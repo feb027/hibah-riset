@@ -73,6 +73,15 @@
 - [x] Patch verification wrote `docs/reviews/review-pendahuluan-patch.md` with verdict `READY_FOR_NEXT_PHASE`.
 - [x] Strengthened validator to require Phase 4 review gates.
 
+
+## 2026-05-25 WIB — Phase 5 lecturer handoff package
+
+- [x] Created `docs/handoff/lecturer-handoff-2026-05-25.md` with status, file list, core argument, safe gap, research questions, risks, agenda, and checklist.
+- [x] Created `docs/handoff/draft-sections-clean.md` combining copy-ready `PENDAHULUAN` and `PEKERJAAN TERKAIT`.
+- [x] Verified source/citation status: 38 mapped sources; all cited `[S###]` IDs in the drafts exist in `references/references.bib`.
+- [x] Review gate wrote `docs/reviews/review-handoff-package.md` with verdict `READY_FOR_DELIVERY`.
+- [x] Strengthened validator to require Phase 5 handoff artifacts and delivery review.
+
 ## Next phase
 
-Phase 5: prepare lecturer-facing handoff package: cleaned draft sections, source/citation status, risks, and next discussion agenda.
+After lecturer feedback: convert accepted source IDs to IEEE/numeric citations, update bibliography metadata, and refine method/prototype plan based on selected detector/tracker/evaluation decisions.

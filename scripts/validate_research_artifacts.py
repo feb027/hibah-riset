@@ -27,6 +27,9 @@ REQUIRED = [
     'docs/reviews/review-pekerjaan-terkait-patch.md',
     'docs/reviews/review-pendahuluan.md',
     'docs/reviews/review-pendahuluan-patch.md',
+    'docs/reviews/review-handoff-package.md',
+    'docs/handoff/lecturer-handoff-2026-05-25.md',
+    'docs/handoff/draft-sections-clean.md',
     'references/README.md',
     'references/source-id-map.md',
     'references/references.bib',
@@ -140,6 +143,7 @@ reviews = {
     'docs/reviews/review-pekerjaan-terkait-patch.md': ['READY_FOR_NEXT_PHASE'],
     'docs/reviews/review-pendahuluan.md': ['READY_FOR_PATCH', 'READY_FOR_NEXT_PHASE'],
     'docs/reviews/review-pendahuluan-patch.md': ['READY_FOR_NEXT_PHASE'],
+    'docs/reviews/review-handoff-package.md': ['READY_FOR_DELIVERY'],
 }
 for rel, accepted in reviews.items():
     p = ROOT / rel
