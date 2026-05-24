@@ -85,3 +85,8 @@
 ## Next phase
 
 After lecturer feedback: convert accepted source IDs to IEEE/numeric citations, update bibliography metadata, and refine method/prototype plan based on selected detector/tracker/evaluation decisions.
+
+## 2026-05-25 WIB — Casual lecturer discussion questions
+
+- [x] Added `docs/handoff/pertanyaan-santai-untuk-dosen.md` with non-formal, practical questions for offline lecturer discussion.
+- [x] Questions cover focus/novelty, YOLO26, DiffMOT/OC-SORT, counting logic, datasets, evaluation, citations, draft quality, and next steps.
