@@ -6,7 +6,7 @@
 - [x] Located source PDFs in `docs/`.
 - [x] Extracted proposal and lecturer guide into `docs/_extracted/`.
 - [x] Created project brief, pre-plan, source ledger, draft/review structure, and validation script.
-- [ ] Create/push GitHub repo.
+- [x] Create/push GitHub repo: https://github.com/feb027/hibah-riset
 - [ ] Phase 1 SOTA source ledger.
 
 ## Next phase
