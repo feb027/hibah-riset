@@ -14,8 +14,17 @@ Target tugas minggu ini:
 - Jangan mengarang sitasi. Setiap klaim SOTA harus punya URL/DOI/arXiv/venue dan tanggal akses.
 - Pisahkan bukti peer-reviewed, arXiv/preprint, dokumentasi vendor, blog, dan GitHub.
 - GitHub hanya lewat `gh` CLI; jangan scrape github.com.
-- Jangan menulis full draft final sebelum source ledger dan evidence matrix terisi.
+- Jangan menulis full draft final sebelum source ledger, evidence matrix, bibliography, dan full-text notes prioritas siap.
 - Jangan hapus PDF sumber.
+
+## Evidence gates
+
+Before Phase 3 final drafting:
+- `docs/research/source-ledger.md` must contain enough indexed/credible sources.
+- `docs/research/evidence-matrix.md` must map claims to sources and limitations.
+- `references/references.bib` must contain bibliography entries for cited sources.
+- Priority sources must have notes under `docs/research/fulltext-notes/` before detailed method/performance claims are used.
+- `scripts/validate_research_artifacts.py` must pass.
 
 ## Writer strict mode
 

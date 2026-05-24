@@ -1,47 +1,134 @@
 #!/usr/bin/env python3
-"""Lightweight validation for hibah-riset research artifacts."""
+"""Validation gate for hibah-riset research artifacts."""
 from pathlib import Path
 import re
 import sys
 
 ROOT = Path(__file__).resolve().parents[1]
+
 REQUIRED = [
     'AGENTS.md',
+    'README.md',
     'docs/00-project-brief.md',
     'docs/01-pre-plan.md',
     'docs/PROGRESS.md',
     'docs/_extracted/manifest.json',
     'docs/research/source-ledger.md',
     'docs/research/evidence-matrix.md',
+    'docs/research/phase1-source-notes.md',
+    'docs/research/fulltext-notes/README.md',
     'docs/outlines/pekerjaan-terkait-outline.md',
     'docs/drafts/pekerjaan-terkait.md',
     'docs/drafts/pendahuluan.md',
+    'docs/reviews/review-source-ledger.md',
+    'docs/reviews/review-pekerjaan-terkait-outline.md',
+    'references/README.md',
+    'references/source-id-map.md',
+    'references/references.bib',
+    'prompts/researcher-source-ledger.md',
+    'prompts/fulltext-reader.md',
+    'prompts/writer-pekerjaan-terkait.md',
+    'prompts/writer-pendahuluan.md',
+    'prompts/reviewer-brutal.md',
+    'prompts/citation-auditor.md',
+    'prompts/final-verifier.md',
 ]
 
-errors = []
+BAD_TOKENS = ['{Formatting Citation}', 'Field Code Changed']
+errors: list[str] = []
+warnings: list[str] = []
+
+def read(rel: str) -> str:
+    return (ROOT / rel).read_text(encoding='utf-8', errors='replace')
+
 for rel in REQUIRED:
     if not (ROOT / rel).exists():
         errors.append(f'missing required file: {rel}')
 
-for rel in ['docs/drafts/pekerjaan-terkait.md', 'docs/drafts/pendahuluan.md', 'docs/research/source-ledger.md']:
+for rel in [
+    'docs/drafts/pekerjaan-terkait.md',
+    'docs/drafts/pendahuluan.md',
+    'docs/research/source-ledger.md',
+    'docs/research/evidence-matrix.md',
+    'docs/outlines/pekerjaan-terkait-outline.md',
+]:
     p = ROOT / rel
     if p.exists():
         text = p.read_text(encoding='utf-8', errors='replace')
-        bad = ['{Formatting Citation}', 'Field Code Changed']
-        for token in bad:
+        for token in BAD_TOKENS:
             if token in text:
                 errors.append(f'{rel} contains extraction/Word artifact token: {token}')
 
-ledger = ROOT / 'docs/research/source-ledger.md'
-if ledger.exists():
-    text = ledger.read_text(encoding='utf-8', errors='replace')
-    rows = [ln for ln in text.splitlines() if re.match(r'\| S\d+', ln)]
-    if len(rows) < 10:
-        errors.append(f'source ledger too small: {len(rows)} source rows')
+ledger_path = ROOT / 'docs/research/source-ledger.md'
+if ledger_path.exists():
+    ledger = read('docs/research/source-ledger.md')
+    rows = [ln for ln in ledger.splitlines() if re.match(r'\| S\d+', ln)]
+    if len(rows) < 20:
+        errors.append(f'source ledger too small: {len(rows)} source rows; expected >=20')
+    a_main = [r for r in rows if '| A-main |' in r]
+    if len(a_main) < 15:
+        errors.append(f'A-main source count too small: {len(a_main)}; expected >=15')
+    recent = [r for r in rows if re.search(r'\| 202[4-6](?:\D|$)', r)]
+    if len(rows) and len(recent) / len(rows) < 0.70:
+        errors.append(f'recent source ratio too low: {len(recent)}/{len(rows)}; expected >=70%')
+    if 'YOLO26' in ledger and 'C-caution' not in ledger:
+        errors.append('YOLO26 appears in ledger but caution classification is missing')
+
+bib_path = ROOT / 'references/references.bib'
+if bib_path.exists():
+    bib = read('references/references.bib')
+    entries = re.findall(r'^@\w+\{', bib, flags=re.M)
+    if len(entries) < 20:
+        errors.append(f'references.bib has too few entries: {len(entries)}; expected >=20')
+    for sid in ['S003', 'S004', 'S010', 'S011', 'S018', 'S021', 'S024', 'S025', 'S027', 'S028']:
+        if f'{{{sid},' not in bib:
+            warnings.append(f'priority source {sid} not found as a BibTeX key')
+
+notes_dir = ROOT / 'docs/research/fulltext-notes'
+if notes_dir.exists():
+    notes = [p for p in notes_dir.glob('S*.md')]
+    if len(notes) < 10:
+        errors.append(f'fulltext note templates too few: {len(notes)}; expected >=10')
+else:
+    errors.append('missing docs/research/fulltext-notes directory')
+
+reviews = {
+    'docs/reviews/review-source-ledger.md': ['READY_FOR_OUTLINE'],
+    'docs/reviews/review-pekerjaan-terkait-outline.md': ['READY_FOR_DRAFT'],
+}
+for rel, accepted in reviews.items():
+    p = ROOT / rel
+    if p.exists():
+        text = p.read_text(encoding='utf-8', errors='replace')
+        if not any(v in text for v in accepted):
+            errors.append(f'{rel} missing accepted verdict {accepted}')
+
+outline_path = ROOT / 'docs/outlines/pekerjaan-terkait-outline.md'
+if outline_path.exists():
+    outline = read('docs/outlines/pekerjaan-terkait-outline.md')
+    required_terms = [
+        'People counting',
+        'NMS-free',
+        'Multi-object tracking',
+        'Diffusion-based MOT',
+        'Counting logic',
+        'Dataset',
+        'Sintesis gap',
+        'Anti-overclaim',
+    ]
+    for term in required_terms:
+        if term.lower() not in outline.lower():
+            errors.append(f'outline missing required concept: {term}')
+
+if warnings:
+    print('VALIDATION WARNINGS')
+    for w in warnings:
+        print('-', w)
 
 if errors:
     print('VALIDATION FAILED')
     for e in errors:
         print('-', e)
     sys.exit(1)
+
 print('VALIDATION PASSED')

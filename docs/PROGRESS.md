@@ -27,3 +27,13 @@ Phase 1: SOTA discovery and source ledger. Minimum target before drafting: 20 ca
 - [x] Rewrote `docs/outlines/pekerjaan-terkait-outline.md` into a full thematic outline.
 - [x] Added source-to-section map and anti-overclaim rules for Phase 3 writer.
 - [x] Run reviewer pass on Phase 2 outline: `docs/reviews/review-pekerjaan-terkait-outline.md` verdict `READY_FOR_DRAFT`.
+
+## 2026-05-25 WIB — Phase 0.5 infrastructure hardening
+
+- [x] Added bibliography infrastructure under `references/`.
+- [x] Generated starter `references/references.bib` from DOI/arXiv metadata where possible.
+- [x] Added source ID mapping in `references/source-id-map.md`.
+- [x] Added full-text reading note templates under `docs/research/fulltext-notes/`.
+- [x] Improved prompts for researcher, full-text reader, writers, reviewer, citation auditor, and final verifier.
+- [x] Upgraded `scripts/validate_research_artifacts.py` into a stronger quality gate.
+- [x] Updated README, AGENTS, and pre-plan with evidence-gate rules.

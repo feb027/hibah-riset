@@ -18,5 +18,14 @@ Repo kerja riset untuk pendalaman SOTA dan penajaman naskah awal penelitian PUU 
 - Semua fase dicatat di `docs/PROGRESS.md`.
 - Pre-plan utama ada di `docs/01-pre-plan.md`.
 - Ledger sumber SOTA ada di `docs/research/source-ledger.md`.
+- Evidence matrix ada di `docs/research/evidence-matrix.md`.
+- Bibliography ada di `references/references.bib`.
+- Full-text note prioritas ada di `docs/research/fulltext-notes/`.
 - Draft final sementara ditulis di `docs/drafts/`.
 - Review brutal/validasi ditulis di `docs/reviews/`.
+
+## Validasi
+
+```bash
+python3 scripts/validate_research_artifacts.py
+```

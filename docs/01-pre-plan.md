@@ -40,6 +40,8 @@
 
 - [ ] Source ledger berisi minimal 20 sumber kandidat, dengan minimal 15 sumber kuat yang layak disitasi.
 - [ ] Minimal 70% sumber utama berasal dari 2024–2026; sumber klasik boleh untuk dataset/metric/metode dasar.
+- [ ] `references/references.bib` berisi entry untuk sumber yang akan disitasi.
+- [ ] Full-text notes prioritas tersedia sebelum klaim metode/performa detail dipakai.
 - [ ] Setiap klaim utama dalam draft punya sumber yang jelas.
 - [ ] Related work dikelompokkan tematik, bukan daftar paper satu-per-satu.
 - [ ] Gap riset eksplisit dan nyambung ke proposal YOLO26 + DiffMOT/OC-SORT + counting logic.
@@ -64,6 +66,26 @@
 **Verification:**
 - `docs/_extracted/manifest.json` ada dan mencatat jumlah halaman/karakter.
 - `git status --short` bersih setelah commit fase.
+
+---
+
+## Phase 0.5 — Research infrastructure hardening
+
+**Objective:** memperkuat infrastruktur sebelum penulisan draft agar sitasi dan klaim lebih aman.
+
+**Files:**
+- Create/modify: `references/references.bib`
+- Create/modify: `references/source-id-map.md`
+- Create: `docs/research/fulltext-notes/README.md`
+- Create: priority full-text note templates under `docs/research/fulltext-notes/`
+- Create/modify prompts:
+  - `prompts/fulltext-reader.md`
+  - `prompts/citation-auditor.md`
+  - `prompts/final-verifier.md`
+  - improved writer/reviewer prompts
+- Modify: `scripts/validate_research_artifacts.py`
+
+**Gate:** validation script passes and bibliography/full-text-note infrastructure exists before Phase 3 final drafting.
 
 ---
 
