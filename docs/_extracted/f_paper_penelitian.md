@@ -1,0 +1,172 @@
+# Extracted text: F-Paper Penelitian.pdf
+
+- Source: `/home/aqua/hibah-riset/docs/F-Paper Penelitian.pdf`
+- Extracted: 2026-05-24T18:28:31.487725Z
+- Pages: 3
+- Characters: 8655
+- Metadata: `{"format": "PDF 1.7", "title": "A Multifrequency MAC Specially Designed for Wireless Sensor", "author": "Nitin.vashisth", "creator": "Microsoft® Word 2016", "producer": "Microsoft® Word 2016", "creationDate": "D:20250624082309+07'00'", "modDate": "D:20250624082309+07'00'"}`
+
+
+## Page 1
+
+ACM Transactions on xxxxxxxx, Vol. xx, No. x, Article xx, Publication date: Month YYYY 
+Judul Makalah Penelitian  
+PENULIS-1, Afiliasi dan Email Penulis-1 
+PENULIS-2, Afiliasi dan Email Penulis-2 
+PENULIS-N, Afiliasi dan Email Penulis-N 
+ 
+Abstrak 
+Kalimat pembuka adalah mendeskripsikan masalah dan pentngnya untuk diselesaikan atau masalah 
+pokok dan tujuan penelitian. Kalimat selanjutnya adalah mendeskripsikan pendekatan (metodologi) yang 
+dilakukan untuk menyelesaikan masalah. Kalimat penutup mendeskripsikan hasil utama yang diperoleh 
+atau temuan dan signifikansi. 
+Kata Kunci: Sepilihan kata-kata bermakna dari paper ini yang dapat dipakai untuk mengindeks kandungan 
+isinya, misalnya dipilih yang dapat berfungsi sebagai alat penelusur, mampu mencerminkan konsep yang 
+terkandung dalam naskah, kata kunci tidak selalu berupa kata tunggal, kata kunci bukan kata biasa tetapi 
+biasanya istilah 
+ PENDAHULUAN 
+Paragraf awal menyatakan konteks dan area penelitian secara umum, serta 
+pentingnya area penelitian tersebut berdasarkan temuan dalam survey paper. 
+Paragraf-paragraf selanjutnya memperkenalkan masalah yang diselesaikan, dan 
+yakinkan mengapa masala tersebut penting atau menarik untuk diselesakan 
+berdasarkan survey paper. 
+Paragraf-paragraf selanjutnya mendeskripsikan outline pendekatan yang dipakai 
+untuk menyelasikan masalah tersebut, termasuk mendeskripsikan outline hasil yang 
+sudah diperoleh saat ini (eksisting) berdasarkan survey paper. Termasuk juga 
+menyatakan kesenjangan (gap) hasil penelitian yang masih ada, dan peluang 
+penelitian yang dapat dilakukan. Kemudian definisikan masalah penelitian dan 
+pertanyaan penelitian yang memuat pernyataan masalah utama yang masih ada 
+berdasarkan kesenjangan (gap) penelitian tersebut, serta tujuan dan lingkup dari 
+penelitian ini. 
+Paragraf akhir menyatakan hasil utama dari kajian penelitian yang telah dilakukan 
+(yang diperoleh dari penelitian kita), misal deskripsi singkat dari usulan model, 
+algoritma, dll. beserta hasil evaluasinya, termasuk memberikan overview apa yang 
+akan disampaikan dalam paper ini (outline makalah) disetiap bagian-bagian paper ini. 
+ PEKERJAAN TERKAIT 
+Paragraf-paragraf awal mendeskripsikan overview hasil penelitian sebelumnya yang 
+relevan, dan secara kritis menelaah (menganalisis) kelebihan, kekurangan, dan 
+justifikasinya. Hasil kajian penelitian sebelumnya dapat dikelompokan misalnya 
+berdasarkan metode, kelas persoalan, dan lain sebagainya. Hindari polemik, 
+pemggunaan frasa pujian, atau menyalahkan, tetapi gunakan fakta untuk 
+menyatakan kelebihan atau kekurangan hasil penelitian sebelumnya tersebut.  
+Paragraf-paragraf selanjutnya mengidentifikasi adanya gap pengetahuan terkait 
+dengan masalah yang diteliti, termasuk mendeskripsikan gap masalah yang belum 
+terpecahkan (dapat diidentifikasi dari kelemahan atau kekurangan hasil penelitian 
+sebelumnya) 
+Pararaf akhir mengidentifikasi kebutuhan untuk menyelesaikan masalah penelitian 
+(menegaskan perlunya penelitian lebih lanjut dan mendeskripsikan solusi yang 
+ditawarkan dalam makalah ini), baik yang sekarang maupun untuk kedepan nanti. 
+ 
+ 
+1
+
+
+## Page 2
+
+Aradea 
+ 
+ 
+ACM Transactions on xxxxxxxx, Vol. xx, No. x, Article x, Publication date: Month YYYY 
+ USULAN PENDEKATAN (PROPOSED METHOD) 
+Bagian isi paper (body of the paper) sangat bergantung pada topik dan jenis penelitian, 
+misalnya apakah teoritical research, applied resarch, action research, case studies, 
+surveys, experiments. Cara praktisnya dapat melihat contoh jurnal yang bereputasi 
+untuk setiap kategori penelitian yang akan ditulis. Bidang computer science untuk  
+applied resarch dapat mencakup: 
+ 
+Bagian awal mendeskripsikan arsitektur sistem yang diusulkan, termasuk dapat juga 
+memuat algoritma baru atau formalisme, atau serangkaian teorema yang disertai 
+dengan pembuktian (proof), jika diperlukan. 
+ 
+Bagian selanjutnya menyajikan deskripsi penerapan atau eksperimen, dapat terdiri 
+dari:  
+a. Data eksperimen atau data yang digunakan dalam penelitian, sebutkan dari mana 
+data untuk eksperimen diperoleh, jika memungkinkan akan lebih baik jika 
+menggunakan data yang dipakai sebagai standar oleh komunitas peneliti, jelaskan 
+statistik data tersebut dan bagaimana data dipergunakan dalam eksperiment, 
+serta jelaskan pula pre-processing yang dilakukan terhadap data (jika dilakukan). 
+b. Deskripsi tahapan-tahapan pengembangan atau eksperimen, jelaskan tujuan dan 
+prosedurnya dalam bentuk narasi, namun jika cukup kompleks dapat ditulis dalam 
+bentuk algoritma atau bagan/ diagram alir.  
+c. Diskusi hasil, menjelaskan fenomena yang diperoleh dari hasil pengembangan 
+atau eksperimen tersebut, yaitu memaparkan hasil pengembangan atau 
+eksperimen apa adanya (jujur), dan gunakan tabel dan/atau grafik untuk 
+memperjelas (termasuk penjelasan dari setiap tabel/grafik tersebut), berikan 
+penjelasan temuan utama atau temuan penting yang dapat disimpulkan. 
+ 
+Bagian akhir mendeskripsikan evaluasi sistem, dapat berisi penjelasan cara 
+mengukur kinerja sistem atau cara mengevaluasinya, melakukan analisis dan 
+menyimpulkan pembahasan secara menyeluruh dari hasil pengembangan atau 
+eksperimen yang sudah dilakukan, tampilkan hasil evaluasi dan validasi/ hasil 
+pengujian yang telah dilakukan. Secara teknis, dapat juga mendeskripsikan ancaman 
+terhadap validitas (threats to validity), terdiri dari validitas internal, validitas 
+construct, validitas kesimpulan, dan validitas eksternal. 
+ KESIMPULAN DAN PEKERJAAN KEDEPAN 
+Paragraf awal mendeskripsikan rangkuman kontribusi makalah ini, serta menjawab 
+pertanyaan penelitian berdasarkan gap masalah yang ada di bagian pendahuluan dan 
+pekerjaan terkait, serta singkron dengan tujuan penelitian. 
+Parargaf selanjutnya membahas rangkuman kelebihan dan kekurangan dari hasil 
+penelitian di dalam makalah ini. 
+Paragraf akhir mendeskripsikan penelitian lanjutan (future work). Future works yang 
+akan dilakukan sebagai tahapan berikutnya dari penelitian kita, boleh dari temuan-
+temuan hasil eksperimen. Dapat berupa langkah berikutnya setelah temuan diperoleh. 
+Saran bisa berupa teori, implementasi (praktis), atau untuk penelitian berikutnya. 
+Jika kesimpulan menolak hipotesis, maka perlu disarankan penelitian lebih lanjut 
+untuk menguji teori-teori yang ada, dan jika kesimpulan menerima hipotesis, maka 
+saran diarahkan ke langkah praktis bagaimana supaya hasil penelitian bisa 
+diimplementasikan lebih lanjut.
+
+
+## Page 3
+
+Aradea                                     
+ 
+                                                                                                                                         
+ 
+ACM Transactions on xxxxxxxx, Vol. xx, No. xx, Article xx, Publication date: Month YYYY 
+UCAPAN TERIMAKASIH 
+Ucapan terima kasih dan pemberitahuan tentang sponsor penelitian ini, ucapan 
+terima kasih pada kolega (bukan anggota peeliti) yang pernah diajak berdiskusi atau 
+terlibat secara tidak langsung, ucapan terima kasih kepada (anonymous) reviewers 
+yang memberikan saran-saran yang konstruktif. 
+REFERENSI 
+Menuliskan semua sumber publikasi yang dirujuk langsung (atau semua daftar 
+referensi harus dirujuk minimal sekali didalam teks makalah). Ikuti cara penulisan 
+referensi dan cara merujuknya sesuai dengan aturan dari jurnal yang dituju. 
+Gunakan sumber referensi dari jurnal dan konferensi yang berreputasi. 
+ 
+TIPS PENULISAN MAKALAH ILMIAH 
+1. Top-down design: mulai dari outline, selanjutnya isi detailnya. 
+2. Inside-out writing: mulai dari body of paper, selanjutnya tulis pendahuluan, 
+pekerjaan terkait, kesimpulan, dan terakhir abstrak dan judul. 
+3. Table & diagram: periksa keterbacaan tabel dan diagram. 
+4. Dependency analysis: periksa apakah paper sudah self-contained dan terpapar 
+secara runut. 
+5. Factuality: pastikan semua yang dinyatakan dalam makalah adalah fakta yang 
+benar. 
+6. Interpretability: periksa setiap kalimat apakah bisa menimbulkan salah persepsi 
+(bermakna ganda), jika ya maka perbaiki. 
+7. Optimisation: hilangkan bagian-bagian yang tidak perlu (kurang relevan), jika 
+memungkinkan ringkas kalimat yang panjang tanpa menghilangkan isi pesan 
+utama yang ingin disampaikan. 
+8. Readibility: apakah isi makalah dapat terbaca dengan baik? Apakah bagian-
+bagiannya terhubung satu sama lainnya (koherensi). 
+ 
+Catatan: 
+• 
+Periksa manuskrip berulang-ulang untuk memastikan tidak ada kesalahan tata 
+bahasa, cara penulisan, dan alur pikiran. 
+• 
+Minta 
+batuan 
+kolega 
+untuk 
+mereview 
+makalah 
+serta 
+memastikan 
+keterbacaannya. 
+• 
+Lebih baik menginvestasikan waktu lebih lama untuk memastikan makalah 
+sudah tertulis dengan baik, daripada mengirim makalah yang masih 
+mengandung kesalahan dan akibatnya bisa fatal.

@@ -1,0 +1,35 @@
+[
+  {
+    "slug": "proposal_puu_2026_counting",
+    "source": "/home/aqua/hibah-riset/docs/Proposal PUU 2026 - Counting(2).pdf",
+    "output": "/home/aqua/hibah-riset/docs/_extracted/proposal_puu_2026_counting.md",
+    "pages": 11,
+    "chars": 29650,
+    "metadata": {
+      "format": "PDF 1.7",
+      "title": "PUU 2026",
+      "author": "informatika;Desti Karmini Nurdatillah;Febnawan Fatur Rochman",
+      "keywords": "Riset",
+      "creator": "Microsoft® Word for Microsoft 365",
+      "producer": "Microsoft® Word for Microsoft 365",
+      "creationDate": "D:20260525011611+07'00'",
+      "modDate": "D:20260525011611+07'00'"
+    }
+  },
+  {
+    "slug": "f_paper_penelitian",
+    "source": "/home/aqua/hibah-riset/docs/F-Paper Penelitian.pdf",
+    "output": "/home/aqua/hibah-riset/docs/_extracted/f_paper_penelitian.md",
+    "pages": 3,
+    "chars": 8655,
+    "metadata": {
+      "format": "PDF 1.7",
+      "title": "A Multifrequency MAC Specially Designed for Wireless Sensor",
+      "author": "Nitin.vashisth",
+      "creator": "Microsoft® Word 2016",
+      "producer": "Microsoft® Word 2016",
+      "creationDate": "D:20250624082309+07'00'",
+      "modDate": "D:20250624082309+07'00'"
+    }
+  }
+]

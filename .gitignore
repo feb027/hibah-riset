@@ -1,0 +1,13 @@
+# Python/cache
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+
+# Office temp files
+~$*.docx
+~$*.xlsx
+
+# Generated local scratch
+/tmp/
+.DS_Store
