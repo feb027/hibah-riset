@@ -22,6 +22,7 @@ REQUIRED = [
     'docs/drafts/pendahuluan.md',
     'docs/reviews/review-source-ledger.md',
     'docs/reviews/review-pekerjaan-terkait-outline.md',
+    'docs/reviews/review-fulltext-notes.md',
     'references/README.md',
     'references/source-id-map.md',
     'references/references.bib',
@@ -85,16 +86,45 @@ if bib_path.exists():
             warnings.append(f'priority source {sid} not found as a BibTeX key')
 
 notes_dir = ROOT / 'docs/research/fulltext-notes'
+PRIORITY_NOTE_IDS = ['S003', 'S004', 'S010', 'S011', 'S018', 'S021', 'S024', 'S025', 'S027', 'S028']
+REQUIRED_NOTE_SECTIONS = [
+    '## Source identity',
+    '## Why this source matters',
+    '## Problem addressed',
+    '## Method summary',
+    '## Dataset / evaluation protocol',
+    '## Metrics reported',
+    '## Findings safe to cite',
+    '## Limitations stated by authors',
+    '## Limitations inferred for this project',
+    '## Exact claims allowed in draft',
+    '## Claims NOT allowed',
+    '## Mapped sections',
+    '## Notes for citation auditor',
+]
 if notes_dir.exists():
     notes = [p for p in notes_dir.glob('S*.md')]
     if len(notes) < 10:
         errors.append(f'fulltext note templates too few: {len(notes)}; expected >=10')
+    for sid in PRIORITY_NOTE_IDS:
+        matches = list(notes_dir.glob(f'{sid}*.md'))
+        if not matches:
+            errors.append(f'missing priority fulltext note for {sid}')
+            continue
+        text = matches[0].read_text(encoding='utf-8', errors='replace')
+        for section in REQUIRED_NOTE_SECTIONS:
+            if section not in text:
+                errors.append(f'{matches[0].relative_to(ROOT)} missing section: {section}')
+        for token in ['TODO', 'S###', 'Short Title']:
+            if token in text:
+                errors.append(f'{matches[0].relative_to(ROOT)} still contains template marker: {token}')
 else:
     errors.append('missing docs/research/fulltext-notes directory')
 
 reviews = {
     'docs/reviews/review-source-ledger.md': ['READY_FOR_OUTLINE'],
     'docs/reviews/review-pekerjaan-terkait-outline.md': ['READY_FOR_DRAFT'],
+    'docs/reviews/review-fulltext-notes.md': ['READY_FOR_DRAFT'],
 }
 for rel, accepted in reviews.items():
     p = ROOT / rel

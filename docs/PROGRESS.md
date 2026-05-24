@@ -9,10 +9,6 @@
 - [x] Create/push GitHub repo: https://github.com/feb027/hibah-riset
 - [ ] Phase 1 SOTA source ledger.
 
-## Next phase
-
-Phase 1: SOTA discovery and source ledger. Minimum target before drafting: 20 candidates / 15 usable sources, with source type and gap mapping.
-
 ## 2026-05-25 WIB — Phase 1 source discovery started
 
 - [x] Collected indexed/credible source candidates for detector/YOLO26/NMS-free/edge.
@@ -37,3 +33,15 @@ Phase 1: SOTA discovery and source ledger. Minimum target before drafting: 20 ca
 - [x] Improved prompts for researcher, full-text reader, writers, reviewer, citation auditor, and final verifier.
 - [x] Upgraded `scripts/validate_research_artifacts.py` into a stronger quality gate.
 - [x] Updated README, AGENTS, and pre-plan with evidence-gate rules.
+
+## 2026-05-25 WIB — Phase 2.5 full-text notes
+
+- [x] Filled full-text notes for detector sources: S003 YOLOv10 and S004 RT-DETR.
+- [x] Filled full-text notes for people-counting/crowd-counting sources: S010, S011, S027, S028.
+- [x] Filled full-text notes for MOT/metric sources: S018, S021, S024, S025.
+- [x] Added Phase 2.5 review: `docs/reviews/review-fulltext-notes.md` verdict `READY_FOR_DRAFT`.
+- [x] Strengthened validator to reject priority full-text notes that still contain template markers or missing required sections.
+
+## Next phase
+
+Phase 3: draft `docs/drafts/pekerjaan-terkait.md` using the approved outline and full-text notes.
