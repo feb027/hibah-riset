@@ -23,6 +23,8 @@ REQUIRED = [
     'docs/reviews/review-source-ledger.md',
     'docs/reviews/review-pekerjaan-terkait-outline.md',
     'docs/reviews/review-fulltext-notes.md',
+    'docs/reviews/review-pekerjaan-terkait.md',
+    'docs/reviews/review-pekerjaan-terkait-patch.md',
     'references/README.md',
     'references/source-id-map.md',
     'references/references.bib',
@@ -84,6 +86,13 @@ if bib_path.exists():
     for sid in ['S001', 'S002', 'S003', 'S004', 'S010', 'S011', 'S018', 'S021', 'S024', 'S025', 'S027', 'S028']:
         if f'{{{sid},' not in bib:
             warnings.append(f'priority source {sid} not found as a BibTeX key')
+    for draft_rel in ['docs/drafts/pekerjaan-terkait.md', 'docs/drafts/pendahuluan.md']:
+        draft_path = ROOT / draft_rel
+        if draft_path.exists():
+            cited_ids = sorted(set(re.findall(r'\[S(\d{3})\]', draft_path.read_text(encoding='utf-8', errors='replace'))))
+            missing = [f'S{sid}' for sid in cited_ids if f'{{S{sid},' not in bib]
+            if missing:
+                errors.append(f'{draft_rel} cites IDs missing from references.bib: {", ".join(missing)}')
 
 notes_dir = ROOT / 'docs/research/fulltext-notes'
 PRIORITY_NOTE_IDS = ['S001', 'S002', 'S003', 'S004', 'S010', 'S011', 'S018', 'S021', 'S024', 'S025', 'S027', 'S028']
@@ -125,6 +134,8 @@ reviews = {
     'docs/reviews/review-source-ledger.md': ['READY_FOR_OUTLINE'],
     'docs/reviews/review-pekerjaan-terkait-outline.md': ['READY_FOR_DRAFT'],
     'docs/reviews/review-fulltext-notes.md': ['READY_FOR_DRAFT'],
+    'docs/reviews/review-pekerjaan-terkait.md': ['READY_FOR_PATCH', 'READY_FOR_NEXT_PHASE'],
+    'docs/reviews/review-pekerjaan-terkait-patch.md': ['READY_FOR_NEXT_PHASE'],
 }
 for rel, accepted in reviews.items():
     p = ROOT / rel

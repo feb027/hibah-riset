@@ -50,6 +50,18 @@
 - [x] Updated full-text reader prompt and README to require Bahasa Indonesia note content while preserving validator headings.
 - [x] Updated Phase 2.5 review and validator to include S001/S002 as priority caution notes.
 
+
+## 2026-05-25 WIB — Phase 3 PEKERJAAN TERKAIT draft
+
+- [x] Drafted `docs/drafts/pekerjaan-terkait.md` in Bahasa Indonesia academic style.
+- [x] Used thematic structure from Phase 2 outline: domain counting, detector, MOT, DiffMOT, counting logic, evaluation, and gap synthesis.
+- [x] Preserved YOLO26 caution positioning: candidate implementation/context, not peer-reviewed novelty anchor.
+- [x] Reviewer pass wrote `docs/reviews/review-pekerjaan-terkait.md` with verdict `READY_FOR_PATCH`.
+- [x] Patched citation blocker by adding BibTeX entries for S006, S015, S016, and S017.
+- [x] Patched YOLO26 wording in the gap synthesis.
+- [x] Patch verification wrote `docs/reviews/review-pekerjaan-terkait-patch.md` with verdict `READY_FOR_NEXT_PHASE`.
+- [x] Strengthened validator to catch draft citations missing from `references/references.bib` and require Phase 3 review gates.
+
 ## Next phase
 
-Phase 3: draft `docs/drafts/pekerjaan-terkait.md` using the approved outline, YOLO26 caution notes, Indonesian bridge, and full-text notes.
+Phase 4: draft `docs/drafts/pendahuluan.md` after using Phase 3 related work as the SOTA/gap basis.
