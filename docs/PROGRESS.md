@@ -62,6 +62,17 @@
 - [x] Patch verification wrote `docs/reviews/review-pekerjaan-terkait-patch.md` with verdict `READY_FOR_NEXT_PHASE`.
 - [x] Strengthened validator to catch draft citations missing from `references/references.bib` and require Phase 3 review gates.
 
+
+## 2026-05-25 WIB — Phase 4 PENDAHULUAN draft
+
+- [x] Drafted `docs/drafts/pendahuluan.md` in Bahasa Indonesia academic style using Phase 3 `PEKERJAAN TERKAIT` as the SOTA/gap basis.
+- [x] Sharpened proposal introduction around urgency, technical problem, SOTA summary, gap, research questions, objectives/scope, contribution, and 5-year roadmap.
+- [x] Preserved YOLO26 caution positioning and density-map vs trajectory/ID counting separation.
+- [x] Reviewer pass wrote `docs/reviews/review-pendahuluan.md` with verdict `READY_FOR_PATCH`.
+- [x] Patched blockers: reduced draft below the PUU 1000-word limit and replaced article-outline ending with a PUU-style five-year roadmap.
+- [x] Patch verification wrote `docs/reviews/review-pendahuluan-patch.md` with verdict `READY_FOR_NEXT_PHASE`.
+- [x] Strengthened validator to require Phase 4 review gates.
+
 ## Next phase
 
-Phase 4: draft `docs/drafts/pendahuluan.md` after using Phase 3 related work as the SOTA/gap basis.
+Phase 5: prepare lecturer-facing handoff package: cleaned draft sections, source/citation status, risks, and next discussion agenda.

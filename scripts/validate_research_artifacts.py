@@ -25,6 +25,8 @@ REQUIRED = [
     'docs/reviews/review-fulltext-notes.md',
     'docs/reviews/review-pekerjaan-terkait.md',
     'docs/reviews/review-pekerjaan-terkait-patch.md',
+    'docs/reviews/review-pendahuluan.md',
+    'docs/reviews/review-pendahuluan-patch.md',
     'references/README.md',
     'references/source-id-map.md',
     'references/references.bib',
@@ -136,6 +138,8 @@ reviews = {
     'docs/reviews/review-fulltext-notes.md': ['READY_FOR_DRAFT'],
     'docs/reviews/review-pekerjaan-terkait.md': ['READY_FOR_PATCH', 'READY_FOR_NEXT_PHASE'],
     'docs/reviews/review-pekerjaan-terkait-patch.md': ['READY_FOR_NEXT_PHASE'],
+    'docs/reviews/review-pendahuluan.md': ['READY_FOR_PATCH', 'READY_FOR_NEXT_PHASE'],
+    'docs/reviews/review-pendahuluan-patch.md': ['READY_FOR_NEXT_PHASE'],
 }
 for rel, accepted in reviews.items():
     p = ROOT / rel
