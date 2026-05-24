@@ -21,3 +21,9 @@ Phase 1: SOTA discovery and source ledger. Minimum target before drafting: 20 ca
 - [x] Updated `docs/research/source-ledger.md` with 38 source entries.
 - [x] Updated `docs/research/evidence-matrix.md` with draftable claims, limits, and blockers.
 - [x] Run reviewer pass on source ledger before Phase 2 outline finalization: `docs/reviews/review-source-ledger.md` verdict `READY_FOR_OUTLINE`.
+
+## 2026-05-25 WIB — Phase 2 related-work outline
+
+- [x] Rewrote `docs/outlines/pekerjaan-terkait-outline.md` into a full thematic outline.
+- [x] Added source-to-section map and anti-overclaim rules for Phase 3 writer.
+- [x] Run reviewer pass on Phase 2 outline: `docs/reviews/review-pekerjaan-terkait-outline.md` verdict `READY_FOR_DRAFT`.
