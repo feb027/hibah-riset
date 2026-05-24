@@ -1,92 +1,192 @@
 # Pertanyaan Santai untuk Diskusi Dosen
 
-> Tujuan file ini: pegangan ngomong saat diskusi offline supaya pertanyaannya natural, tidak terlalu akademis, tapi tetap mengarah ke keputusan penting.
+> Konteks: dosen kemungkinan belum terlalu mengikuti detail teknis riset ini. Jadi jangan langsung tanya teknis seperti “YOLO26 gimana?” atau “DiffMOT oke tidak?”. Mulai dari menjelaskan dulu **kenapa riset ini arahnya begitu**, baru minta saran.
 
-## Pembuka santai
+## Pola ngobrol yang disarankan
 
-- “Bu/Pak, kemarin kami coba rapihin bagian SOTA, pekerjaan terkait, sama pendahuluannya. Boleh kami minta arahan, kira-kira arah gap yang kami tarik ini sudah pas belum?”
-- “Kami coba posisikan risetnya bukan sekadar pakai YOLO26, tapi integrasi detector, tracker, sama counting logic. Menurut Bu/Pak, framing seperti ini sudah aman belum?”
-- “Kalau dari draft ini, bagian mana yang menurut Bu/Pak paling perlu dipertajam sebelum lanjut ke metode/prototipe?”
+Gunakan pola ini:
 
-## Pertanyaan soal fokus riset
+1. Jelaskan konteks singkat.
+2. Jelaskan masalah yang kami lihat.
+3. Jelaskan arah solusi yang kami susun.
+4. Baru minta saran dosen.
 
-1. “Menurut Bu/Pak, fokus utama riset ini sebaiknya lebih ditekankan ke **model deteksinya**, **tracking-nya**, atau **counting logic-nya**?”
-2. “Kalau harus dibuat lebih sederhana, bagian mana yang sebaiknya jadi inti kontribusi utama?”
-3. “Apakah gap ‘integrasi detector real-time + tracker robust + counting logic berbasis zona’ sudah cukup kuat untuk dibawa sebagai posisi penelitian?”
-4. “Apakah perlu tetap membawa istilah *smart surveillance/crowd management*, atau cukup fokus ke *real-time people counting* saja?”
-5. “Untuk ruang publik target, sebaiknya kami bayangkan skenario seperti CCTV kampus, stasiun, pintu masuk gedung, atau tempat lain?”
+Format sederhananya:
 
-## Pertanyaan soal YOLO26
+> “Bu/Pak, kami coba baca ulang proposal dan update SOTA-nya. Dari situ kami melihat masalahnya bukan cuma mendeteksi orang, tapi menjaga agar orang yang sama tidak dihitung dua kali saat bergerak, tertutup, atau keluar-masuk zona. Karena itu kami coba arahkan risetnya ke integrasi detector, tracker, dan counting logic. Menurut Bu/Pak, framing seperti ini sudah masuk akal belum?”
 
-6. “Karena YOLO26 masih banyak berbasis dokumentasi vendor dan preprint, apakah aman kalau kami posisikan hanya sebagai kandidat implementasi, bukan dasar novelty utama?”
-7. “Apakah Bu/Pak ingin YOLO26 tetap jadi detector utama, atau sebaiknya kami siapkan pembanding seperti YOLOv10/RT-DETR juga?”
-8. “Kalau nanti reviewer/dosen lain mempertanyakan YOLO26 karena masih baru, apakah strategi kami yang menjadikan YOLOv10 dan RT-DETR sebagai dasar akademik sudah cukup aman?”
-9. “Apakah istilah NMS-free perlu dijelaskan lebih sederhana di proposal, atau cukup disebut sebagai bagian dari efisiensi detector?”
+---
 
-## Pertanyaan soal DiffMOT dan OC-SORT
+# Script pembuka 1 menit
 
-10. “Untuk tracking, apakah DiffMOT sebaiknya diposisikan sebagai metode utama karena gerak non-linear, lalu OC-SORT sebagai fallback ringan?”
-11. “Kalau DiffMOT ternyata berat saat prototipe, apakah sejak awal perlu kami tulis bahwa OC-SORT/SORT-family menjadi baseline atau backup?”
-12. “Apakah perlu membandingkan DiffMOT dengan tracker lain juga, atau cukup dengan OC-SORT dulu supaya scope tidak melebar?”
-13. “Menurut Bu/Pak, fokus evaluasi tracker nanti lebih penting ke IDF1/HOTA, atau langsung ke error hitung orang?”
+Kalau mau mulai diskusi, bisa pakai ini:
 
-## Pertanyaan soal counting logic
+> “Bu/Pak, jadi kami coba dalami lagi proposal counting yang kemarin lolos. Awalnya proposal banyak menekankan YOLO26 dan DiffMOT. Setelah kami baca SOTA terbaru, kami lihat masalah people counting di ruang publik itu bukan cuma model deteksi yang cepat, tapi juga bagaimana sistem menjaga identitas orang antar-frame, terutama kalau ada oklusi, orang berdekatan, atau geraknya tidak lurus. Kalau ID-nya hilang atau tertukar, hasil hitung bisa dobel atau malah tidak kehitung.”
 
-14. “Untuk counting logic, apakah konsep RoI polygon, zone-to-zone trajectory, dan ID state memory sudah masuk akal untuk dijadikan kontribusi sistem?”
-15. “Kalau orang hanya mondar-mandir di area kamera, apakah sistem harus menghitung hanya saat benar-benar pindah zona?”
-16. “Apakah perlu dari awal kami definisikan skenario masuk-keluar, misalnya zona A ke zona B baru dihitung?”
-17. “Untuk menghindari double-counting, apakah ID memory cukup dijelaskan secara konsep dulu, atau perlu langsung dibuat diagram alurnya?”
+Lanjutkan:
 
-## Pertanyaan soal dataset dan validasi
+> “Karena itu, kami coba posisikan risetnya sebagai pipeline: YOLO26 untuk deteksi real-time, DiffMOT untuk tracking gerak non-linear, OC-SORT sebagai fallback yang lebih ringan, lalu counting logic berbasis RoI, zona, dan ID memory supaya hitungannya lebih stabil. Tapi kami ingin minta arahan Bu/Pak, apakah framing ini sudah pas untuk arah hibah ini, atau perlu disederhanakan/digeser fokusnya?”
 
-18. “Untuk dataset awal, apakah cukup pakai MOT20, DanceTrack, dan CrowdHuman, atau perlu cari dataset people counting yang punya label keluar-masuk?”
-19. “Kalau dataset publik tidak punya label zona/counting, apakah boleh kami buat validasi kecil dari video sendiri atau CCTV publik?”
-20. “Untuk validasi lokal, apakah memungkinkan pakai rekaman area kampus atau harus pakai data publik saja?”
-21. “Nanti ground truth counting sebaiknya dibuat manual per video, per zona, atau cukup sampling beberapa skenario dulu?”
-22. “Kalau target TKT 3–4, seberapa jauh prototipe harus berjalan? Cukup demo video offline, atau harus real-time dari kamera?”
+---
 
-## Pertanyaan soal evaluasi
+# Versi pembuka yang lebih pendek
 
-23. “Metrik evaluasi yang paling penting menurut Bu/Pak apa: FPS, HOTA/IDF1, counting error, atau semuanya tetap perlu?”
-24. “Kalau sistem deteksinya bagus tapi counting error masih tinggi, apakah itu tetap dianggap masalah utama yang perlu dianalisis?”
-25. “Apakah perlu sejak awal menulis bahwa evaluasi akan dipisah: detector, tracker, counting, dan real-time performance?”
-26. “Untuk klaim real-time, kira-kira target minimal FPS-nya perlu ditentukan sekarang atau nanti setelah eksperimen awal?”
+Kalau waktunya sempit:
 
-## Pertanyaan soal sumber dan sitasi
+> “Bu/Pak, kami sudah update SOTA dan coba rapihkan gap-nya. Intinya kami melihat riset ini sebaiknya tidak hanya dibingkai sebagai ‘pakai YOLO26’, tapi sebagai integrasi detector, tracker, dan counting logic supaya hasil hitung orang lebih stabil di kondisi oklusi dan ramai. Kami ingin minta saran, apakah arah framing ini sudah tepat?”
 
-27. “Di source ledger kami ada beberapa paper MDPI yang relevan. Apakah Bu/Pak nyaman memakai MDPI sebagai pendukung, asal anchor utamanya tetap CVPR/NeurIPS/IEEE/Springer/Nature?”
-28. “Untuk final nanti, apakah sitasi sebaiknya langsung IEEE numerik, atau source ID internal dulu tidak apa-apa selama diskusi?”
-29. “Apakah ada jurnal atau konferensi tertentu yang Bu/Pak ingin kami jadikan acuan gaya penulisan dan daftar pustaka?”
-30. “Kalau ada sumber yang menurut Bu/Pak kurang kuat, bagian mana yang sebaiknya kami ganti dengan paper yang lebih bereputasi?”
+---
 
-## Pertanyaan soal draft Pendahuluan dan Pekerjaan Terkait
+# Pertanyaan utama yang paling penting
 
-31. “Apakah alur pendahuluan dari urgensi → masalah teknis → SOTA → gap → tujuan sudah enak dibaca?”
-32. “Apakah bagian pekerjaan terkait sudah cukup tematik, atau masih terlalu panjang/teknis?”
-33. “Bagian mana yang sebaiknya kami ringkas supaya draft lebih nyaman dibaca dosen/reviewer?”
-34. “Apakah istilah teknis seperti NMS-free, ID switch, HOTA, dan DiffMOT perlu dijelaskan lebih awam?”
-35. “Apakah roadmap 5 tahun di pendahuluan sudah sesuai dengan arah kelompok riset AI Siliwangi?”
+## 1. Minta validasi arah riset
 
-## Pertanyaan soal langkah berikutnya
+- “Bu/Pak, dari penjelasan tadi, apakah arah risetnya sudah pas kalau kami bingkai sebagai integrasi detector, tracking, dan counting logic?”
+- “Apakah gap seperti ini cukup kuat, atau menurut Bu/Pak masih terlalu teknis?”
+- “Kalau Bu/Pak melihat proposal awal, bagian mana yang paling sebaiknya kami jadikan fokus utama?”
+- “Menurut Bu/Pak, riset ini lebih baik ditekankan sebagai riset model, sistem, atau aplikasi/prototipe?”
 
-36. “Setelah ini, sebaiknya kami lanjut ke perapian sitasi dulu, atau mulai eksplorasi prototipe kecil?”
-37. “Untuk tugas mahasiswa minggu depan, lebih baik dibagi ke citation formatting, dataset/prototype, atau diagram metode?”
-38. “Apakah perlu kami buat diagram pipeline baru berdasarkan SOTA yang sudah diperbarui?”
-39. “Kalau harus demo awal, bagian mana yang paling realistis: YOLO detector dulu, tracking dulu, atau counting logic sederhana dulu?”
-40. “Apa keputusan paling penting yang harus kami bawa pulang dari diskusi minggu depan?”
+## 2. Minta saran soal kontribusi
 
-## Versi paling singkat kalau waktu diskusi terbatas
+- “Kalau kontribusinya harus dibuat lebih jelas, sebaiknya kami tekankan di bagian mana: detector, tracking, atau logika hitung?”
+- “Apakah cukup kalau kontribusinya berupa pipeline yang menggabungkan beberapa metode, atau harus ada modifikasi metode tertentu?”
+- “Kalau tidak sampai membuat algoritma baru, apakah integrasi sistem + evaluasi pada skenario ruang publik masih cukup layak untuk hibah ini?”
+- “Menurut Bu/Pak, novelty yang aman untuk ditulis itu apa?”
 
-Kalau waktunya sempit, cukup tanya ini:
+## 3. Minta saran soal YOLO26
 
-1. “Bu/Pak, framing gap integrasi detector + tracker + counting logic ini sudah pas belum?”
-2. “YOLO26 aman tidak kalau kami posisikan sebagai kandidat implementasi, bukan novelty utama?”
+Jelaskan dulu:
+
+> “Untuk YOLO26, kami menemukan sumbernya masih banyak dari dokumentasi vendor dan preprint. Jadi kami tidak berani menjadikannya satu-satunya dasar akademik. Kami posisikan sebagai kandidat implementasi terbaru, sementara argumen akademik NMS-free kami topang dari YOLOv10 dan RT-DETR.”
+
+Lalu tanya:
+
+- “Menurut Bu/Pak, posisi YOLO26 seperti itu sudah aman?”
+- “Apakah YOLO26 tetap perlu dipakai sebagai model utama karena sudah ada di proposal, atau boleh kami siapkan baseline pembanding seperti YOLOv10/RT-DETR?”
+- “Kalau nanti ada yang mempertanyakan YOLO26 karena belum kuat secara paper, sebaiknya kami jawab seperti apa?”
+- “Apakah perlu kami ubah narasinya supaya YOLO26 tidak terlihat sebagai satu-satunya novelty?”
+
+## 4. Minta saran soal DiffMOT dan OC-SORT
+
+Jelaskan dulu:
+
+> “Untuk tracking, kami melihat DiffMOT cocok karena menangani gerak non-linear. Tapi karena diffusion bisa lebih berat, kami juga menaruh OC-SORT sebagai fallback yang lebih ringan.”
+
+Lalu tanya:
+
+- “Menurut Bu/Pak, pembagian DiffMOT sebagai tracker utama dan OC-SORT sebagai fallback ini masuk akal?”
+- “Apakah perlu sejak awal kami tulis bahwa OC-SORT adalah backup kalau DiffMOT terlalu berat?”
+- “Kalau scope-nya mau dijaga, cukup bandingkan DiffMOT dan OC-SORT dulu, atau perlu tracker lain juga?”
+- “Dari sisi riset, apakah tracking ini perlu jadi fokus besar, atau cukup sebagai komponen sistem?”
+
+## 5. Minta saran soal counting logic
+
+Jelaskan dulu:
+
+> “Kami juga melihat bahwa tracking bagus belum tentu counting-nya benar. Karena itu kami tambahkan logika RoI, zona, validasi lintasan, dan ID memory supaya orang yang sama tidak dihitung dua kali.”
+
+Lalu tanya:
+
+- “Apakah counting logic seperti RoI, zone-to-zone, dan ID memory ini layak dijadikan bagian kontribusi?”
+- “Kalau orang mondar-mandir di area kamera, menurut Bu/Pak sebaiknya dihitung kapan?”
+- “Apakah perlu dari awal kami definisikan skenario masuk-keluar, misalnya dari zona A ke zona B baru dihitung?”
+- “Apakah bagian counting logic ini perlu dibuat diagram supaya lebih mudah dipahami?”
+
+## 6. Minta saran soal dataset dan validasi
+
+Jelaskan dulu:
+
+> “Untuk data, kami melihat MOT20, DanceTrack, dan CrowdHuman cocok untuk deteksi/tracking, tapi belum tentu punya label counting berbasis zona. Jadi mungkin perlu validasi tambahan dari video lokal atau video publik.”
+
+Lalu tanya:
+
+- “Menurut Bu/Pak, untuk tahap awal cukup pakai dataset publik dulu, atau perlu video lokal juga?”
+- “Kalau perlu video lokal, apakah memungkinkan pakai rekaman area kampus atau ruang publik tertentu?”
+- “Untuk validasi counting, apakah ground truth-nya cukup dibuat manual di beberapa video dulu?”
+- “Kalau targetnya TKT 3–4, apakah demo offline dari video sudah cukup, atau harus real-time dari kamera?”
+
+## 7. Minta saran soal evaluasi
+
+Jelaskan dulu:
+
+> “Kami rencanakan evaluasinya tidak hanya akurasi deteksi, tapi juga ID tracking, error hitung, dan FPS/latency.”
+
+Lalu tanya:
+
+- “Menurut Bu/Pak, metrik mana yang paling penting untuk ditekankan?”
+- “Apakah evaluasi perlu dipisah menjadi detector, tracker, counting, dan real-time performance?”
+- “Kalau detector bagus tapi counting error masih tinggi, apakah itu justru bisa jadi analisis utama?”
+- “Target real-time-nya perlu ditentukan sekarang, atau nanti setelah eksperimen awal?”
+
+## 8. Minta saran soal sumber dan sitasi
+
+Jelaskan dulu:
+
+> “Kami sudah kumpulkan sumber 2024–2026 dan memisahkan mana yang peer-reviewed, mana yang vendor/preprint. Tapi beberapa sumber people counting yang relevan ada dari MDPI, jadi kami sandingkan dengan CVPR/NeurIPS/IEEE/Springer/Nature supaya lebih aman.”
+
+Lalu tanya:
+
+- “Apakah Bu/Pak nyaman kalau MDPI dipakai sebagai pendukung, bukan sumber utama satu-satunya?”
+- “Apakah ada venue atau jurnal tertentu yang sebaiknya kami jadikan acuan?”
+- “Kalau ada sumber yang kurang kuat, bagian mana yang sebaiknya kami ganti?”
+- “Untuk draft tim, apakah boleh pakai source ID dulu, lalu nanti kami konversi ke IEEE setelah arahnya disetujui?”
+
+## 9. Minta saran soal draft
+
+- “Apakah alur pendahuluannya sudah enak: urgensi, masalah teknis, SOTA, gap, tujuan?”
+- “Apakah pekerjaan terkaitnya sudah cukup tematik, atau masih terlalu teknis?”
+- “Bagian mana yang menurut Bu/Pak perlu dipersingkat?”
+- “Apakah istilah seperti NMS-free, ID switch, HOTA, dan DiffMOT perlu dijelaskan lebih awam?”
+- “Apakah roadmap 5 tahun sudah sesuai dengan arah kelompok riset?”
+
+## 10. Minta arahan next step
+
+- “Setelah ini, menurut Bu/Pak kami sebaiknya lanjut ke perapian sitasi dulu atau mulai prototipe kecil?”
+- “Kalau mulai prototipe, sebaiknya mulai dari detector dulu, tracking dulu, atau counting logic sederhana dulu?”
+- “Untuk pembagian kerja mahasiswa, lebih baik fokus ke citation formatting, dataset, diagram metode, atau eksperimen awal?”
+- “Apa keputusan utama yang sebaiknya kami bawa pulang dari diskusi ini?”
+
+---
+
+# Versi super singkat kalau cuma sempat tanya 5 hal
+
+1. “Bu/Pak, framing riset sebagai integrasi detector + tracker + counting logic ini sudah pas belum?”
+2. “YOLO26 sebaiknya tetap jadi model utama, atau perlu disiapkan baseline pembanding?”
 3. “DiffMOT utama dan OC-SORT fallback, apakah strategi ini masuk akal?”
-4. “Dataset dan validasinya sebaiknya pakai publik saja, atau perlu video lokal juga?”
+4. “Validasi cukup pakai dataset publik dulu, atau perlu video lokal juga?”
 5. “Next step kami sebaiknya rapihin sitasi dulu atau mulai prototipe kecil?”
 
-## Kalimat penutup santai
+---
 
-- “Oke Bu/Pak, berarti setelah ini kami fokus ke bagian yang Ibu/Bapak arahkan dulu, nanti kami update draft dan source-nya.”
-- “Kalau begitu kami akan rapikan bagian gap, sitasi, dan rencana validasi sesuai masukan hari ini.”
-- “Siap Bu/Pak, nanti kami lanjutkan ke prototipe kecil sambil tetap jaga framing akademiknya.”
+# Kalau dosen bertanya “kenapa tidak cukup YOLO saja?”
+
+Jawaban santai:
+
+> “Karena YOLO hanya mendeteksi orang per-frame, Bu/Pak. Untuk counting, kita perlu tahu apakah orang di frame sekarang sama dengan orang di frame sebelumnya. Kalau ID-nya hilang atau tertukar saat oklusi, orang yang sama bisa dihitung dua kali. Jadi YOLO perlu digabung dengan tracker dan counting logic.”
+
+# Kalau dosen bertanya “kenapa perlu DiffMOT?”
+
+Jawaban santai:
+
+> “Karena gerak orang di kerumunan sering tidak lurus dan bisa saling menutupi. DiffMOT kami lihat relevan untuk prediksi lintasan non-linear. Tapi karena bisa lebih berat, kami tetap siapkan OC-SORT sebagai opsi ringan.”
+
+# Kalau dosen bertanya “apa novelty-nya?”
+
+Jawaban santai:
+
+> “Novelty yang kami tarik bukan sekadar memakai YOLO26, Bu/Pak. Yang kami usulkan adalah integrasi pipeline: detector real-time, tracker untuk menjaga ID saat oklusi/gerak non-linear, fallback ringan, dan counting logic berbasis zona supaya double-counting bisa ditekan.”
+
+# Kalau dosen bertanya “apa yang mau divalidasi?”
+
+Jawaban santai:
+
+> “Kami ingin validasi empat hal: deteksinya cukup baik, tracking ID-nya stabil, error hitungnya rendah, dan FPS/latency-nya masih masuk untuk real-time.”
+
+---
+
+# Kalimat penutup santai
+
+- “Siap Bu/Pak, berarti setelah ini kami rapihkan framing dan fokusnya sesuai arahan.”
+- “Oke Bu/Pak, nanti kami update draft, lalu lanjut ke bagian yang paling prioritas dulu.”
+- “Siap, jadi kami tidak akan terlalu mengunci di YOLO26 saja, tapi tetap jaga pipeline dan evaluasinya.”
+- “Baik Bu/Pak, nanti kami siapkan versi yang lebih rapi untuk sitasi dan metode setelah arah ini disetujui.”

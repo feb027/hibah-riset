@@ -90,3 +90,9 @@ After lecturer feedback: convert accepted source IDs to IEEE/numeric citations, 
 
 - [x] Added `docs/handoff/pertanyaan-santai-untuk-dosen.md` with non-formal, practical questions for offline lecturer discussion.
 - [x] Questions cover focus/novelty, YOLO26, DiffMOT/OC-SORT, counting logic, datasets, evaluation, citations, draft quality, and next steps.
+
+## 2026-05-25 WIB — Casual lecturer questions reframed
+
+- [x] Revised `docs/handoff/pertanyaan-santai-untuk-dosen.md` because lecturers may not be deeply involved in the technical research details.
+- [x] Added explanation-first flow: context → problem → proposed direction → ask for advice.
+- [x] Added short scripts for explaining why YOLO alone is not enough, why DiffMOT is considered, what the safe novelty is, and what needs validation.
