@@ -37,6 +37,8 @@ Write exactly one note file:
 
 ## Rules
 
+- Write note content in **Bahasa Indonesia akademik-natural** unless an exact English technical term is clearer.
+- Keep the section headings exactly as listed above so the validator can check completeness.
 - Use the source's own text. Do not infer performance numbers from abstracts.
 - Quote or paraphrase cautiously. If unsure, write “not verified”.
 - Do not write prose for the manuscript. This is evidence extraction only.

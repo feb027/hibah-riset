@@ -2,7 +2,7 @@
 
 Date: 2026-05-25 WIB
 Reviewer: Hermes main verification pass after full-text-reader subagents
-Artifact scope: `docs/research/fulltext-notes/S003`, `S004`, `S010`, `S011`, `S018`, `S021`, `S024`, `S025`, `S027`, `S028`
+Artifact scope: `docs/research/fulltext-notes/S001`, `S002`, `S003`, `S004`, `S010`, `S011`, `S018`, `S021`, `S024`, `S025`, `S027`, `S028`, plus Indonesian writer bridge `00-phase2-5-indonesian-brief.md`
 
 ## Verdict
 
@@ -14,6 +14,8 @@ No blocker remains for starting Phase 3 draft of `PEKERJAAN TERKAIT`, provided t
 
 | Source | Note file | Required sections | TODO/template residue | Draft readiness |
 |---|---|---:|---:|---|
+| S001 | `S001-yolo26-arxiv-analysis.md` | complete | none | caution-ready |
+| S002 | `S002-yolo26-ultralytics-docs.md` | complete | none | caution-ready |
 | S003 | `S003-yolov10.md` | complete | none | ready |
 | S004 | `S004-rt-detr.md` | complete | none | ready |
 | S010 | `S010-passenger-flow-yolo-edge.md` | complete | none | ready |
@@ -27,7 +29,8 @@ No blocker remains for starting Phase 3 draft of `PEKERJAAN TERKAIT`, provided t
 
 ## Evidence quality check
 
-- Detector notes S003/S004 correctly limit claims to object detection, end-to-end/NMS-free design, latency/accuracy framing, and COCO-style detector evaluation. They do **not** claim people-counting, tracking, line-crossing, or double-counting performance.
+- Detector notes S001/S002/S003/S004 correctly limit claims: S001/S002 are YOLO26 caution/context sources, while S003/S004 are peer-reviewed detector anchors for object detection, end-to-end/NMS-free design, latency/accuracy framing, and COCO-style detector evaluation. They do **not** claim people-counting, tracking, line-crossing, or double-counting performance.
+- `00-phase2-5-indonesian-brief.md` now gives a Bahasa Indonesia bridge for Phase 3 writer so evidence boundaries are easier to reuse in Indonesian academic prose.
 - Counting notes S010/S011/S027/S028 correctly distinguish detection-tracking-counting from density-map crowd counting.
 - MOT notes S018/S021/S024 correctly separate dense-scene occlusion, non-linear motion prediction, and lightweight fallback/baseline roles.
 - Metric note S025 correctly positions HOTA as an evaluation metric, not a tracking/counting method.
@@ -35,17 +38,18 @@ No blocker remains for starting Phase 3 draft of `PEKERJAAN TERKAIT`, provided t
 
 ## Citation integrity check
 
-- All ten priority source IDs exist in `docs/research/source-ledger.md`.
-- All ten priority source IDs exist as BibTeX keys in `references/references.bib`.
-- Notes are aligned with `docs/research/evidence-matrix.md` blocker row: full-text notes now exist for S003, S004, S010, S011, S018, S021, S024, S025, S027, and S028.
+- All twelve priority source IDs exist in `docs/research/source-ledger.md`.
+- All twelve priority source IDs exist as BibTeX keys in `references/references.bib`.
+- Notes are aligned with `docs/research/evidence-matrix.md` blocker row: full-text notes now exist for S001, S002, S003, S004, S010, S011, S018, S021, S024, S025, S027, and S028.
 
 ## Remaining risks / writer cautions
 
-1. **S003/S004 bibliography metadata:** `references.bib` currently keeps source-ID keys; citation auditor should later decide whether final bibliography needs formal NeurIPS/CVPR proceedings metadata instead of arXiv-oriented metadata.
-2. **MDPI acceptability:** S010, S011, and S018 are useful but may need support from CVF/Springer/Nature/IEEE sources if the lecturer is strict about MDPI.
-3. **Performance claims:** numeric metrics from notes can be cited only with dataset/protocol context; do not compare numbers across papers as if they used identical conditions.
-4. **Density-map vs ID-based counting:** S027/S028 support crowd-counting background and edge constraints, but they must not be used as proof of line/zone crossing or identity-persistence counting.
-5. **YOLO26 positioning:** still use YOLO26 as candidate/latest implementation context only; anchor academic detector claims on S003/S004/S005/S006/S007.
+1. **S001/S002 YOLO26 caution:** YOLO26 is now covered, but both sources remain `C-caution`; final prose must state YOLO26 as candidate implementation/context, not peer-reviewed anchor.
+2. **S003/S004 bibliography metadata:** `references.bib` currently keeps source-ID keys; citation auditor should later decide whether final bibliography needs formal NeurIPS/CVPR proceedings metadata instead of arXiv-oriented metadata.
+3. **MDPI acceptability:** S010, S011, and S018 are useful but may need support from CVF/Springer/Nature/IEEE sources if the lecturer is strict about MDPI.
+4. **Performance claims:** numeric metrics from notes can be cited only with dataset/protocol context; do not compare numbers across papers as if they used identical conditions.
+5. **Density-map vs ID-based counting:** S027/S028 support crowd-counting background and edge constraints, but they must not be used as proof of line/zone crossing or identity-persistence counting.
+6. **YOLO26 positioning:** use YOLO26 as candidate/latest implementation context only; anchor academic detector claims on S003/S004/S005/S006/S007.
 
 ## Decision
 

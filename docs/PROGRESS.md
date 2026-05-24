@@ -42,6 +42,14 @@
 - [x] Added Phase 2.5 review: `docs/reviews/review-fulltext-notes.md` verdict `READY_FOR_DRAFT`.
 - [x] Strengthened validator to reject priority full-text notes that still contain template markers or missing required sections.
 
+
+## 2026-05-25 WIB — Phase 2.5 correction: Indonesian bridge + YOLO26 caution notes
+
+- [x] Added YOLO26 caution full-text notes: `S001-yolo26-arxiv-analysis.md` and `S002-yolo26-ultralytics-docs.md`.
+- [x] Added `docs/research/fulltext-notes/00-phase2-5-indonesian-brief.md` for Bahasa Indonesia writer handoff.
+- [x] Updated full-text reader prompt and README to require Bahasa Indonesia note content while preserving validator headings.
+- [x] Updated Phase 2.5 review and validator to include S001/S002 as priority caution notes.
+
 ## Next phase
 
-Phase 3: draft `docs/drafts/pekerjaan-terkait.md` using the approved outline and full-text notes.
+Phase 3: draft `docs/drafts/pekerjaan-terkait.md` using the approved outline, YOLO26 caution notes, Indonesian bridge, and full-text notes.

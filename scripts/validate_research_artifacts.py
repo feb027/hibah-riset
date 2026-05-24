@@ -81,12 +81,12 @@ if bib_path.exists():
     entries = re.findall(r'^@\w+\{', bib, flags=re.M)
     if len(entries) < 20:
         errors.append(f'references.bib has too few entries: {len(entries)}; expected >=20')
-    for sid in ['S003', 'S004', 'S010', 'S011', 'S018', 'S021', 'S024', 'S025', 'S027', 'S028']:
+    for sid in ['S001', 'S002', 'S003', 'S004', 'S010', 'S011', 'S018', 'S021', 'S024', 'S025', 'S027', 'S028']:
         if f'{{{sid},' not in bib:
             warnings.append(f'priority source {sid} not found as a BibTeX key')
 
 notes_dir = ROOT / 'docs/research/fulltext-notes'
-PRIORITY_NOTE_IDS = ['S003', 'S004', 'S010', 'S011', 'S018', 'S021', 'S024', 'S025', 'S027', 'S028']
+PRIORITY_NOTE_IDS = ['S001', 'S002', 'S003', 'S004', 'S010', 'S011', 'S018', 'S021', 'S024', 'S025', 'S027', 'S028']
 REQUIRED_NOTE_SECTIONS = [
     '## Source identity',
     '## Why this source matters',

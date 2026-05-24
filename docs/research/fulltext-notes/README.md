@@ -4,7 +4,7 @@ These notes are required before Phase 3 final prose uses detailed claims from a 
 
 ## Rule
 
-A source may be cited for high-level background from the ledger, but any specific claim about method, metric, dataset, limitation, or performance must come from a full-text note.
+A source may be cited for high-level background from the ledger, but any specific claim about method, metric, dataset, limitation, or performance must come from a full-text note. Write note content in **Bahasa Indonesia akademik-natural** so Phase 3 writer can reuse the evidence safely; keep the required English section headings for validator compatibility.
 
 ## Required fields per note
 
