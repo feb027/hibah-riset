@@ -14,6 +14,8 @@ REQUIRED = [
     'docs/PROGRESS.md',
     'docs/_extracted/manifest.json',
     'docs/research/source-ledger.md',
+    'docs/research/source-ledger-ringkasan-indonesia.md',
+    'docs/research/papers/manifest.md',
     'docs/research/evidence-matrix.md',
     'docs/research/phase1-source-notes.md',
     'docs/research/fulltext-notes/README.md',
@@ -134,6 +136,45 @@ if notes_dir.exists():
                 errors.append(f'{matches[0].relative_to(ROOT)} still contains template marker: {token}')
 else:
     errors.append('missing docs/research/fulltext-notes directory')
+
+summary_path = ROOT / 'docs/research/source-ledger-ringkasan-indonesia.md'
+if summary_path.exists():
+    summary = summary_path.read_text(encoding='utf-8', errors='replace')
+    summary_ids = sorted(set(re.findall(r'(?m)^##\s+(S\d{3})\b', summary)))
+    expected_ids = [f'S{i:03d}' for i in range(1, 39)]
+    missing_summary = [sid for sid in expected_ids if sid not in summary_ids]
+    if missing_summary:
+        errors.append(f'Indonesian source summary missing IDs: {", ".join(missing_summary)}')
+    required_fields = [
+        '**Judul:**',
+        '**Penulis:**',
+        '**Jurnal/Konferensi:**',
+        '**URL:**',
+        '**Permasalahan:**',
+        '**Kontribusi:**',
+        '**Metode/solusi:**',
+        '**Hasil utama:**',
+        '**Batasan:**',
+        '**Relevansi dengan penelitian ini:**',
+    ]
+    for sid in expected_ids:
+        m = re.search(rf'(?ms)^##\s+{sid}\b(.*?)(?=^##\s+S\d{{3}}\b|\Z)', summary)
+        if not m:
+            continue
+        block = m.group(1)
+        for field in required_fields:
+            if field not in block:
+                errors.append(f'Indonesian source summary {sid} missing field: {field}')
+
+paper_text_dir = ROOT / 'docs/research/paper-text'
+if paper_text_dir.exists():
+    text_ids = sorted({p.name[:4] for p in paper_text_dir.glob('S*.md')})
+    expected_ids = [f'S{i:03d}' for i in range(1, 39)]
+    missing_text = [sid for sid in expected_ids if sid not in text_ids]
+    if missing_text:
+        errors.append(f'paper-text extraction missing IDs: {", ".join(missing_text)}')
+else:
+    errors.append('missing docs/research/paper-text directory')
 
 reviews = {
     'docs/reviews/review-source-ledger.md': ['READY_FOR_OUTLINE'],

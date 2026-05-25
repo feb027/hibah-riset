@@ -101,3 +101,10 @@ After lecturer feedback: convert accepted source IDs to IEEE/numeric citations, 
 
 - [x] Expanded `docs/handoff/pertanyaan-santai-untuk-dosen.md` so the YOLO26 section explains NMS, YOLOv10, and RT-DETR in lecturer-friendly language before asking for advice.
 - [x] Added ready answers for likely lecturer questions: why YOLOv10/RT-DETR are mentioned and how they differ from YOLO26.
+
+## 2026-05-25 WIB — Indonesian source-ledger paper summaries
+
+- [x] Downloaded/saved available source materials under `docs/research/papers/` and extracted readable text under `docs/research/paper-text/` for all 38 mapped sources.
+- [x] Created `docs/research/source-ledger-ringkasan-indonesia.md` with Indonesian summaries for S001–S038 using fields: Judul, Penulis, Jurnal/Konferensi, URL, Permasalahan, Kontribusi, Metode/solusi, Hasil utama, Batasan, Relevansi.
+- [x] Used delegated agents for source-summary batches and retained batch outputs as supporting artifacts.
+- [x] Added `scripts/download_and_extract_sources.py` for reproducible source download/extraction attempts.
