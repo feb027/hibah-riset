@@ -57,13 +57,29 @@ Kalau waktunya sempit:
 
 Jelaskan dulu:
 
-> “Untuk YOLO26, kami menemukan sumbernya masih banyak dari dokumentasi vendor dan preprint. Jadi kami tidak berani menjadikannya satu-satunya dasar akademik. Kami posisikan sebagai kandidat implementasi terbaru, sementara argumen akademik NMS-free kami topang dari YOLOv10 dan RT-DETR.”
+> “Untuk YOLO26, kami menemukan sumbernya masih banyak dari dokumentasi vendor dan preprint. Jadi kami tidak berani menjadikannya satu-satunya dasar akademik. Kami posisikan YOLO26 sebagai kandidat implementasi terbaru. Supaya argumen akademiknya tetap kuat, kami topang dari YOLOv10 dan RT-DETR, karena dua paper itu sudah lebih kuat secara akademik untuk menjelaskan arah detector real-time yang end-to-end dan NMS-free.”
+
+Kalau dosen belum familiar, jelaskan dengan bahasa santai:
+
+> “Sederhananya, NMS itu proses tambahan setelah model mendeteksi objek, untuk memilih bounding box mana yang dianggap paling benar kalau ada banyak box yang tumpang tindih. Masalahnya, proses tambahan ini bisa menambah latency dan butuh threshold. Nah, arah NMS-free itu mencoba membuat detector lebih end-to-end, jadi hasil deteksi tidak terlalu bergantung pada post-processing tambahan.”
+
+Penjelasan YOLOv10:
+
+> “YOLOv10 penting karena dia masih satu keluarga YOLO, tapi sudah membawa ide real-time end-to-end object detection. Jadi kalau YOLO26 ditanya dasarnya apa, kami bisa bilang arah NMS-free di keluarga YOLO sudah punya pijakan akademik dari YOLOv10, bukan cuma dari dokumentasi YOLO26.”
+
+Penjelasan RT-DETR:
+
+> “RT-DETR penting karena dia menunjukkan pendekatan DETR/transformer juga bisa real-time dan end-to-end tanpa NMS. Jadi RT-DETR memperkuat bahwa tren detector modern memang mengarah ke end-to-end/NMS-free, bukan hanya klaim dari YOLO26.”
+
+Kalimat aman kalau dosen tanya “kenapa pakai YOLOv10 dan RT-DETR sebagai penopang?”:
+
+> “Karena YOLOv10 dan RT-DETR lebih kuat untuk argumen akademiknya, Bu/Pak. YOLOv10 menunjukkan keluarga YOLO bisa diarahkan ke end-to-end/NMS-free, sedangkan RT-DETR menunjukkan detector transformer juga bisa real-time tanpa NMS. Jadi keduanya kami pakai untuk membuktikan bahwa arah NMS-free detector itu memang tren SOTA, sementara YOLO26 kami pakai sebagai kandidat implementasi terbaru.”
 
 Lalu tanya:
 
-- “Menurut Bu/Pak, posisi YOLO26 seperti itu sudah aman?”
+- “Menurut Bu/Pak, penjelasan seperti ini sudah cukup aman untuk membedakan YOLO26 sebagai kandidat implementasi dan YOLOv10/RT-DETR sebagai dasar akademik?”
 - “Apakah YOLO26 tetap perlu dipakai sebagai model utama karena sudah ada di proposal, atau boleh kami siapkan baseline pembanding seperti YOLOv10/RT-DETR?”
-- “Kalau nanti ada yang mempertanyakan YOLO26 karena belum kuat secara paper, sebaiknya kami jawab seperti apa?”
+- “Kalau nanti ada yang mempertanyakan YOLO26 karena belum kuat secara paper, apakah strategi menjawab dengan YOLOv10 dan RT-DETR ini sudah tepat?”
 - “Apakah perlu kami ubah narasinya supaya YOLO26 tidak terlihat sebagai satu-satunya novelty?”
 
 ## 4. Minta saran soal DiffMOT dan OC-SORT
@@ -163,6 +179,18 @@ Lalu tanya:
 Jawaban santai:
 
 > “Karena YOLO hanya mendeteksi orang per-frame, Bu/Pak. Untuk counting, kita perlu tahu apakah orang di frame sekarang sama dengan orang di frame sebelumnya. Kalau ID-nya hilang atau tertukar saat oklusi, orang yang sama bisa dihitung dua kali. Jadi YOLO perlu digabung dengan tracker dan counting logic.”
+
+# Kalau dosen bertanya “kenapa YOLOv10 dan RT-DETR disebut-sebut?”
+
+Jawaban santai:
+
+> “Karena kami butuh dasar akademik yang lebih kuat untuk menjelaskan arah NMS-free detector. YOLO26 masih baru dan sumbernya banyak dari vendor/preprint. YOLOv10 sudah menunjukkan di keluarga YOLO bahwa deteksi bisa dibuat end-to-end tanpa NMS. RT-DETR juga menunjukkan detector berbasis transformer bisa real-time dan tanpa NMS. Jadi dua itu kami jadikan penopang akademik, sementara YOLO26 tetap kandidat implementasi terbaru.”
+
+# Kalau dosen bertanya “apa bedanya YOLOv10, RT-DETR, dan YOLO26?”
+
+Jawaban santai:
+
+> “YOLOv10 itu penopang akademik dari keluarga YOLO untuk konsep end-to-end/NMS-free. RT-DETR itu penopang akademik dari jalur transformer detector yang juga real-time dan NMS-free. YOLO26 itu yang kami incar sebagai implementasi terbaru, tapi karena status sumbernya belum sekuat YOLOv10/RT-DETR, kami tidak jadikan satu-satunya dasar novelty.”
 
 # Kalau dosen bertanya “kenapa perlu DiffMOT?”
 

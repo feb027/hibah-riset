@@ -96,3 +96,8 @@ After lecturer feedback: convert accepted source IDs to IEEE/numeric citations, 
 - [x] Revised `docs/handoff/pertanyaan-santai-untuk-dosen.md` because lecturers may not be deeply involved in the technical research details.
 - [x] Added explanation-first flow: context → problem → proposed direction → ask for advice.
 - [x] Added short scripts for explaining why YOLO alone is not enough, why DiffMOT is considered, what the safe novelty is, and what needs validation.
+
+## 2026-05-25 WIB — YOLOv10/RT-DETR casual explanation added
+
+- [x] Expanded `docs/handoff/pertanyaan-santai-untuk-dosen.md` so the YOLO26 section explains NMS, YOLOv10, and RT-DETR in lecturer-friendly language before asking for advice.
+- [x] Added ready answers for likely lecturer questions: why YOLOv10/RT-DETR are mentioned and how they differ from YOLO26.
