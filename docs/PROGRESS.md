@@ -120,3 +120,9 @@ After lecturer feedback: convert accepted source IDs to IEEE/numeric citations, 
 - [x] Reviewer gate wrote `docs/reviews/review-usulan-pendekatan.md` with verdict `READY_FOR_DISCUSSION`.
 - [x] Created discussion handoff: `docs/handoff/proposed-method-handoff-2026-05-31.md`.
 - [x] Strengthened validator to require Proposed Method artifacts and guard against fake experiment-result claims.
+
+## 2026-05-31 UTC — Proposed Method generated visual diagram
+
+- [x] Generated a clean landscape visual architecture diagram using image generation.
+- [x] Saved it to `docs/diagrams/proposed-method-architecture-gpt-image-2.png`.
+- [x] Visually checked the diagram: pipeline and labels are readable, no major typo, and no fake-result numbers are shown.

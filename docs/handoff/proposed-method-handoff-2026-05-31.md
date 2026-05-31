@@ -11,6 +11,8 @@
 4. `docs/diagrams/proposed-method-architecture.mmd` — diagram arsitektur sistem.
 5. `docs/reviews/review-usulan-pendekatan.md` — hasil review; verdict `READY_FOR_DISCUSSION`.
 
+6. `docs/diagrams/proposed-method-architecture-gpt-image-2.png` — diagram visual hasil image generation untuk bahan presentasi/diskusi.
+
 ## Inti yang perlu disampaikan ke dosen
 
 Bagian Proposed Method belum mengklaim eksperimen. Isinya adalah rancangan metodologi dan arsitektur sistem untuk *real-time people counting* berbasis pipeline **detection-tracking-counting**.
