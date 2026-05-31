@@ -1,0 +1,13 @@
+flowchart LR
+    A[Input Video CCTV / Rekaman Ruang Publik] --> B[Preprocessing: resize, frame sampling, timestamp, RoI/zone annotation]
+    B --> C[Human Detector: YOLO26 candidate / YOLOv10-RT-DETR baseline]
+    C --> D[Detection Output: bbox, confidence, class, frame time]
+    D --> E{Tracker Mode}
+    E -->|Robust path| F[DiffMOT: non-linear motion tracking]
+    E -->|Efficient fallback| G[OC-SORT / SORT-family]
+    F --> H[Track Management: ID, trajectory, confidence, lost/reactivated status]
+    G --> H
+    H --> I[Counting Logic: RoI polygon, line/zone crossing, trajectory validation]
+    I --> J[ID State Memory: unseen, inside, counted-in/out, cooldown, expired]
+    J --> K[Output: in/out count, zone count, event log, overlay]
+    K --> L[Evaluation: detection, tracking, counting error, FPS/latency]

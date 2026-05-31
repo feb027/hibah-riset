@@ -108,3 +108,15 @@ After lecturer feedback: convert accepted source IDs to IEEE/numeric citations, 
 - [x] Created `docs/research/source-ledger-ringkasan-indonesia.md` with Indonesian summaries for S001–S038 using fields: Judul, Penulis, Jurnal/Konferensi, URL, Permasalahan, Kontribusi, Metode/solusi, Hasil utama, Batasan, Relevansi.
 - [x] Used delegated agents for source-summary batches and retained batch outputs as supporting artifacts.
 - [x] Added `scripts/download_and_extract_sources.py` for reproducible source download/extraction attempts.
+
+## 2026-05-31 UTC — Phase 6 USULAN PENDEKATAN / Proposed Method
+
+- [x] Extracted the lecturer guide section from `docs/F-Paper Penelitian.pdf` into `docs/_extracted/F-Paper-Penelitian.txt` and used the Proposed Method requirements as the phase gate.
+- [x] Created Phase 6 pre-plan: `docs/plans/2026-05-31-phase6-proposed-method.md`.
+- [x] Created proposed-method outline: `docs/outlines/usulan-pendekatan-outline.md`.
+- [x] Created system architecture diagram source: `docs/diagrams/proposed-method-architecture.mmd`.
+- [x] Created writer/reviewer prompts for Proposed Method.
+- [x] Drafted `docs/drafts/usulan-pendekatan.md` as a pre-experiment methodology/architecture/scenario plan.
+- [x] Reviewer gate wrote `docs/reviews/review-usulan-pendekatan.md` with verdict `READY_FOR_DISCUSSION`.
+- [x] Created discussion handoff: `docs/handoff/proposed-method-handoff-2026-05-31.md`.
+- [x] Strengthened validator to require Proposed Method artifacts and guard against fake experiment-result claims.

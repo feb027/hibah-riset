@@ -22,6 +22,10 @@ REQUIRED = [
     'docs/outlines/pekerjaan-terkait-outline.md',
     'docs/drafts/pekerjaan-terkait.md',
     'docs/drafts/pendahuluan.md',
+    'docs/drafts/usulan-pendekatan.md',
+    'docs/outlines/usulan-pendekatan-outline.md',
+    'docs/plans/2026-05-31-phase6-proposed-method.md',
+    'docs/diagrams/proposed-method-architecture.mmd',
     'docs/reviews/review-source-ledger.md',
     'docs/reviews/review-pekerjaan-terkait-outline.md',
     'docs/reviews/review-fulltext-notes.md',
@@ -29,9 +33,11 @@ REQUIRED = [
     'docs/reviews/review-pekerjaan-terkait-patch.md',
     'docs/reviews/review-pendahuluan.md',
     'docs/reviews/review-pendahuluan-patch.md',
+    'docs/reviews/review-usulan-pendekatan.md',
     'docs/reviews/review-handoff-package.md',
     'docs/handoff/lecturer-handoff-2026-05-25.md',
     'docs/handoff/draft-sections-clean.md',
+    'docs/handoff/proposed-method-handoff-2026-05-31.md',
     'references/README.md',
     'references/source-id-map.md',
     'references/references.bib',
@@ -39,7 +45,9 @@ REQUIRED = [
     'prompts/fulltext-reader.md',
     'prompts/writer-pekerjaan-terkait.md',
     'prompts/writer-pendahuluan.md',
+    'prompts/writer-usulan-pendekatan.md',
     'prompts/reviewer-brutal.md',
+    'prompts/reviewer-usulan-pendekatan.md',
     'prompts/citation-auditor.md',
     'prompts/final-verifier.md',
 ]
@@ -58,6 +66,7 @@ for rel in REQUIRED:
 for rel in [
     'docs/drafts/pekerjaan-terkait.md',
     'docs/drafts/pendahuluan.md',
+    'docs/drafts/usulan-pendekatan.md',
     'docs/research/source-ledger.md',
     'docs/research/evidence-matrix.md',
     'docs/outlines/pekerjaan-terkait-outline.md',
@@ -184,6 +193,7 @@ reviews = {
     'docs/reviews/review-pekerjaan-terkait-patch.md': ['READY_FOR_NEXT_PHASE'],
     'docs/reviews/review-pendahuluan.md': ['READY_FOR_PATCH', 'READY_FOR_NEXT_PHASE'],
     'docs/reviews/review-pendahuluan-patch.md': ['READY_FOR_NEXT_PHASE'],
+    'docs/reviews/review-usulan-pendekatan.md': ['READY_FOR_DISCUSSION'],
     'docs/reviews/review-handoff-package.md': ['READY_FOR_DELIVERY'],
 }
 for rel, accepted in reviews.items():
@@ -209,6 +219,47 @@ if outline_path.exists():
     for term in required_terms:
         if term.lower() not in outline.lower():
             errors.append(f'outline missing required concept: {term}')
+
+method_path = ROOT / 'docs/drafts/usulan-pendekatan.md'
+if method_path.exists():
+    method = method_path.read_text(encoding='utf-8', errors='replace')
+    required_method_terms = [
+        'Gambaran Umum Pendekatan',
+        'Arsitektur Sistem yang Diusulkan',
+        'Rencana Data dan Preprocessing',
+        'Tahapan Metodologi',
+        'Rencana Skenario Eksperimen',
+        'Rencana Metrik Evaluasi',
+        'Ancaman Validitas',
+        'YOLO26',
+        'DiffMOT',
+        'OC-SORT',
+        'RoI',
+        'ID state',
+        'HOTA',
+        'IDF1',
+        'counting error',
+        'FPS',
+    ]
+    for term in required_method_terms:
+        if term.lower() not in method.lower():
+            errors.append(f'proposed method missing required concept: {term}')
+    # Guard against fake-result wording in the pre-experiment proposed-method draft.
+    forbidden_patterns = [
+        r'(?i)hasil\s+(?:eksperimen|pengujian)\s+(?:menunjukkan|membuktikan|memperlihatkan)',
+        r'(?i)model\s+yang\s+diusulkan\s+(?:mencapai|menghasilkan)\s+\d',
+        r'(?i)akurasi\s+(?:sistem|model)\s+(?:sebesar|mencapai)\s+\d',
+    ]
+    for pat in forbidden_patterns:
+        if re.search(pat, method):
+            errors.append(f'proposed method appears to claim actual experiment results: {pat}')
+    cited_ids = sorted(set(re.findall(r'\[S(\d{3})\]', method)))
+    bib_path = ROOT / 'references/references.bib'
+    if bib_path.exists():
+        bib = bib_path.read_text(encoding='utf-8', errors='replace')
+        missing = [f'S{sid}' for sid in cited_ids if f'{{S{sid},' not in bib]
+        if missing:
+            errors.append(f'docs/drafts/usulan-pendekatan.md cites IDs missing from references.bib: {", ".join(missing)}')
 
 if warnings:
     print('VALIDATION WARNINGS')
