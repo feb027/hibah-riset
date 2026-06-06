@@ -126,3 +126,14 @@ After lecturer feedback: convert accepted source IDs to IEEE/numeric citations, 
 - [x] Generated a clean landscape visual architecture diagram using image generation.
 - [x] Saved it to `docs/diagrams/proposed-method-architecture-gpt-image-2.png`.
 - [x] Visually checked the diagram: pipeline and labels are readable, no major typo, and no fake-result numbers are shown.
+
+## 2026-06-06 UTC — Revisi dosen No. 3 / Proposed Method
+
+- [x] Added the lecturer-revision PDF source: `docs/260602 Paper Hibah-People-Counting-revisi-dari-dosen.pdf`.
+- [x] Extracted PDF text/comments to `docs/_extracted/revisi-dosen-260602/full_text.txt`.
+- [x] Mapped relevant No. 3 comments in `docs/revisions/revisi-no3-komentar-dosen.md`.
+- [x] Created copy-ready Word draft: `docs/revisions/revisi-no3-usulan-pendekatan-copy-to-word.md`.
+- [x] Created hard review/manual rewrite checklist: `docs/revisions/revisi-no3-review-dan-catatan.md`.
+- [x] Generated and visually checked three GPT Image 2 figures for architecture, research workflow, and ID state memory under `docs/diagrams/`.
+- [x] Added Wohlin et al. (2012) to `references/references.bib` as the experimental-design reference.
+- [x] Independent final reviewer wrote `docs/reviews/review-revisi-no3-usulan-pendekatan-final.md` with verdict `READY_FOR_WORD_COPY`.

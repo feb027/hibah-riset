@@ -1,0 +1,725 @@
+
+
+===== PAGE 1 =====
+ACM Transactions on xxxxxxxx, Vol. xx, No. x, Article xx, Publication date: Month YYYY 
+ 
+ 
+ 
+ 
+Pengembangan Model Rekognisi Objek untuk Real-Time People 
+Counting System Berbasis Deep Learning. 
+PENULIS-1, Afiliasi dan Email Penulis-1 
+PENULIS-2, Afiliasi dan Email Penulis-2 
+PENULIS-N, Afiliasi dan Email Penulis-N 
+ 
+Abstrak 
+Kalimat pembuka adalah mendeskripsikan masalah dan pentingnya untuk diselesaikan atau masalah 
+pokok dan tujuan penelitian. Kalimat selanjutnya adalah mendeskripsikan pendekatan (metodologi) yang 
+dilakukan untuk menyelesaikan masalah. Kalimat penutup mendeskripsikan hasil utama yang diperoleh 
+atau temuan dan signifikansi. 
+Kata Kunci: Sepilihan kata-kata bermakna dari paper ini yang dapat dipakai untuk mengindeks kandungan 
+isinya, misalnya dipilih yang dapat berfungsi sebagai alat penelusur, mampu mencerminkan konsep yang 
+terkandung dalam naskah, kata kunci tidak selalu berupa kata tunggal, kata kunci bukan kata biasa tetapi 
+biasanya istilah 
+ 
+ PENDAHULUAN 
+Pengelolaan ruang publik modern membutuhkan informasi jumlah orang yang 
+cepat, akurat, dan dapat diperbarui secara real-time. Informasi ini penting untuk 
+mendukung manajemen kapasitas, keselamatan, transportasi, layanan publik, dan 
+pengambilan keputusan berbasis data. Pada area dengan mobilitas tinggi seperti 
+stasiun, kampus, pusat layanan, atau pusat perbelanjaan, pemantauan manual 
+melalui kamera pengawas tidak lagi memadai karena bergantung pada operator dan 
+sulit menjaga konsistensi saat kepadatan meningkat. Studi people counting dan 
+smart surveillance terbaru menunjukkan bahwa kebutuhan utama bukan hanya 
+mendeteksi keberadaan manusia dalam satu frame, tetapi memahami arus, arah, 
+dan perubahan jumlah orang sepanjang waktu (Nurseitov 2026 – S11). 
+Tantangan real-time people counting muncul karena karakter visual ruang publik 
+bersifat dinamis. Kamera dapat merekam dari sudut jauh, tubuh manusia tampak 
+kecil atau hanya sebagian, pencahayaan berubah, dan objek saling menutupi. Pada 
+kondisi tersebut, sistem yang hanya mendeteksi manusia per-frame dapat 
+menghasilkan hitungan tidak stabil: orang yang sama terdeteksi ulang setelah 
+oklusi, ID tertukar ketika lintasan berdekatan, atau objek yang bergerak bolak-balik 
+di sekitar garis hitung memicu double-counting. Literatur crowd counting dan MOT 
+menegaskan bahwa oklusi, variasi perspektif, gerak non-linear, missed detection, 
+dan identity switch langsung memengaruhi reliabilitas sistem berbasis video (Chen 
+et al., 2025 – S18) (Cao et al., 2023 – S24). 
+Pendekatan deep learning membuka peluang untuk mengotomatisasi deteksi, 
+pelacakan, dan penghitungan manusia dari aliran video. Namun, kajian SOTA 
+menunjukkan bahwa penelitian terdahulu berkembang melalui beberapa jalur yang 
+belum selalu terintegrasi. Density-map crowd counting kuat untuk memperkirakan 
+total kerumunan, tetapi tidak selalu menyediakan identitas, arah lintasan, atau 
+memori status objek yang dibutuhkan untuk menghitung orang masuk-keluar 
+berdasarkan zona (Lijia Deng 2023 - S29) (Heba F. Elsepae 2026 – S27). Sebaliknya, 
+pendekatan detection-tracking-counting mendeteksi individu, mempertahankan 
+identitas antar-frame, lalu menghitung berdasarkan RoI, garis, atau zona (Nurseitov 
+2026 – S11) (Kailai Sun 2024 – S34). Karena penelitian ini menargetkan hitungan 
+berbasis lintasan, sistem perlu menjaga hubungan antara deteksi, identitas, dan 
+keputusan hitung. 
+Pada komponen deteksi, detector real-time seperti keluarga YOLO dan DETR real-
+time relevan karena pipeline video memerlukan latency rendah. Tren terbaru 
+bergerak menuju detector end-to-end/NMS-free untuk mengurangi post-processing. 
+ 
+ 
+ 
+1 
+
+
+===== PAGE 2 =====
+ACM Transactions on xxxxxxxx, Vol. xx, No. x, Article xx, Publication date: Month YYYY 
+ 
+YOLOv10 dan RT-DETR menjadi anchor akademik penting karena menunjukkan 
+bahwa deteksi real-time dapat diarahkan ke desain end-to-end tanpa NMS (Ao 
+Wang – S3) (Yian Zhao – S4). Perkembangan D-FINE, DEIM, dan RF-DETR juga 
+menekankan keseimbangan akurasi, latency, dan efisiensi inferensi (Yansong Peng – 
+S5) (Shihua Huang -S6). Dalam penelitian ini, YOLO26 diposisikan sebagai kandidat 
+implementasi terbaru karena dokumentasi dan preprint 2026 menekankan desain 
+NMS-free dan deployment edge; namun, statusnya tetap konteks implementasi 
+berbasis vendor/preprint, bukan satu-satunya dasar akademik novelty (Isaac 
+Robinson – S7). 
+Meski detector real-time dapat menurunkan bottleneck pemrosesan frame, detector 
+belum menjamin counting yang benar. Counting berbasis lintasan bergantung pada 
+stabilitas ID objek antar-frame. OC-SORT dan SORT-family modern penting sebagai 
+baseline dan fallback efisien karena relatif ringan untuk pipeline real-time. Namun, 
+kajian MOT 2024–2026 menunjukkan perlunya pendekatan yang lebih adaptif 
+terhadap oklusi, confidence, dan lintasan kompleks, seperti track-centric, ID-centric, 
+transformer/graph-based, dan occlusion-aware association (Kyujin Shim - S15) 
+(Ruopeng Gao1 - S16). DiffMOT relevan karena memanfaatkan diffusion untuk 
+prediksi gerak non-linear dalam MOT (Weiyi Lv - 21), sedangkan OC-SORT tetap 
+berguna saat constraint perangkat atau latency menjadi dominan (Jinkun Cao – 
+S24).  
+Gap utama penelitian ini adalah perlunya integrasi eksplisit antara detector real-
+time, tracker yang robust terhadap oklusi dan gerak non-linear, fallback ringan, 
+serta counting logic berbasis zona dan memori identitas. Banyak studi telah kuat 
+pada salah satu komponen detector cepat, tracker stabil, density-map counting, atau 
+optimasi edge tetapi public-space people counting menuntut agar deteksi, asosiasi 
+identitas, validasi lintasan, dan keputusan hitung bekerja sebagai satu pipeline. 
+Tanpa RoI polygon, validasi perpindahan zona, dan ID state memory, sistem tetap 
+rentan terhadap double-counting walaupun detector dan tracker memiliki performa 
+baik (Jinkun Cao – S24) (Kailai Sun 2024 – S34). 
+Berdasarkan gap tersebut, penelitian ini merumuskan tiga pertanyaan penelitian: 
+(1) bagaimana merancang pipeline real-time people counting yang menggabungkan 
+detector NMS-free/real-time dengan tracker yang mampu menjaga identitas pada 
+kondisi padat, oklusi, dan gerak non-linear; (2) bagaimana memadukan DiffMOT 
+sebagai tracker utama dengan OC-SORT/SORT-family sebagai fallback efisien tanpa 
+mengabaikan konsistensi ID dan akurasi hitung; dan (3) bagaimana merancang RoI 
+polygon, zone-to-zone trajectory validation, dan ID state memory agar hitungan 
+tidak ganda ketika terjadi oklusi, missed detection, atau fragmentasi lintasan. Ruang 
+lingkup penelitian dibatasi pada perancangan dan validasi awal sistem berbasis 
+video, bukan klaim bahwa satu model selalu unggul pada semua skenario. 
+Tujuan penelitian ini adalah mengembangkan prototype real-time people counting 
+system berbasis deep learning yang mengintegrasikan YOLO26 sebagai kandidat 
+detector implementatif, DiffMOT sebagai tracker utama untuk gerak non-linear, OC-
+SORT sebagai fallback efisien, serta advanced counting logic berbasis RoI, zona, dan 
+ID state memory. Evaluasi diarahkan pada keseimbangan antara akurasi deteksi, 
+kestabilan asosiasi identitas, error hitung, dan performa real-time. Dataset publik 
+seperti MOT20, DanceTrack, dan CrowdHuman relevan untuk menguji deteksi dan 
+tracking pada crowd/occlusion, sedangkan validasi rekaman ruang publik 
+diperlukan untuk menilai kesesuaian sistem terhadap skenario target (Shuai Shao 
+2018? - S38). Metrik HOTA dan IDF1 digunakan untuk kualitas asosiasi identitas, 
+sedangkan FPS/latency dan counting error digunakan untuk kelayakan pipeline 
+counting real-time (Jonathon Luiten - S25] (Ergys Ristani 2016? - S26). 
+Kontribusi penelitian ini adalah formulasi pipeline yang menghubungkan deteksi, 
+pelacakan, validasi lintasan, dan memori status objek dalam satu rancangan sistem. 
+Peta jalan lima tahun diarahkan sebagai berikut: tahun pertama pengembangan 
+arsitektur awal YOLO26–DiffMOT–OC-SORT dan counting logic; tahun kedua 
+peningkatan ketahanan terhadap oklusi, pencahayaan, dan fragmentasi lintasan; 
+Commented [DL51]: Kalimat ini dinyatakan nya nanti 
+pada bagian pembahasan di bagian skenario eksperimen 
+ya, di pendahuluan tidak usah dimunculkan dulu okaay 
+
+
+===== PAGE 3 =====
+ACM Transactions on xxxxxxxx, Vol. xx, No. x, Article xx, Publication date: Month YYYY 
+ 
+tahun ketiga pengembangan atensi atau modul adaptif untuk pola gerak kompleks; 
+tahun keempat optimasi kompresi dan deployment edge; dan tahun kelima hilirisasi 
+ke smart city, crowd management, atau layanan forensik digital. Dengan arah 
+tersebut, penelitian ini diharapkan mendukung smart surveillance yang lebih 
+adaptif pada tahap prototype dan validasi awal TKT 3–4. Sisa dari paper ini terdiri 
+dari bagian pekerjaan terkait, kemudian … blab la bla …. 
+ 
+Paragraf awal menyatakan konteks dan area penelitian secara umum, serta 
+pentingnya area penelitian tersebut berdasarkan temuan dalam survey paper.  
+Paragraf-paragraf selanjutnya memperkenalkan masalah yang diselesaikan, dan 
+yakinkan mengapa masala tersebut penting atau menarik untuk diselesakan 
+berdasarkan survey paper. 
+Paragraf-paragraf selanjutnya mendeskripsikan outline pendekatan yang dipakai 
+untuk menyelasikan masalah tersebut, termasuk mendeskripsikan outline hasil yang 
+sudah diperoleh saat ini (eksisting) berdasarkan survey paper. Termasuk juga 
+menyatakan kesenjangan (gap) hasil penelitian yang masih ada, dan peluang 
+penelitian yang dapat dilakukan. Kemudian definisikan masalah penelitian dan 
+pertanyaan penelitian yang memuat pernyataan masalah utama yang masih ada 
+berdasarkan kesenjangan (gap) penelitian tersebut, serta tujuan dan lingkup dari 
+penelitian ini. 
+Paragraf akhir menyatakan hasil utama dari kajian penelitian yang telah dilakukan 
+(yang diperoleh dari penelitian kita), misal deskripsi singkat dari usulan model, 
+algoritma, dll. beserta hasil evaluasinya, termasuk memberikan overview apa yang 
+akan disampaikan dalam paper ini (outline makalah) disetiap bagian-bagian paper ini. 
+ 
+ 
+PEKERJAAN TERKAIT 
+Pemantauan jumlah orang secara real-time menjadi komponen penting dalam smart 
+surveillance 
+untuk 
+mendukung 
+manajemen 
+kapasitas, 
+keselamatan, 
+dan 
+pengambilanS keputusan berbasis data (S27) (S34). Namun, kondisi ruang publik 
+yang dinamis seperti oklusi, perubahan pencahayaan, dan kepadatan tinggi 
+menyebabkan sistem people counting rentan mengalami missed detection, ID 
+switch, serta double-counting (S11, S18). 
+Secara umum, penelitian people counting berkembang melalui dua pendekatan 
+utama. Pendekatan density-map crowd counting memperkirakan jumlah orang 
+berdasarkan peta kepadatan dan efektif pada kerumunan padat, tetapi tidak 
+menyediakan identitas maupun lintasan individu (S29). Sementara itu, pendekatan 
+detection-tracking-counting mendeteksi individu, mempertahankan identitas antar-
+frame, dan melakukan penghitungan berdasarkan garis atau zona tertentu (S10). 
+Pendekatan kedua lebih sesuai untuk kebutuhan people counting berbasis lintasan, 
+meskipun masih menghadapi masalah ID switch dan oklusi. 
+Pada komponen deteksi, keluarga YOLO menjadi salah satu pilihan utama untuk 
+aplikasi real-time karena keseimbangan antara akurasi dan kecepatan inferensi 
+[S008]. Tren terbaru bergerak menuju detektor NMS-free seperti YOLOv10 dan RT-
+DETR yang mengurangi ketergantungan pada proses post-processing serta 
+meningkatkan efisiensi inferensi (S3S) (S4). Pengembangan lanjutan seperti D-FINE, 
+DEIM, dan RF-DETR juga menunjukkan peningkatan akurasi dan efisiensi pada 
+skenario padat (S5). Dalam penelitian ini, YOLO26 diposisikan sebagai kandidat 
+implementasi terbaru berbasis NMS-free dan deployment edge (S1). 
+Pada 
+komponen 
+pelacakan, 
+berbagai 
+metode 
+MOT 
+dikembangkan 
+untuk 
+meningkatkan stabilitas identitas objek. OC-SORT menawarkan efisiensi tinggi 
+untuk 
+aplikasi 
+real-time 
+(S24), 
+sedangkan 
+Hybrid-SORT 
+dan 
+BoostTrack 
+meningkatkan kualitas asosiasi melalui pemanfaatan informasi tambahan dan 
+mekanisme boosting (S20, S23). Penelitian yang lebih baru seperti Sentinel, 
+LightTrack-ReID, OcclusionTrack, TrackTrack, dan DragonTrack berfokus pada 
+penanganan oklusi dan peningkatan konsistensi identitas (S13) (S14) (S15) (S16). 
+Meskipun demikian, sebagian besar penelitian masih berorientasi pada peningkatan 
+Commented [DL52]: Tambahkan kalimat berupa 
+overview apa yang akan disampaikan dalam paper ini 
+(outline makalah) disetiap bagian-bagian paper ini. 
+
+
+===== PAGE 4 =====
+ACM Transactions on xxxxxxxx, Vol. xx, No. x, Article xx, Publication date: Month YYYY 
+ 
+metrik tracking dan belum secara langsung mengevaluasi akurasi people counting. 
+Salah satu perkembangan terbaru adalah pemanfaatan diffusion model untuk 
+tracking. 
+DiffMOT 
+menggunakan 
+diffusion-based 
+motion 
+prediction 
+untuk 
+menangani gerak non-linear dan meningkatkan stabilitas lintasan (S21), sedangkan 
+DiffusionTrack mengintegrasikan proses deteksi dan asosiasi dalam kerangka difusi 
+(S22). Pendekatan ini berbeda dengan diffusion-based crowd counting yang hanya 
+memperkirakan jumlah kerumunan tanpa mempertahankan identitas individu 
+(S33). 
+Selain deteksi dan tracking, akurasi people counting juga dipengaruhi oleh logika 
+penghitungan. 
+Penggunaan 
+RoI, 
+line 
+crossing, 
+dan 
+zone-based 
+counting 
+memungkinkan sistem menentukan peristiwa masuk atau keluar berdasarkan 
+lintasan objek (S11) (S34). Dokumentasi NVIDIA DeepStream menunjukkan 
+pentingnya integrasi tracker dengan analitik spasial seperti direction detection dan 
+line crossing (S35). Namun, tanpa mekanisme memori identitas, sistem tetap 
+berisiko menghasilkan hitungan ganda ketika terjadi oklusi atau fragmentasi 
+lintasan. 
+Tabel SoTA 
+ 
+Evaluasi sistem umumnya menggunakan dataset CrowdHuman, MOT20, dan 
+DanceTrack yang mewakili kondisi crowd, oklusi, dan gerak non-linear (S36) (S37) 
+(S38). Kualitas tracking diukur menggunakan HOTA dan IDF1 yang menilai 
+konsistensi asosiasi identitas antar-frame (S25) (S26), sedangkan aspek real-time 
+dievaluasi melalui FPS, latency, dan counting error. 
+Berdasarkan telaah tersebut, masih terdapat kesenjangan pada integrasi antara 
+detektor real-time/NMS-free, tracker yang robust terhadap oklusi dan gerak non-
+linear, fallback tracker yang efisien, serta counting logic berbasis zona dan memori 
+identitas. Oleh karena itu, penelitian ini mengusulkan pipeline terpadu yang 
+menggabungkan YOLO26 sebagai detektor, DiffMOT sebagai tracker utama, OC-
+SORT sebagai fallback, serta RoI polygon, zone-to-zone trajectory validation, dan ID 
+state memory untuk meningkatkan akurasi people counting pada ruang publik. 
+ 
+Paragraf-paragraf awal mendeskripsikan overview hasil penelitian sebelumnya yang 
+relevan, dan secara kritis menelaah (menganalisis) kelebihan, kekurangan, dan 
+justifikasinya. Hasil kajian penelitian sebelumnya dapat dikelompokan misalnya 
+berdasarkan metode, kelas persoalan, dan lain sebagainya. Hindari polemik, 
+pemggunaan frasa pujian, atau menyalahkan, tetapi gunakan fakta untuk 
+menyatakan kelebihan atau kekurangan hasil penelitian sebelumnya tersebut. 
+Paragraf-paragraf selanjutnya mengidentifikasi adanya gap pengetahuan terkait 
+dengan masalah yang diteliti, termasuk mendeskripsikan gap masalah yang belum 
+terpecahkan (dapat diidentifikasi dari kelemahan atau kekurangan hasil penelitian 
+sebelumnya) 
+Pararaf akhir mengidentifikasi kebutuhan untuk menyelesaikan masalah penelitian 
+(menegaskan perlunya penelitian lebih lanjut dan mendeskripsikan solusi yang 
+ditawarkan dalam makalah ini), baik yang sekarang maupun untuk kedepan nanti. 
+Commented [DL53]: Lengkapi bagian karya terkait dg 
+Tabel SoTA + dianalisis lg lebih tajam 
+
+
+===== PAGE 5 =====
+ACM Transactions on xxxxxxxx, Vol. xx, No. x, Article x, Publication date: Month YYYY 
+ 
+ USULAN PENDEKATAN (PROPOSED METHOD) 
+Penelitian ini termasuk dalam kategori applied research di bidang computer science, 
+dengan pendekatan pengembangan sistem berbasis eksperimen. Bagian ini disusun 
+mengikuti struktur: (1) rancangan eksperimen (2) arsitektur sistem yang diusulkan, (3) 
+data dan preprocessing, (4) tahapan pengembangan sistem, (5) rencana diskusi hasil, 
+dan (6) rencana evaluasi sistem beserta ancaman terhadap validitas. 
+ 
+CONTOH RANCANGAN EKSPERIMEN 
+Instrumen eksperimen dikembangkan dengan mengadopsi panduan Wohlin dkk. [X] yang disesuaikan 
+dengan kebutuhan penelitian ini. Tabel 2 menunjukkan rancangan penelitian secara keseluruhan. Elemen 
+tujuan, objek studi, domain, dan fokus adalah sasaran untuk mendefinisikan setia aspek penting dalam 
+eksperimen. Pertanyaan evaluasi adalah himpunan pertanyaan yang digunakan untuk mengkaraterisasi cara 
+menilai sasaran dan menentukan objek yang diukur. Sementara, variabel adalah metrik atau himpunan data 
+terkait dengan setiap pertanyaan yang harus dijawab. Penelitian ini bertujuan mengembangkan solusi 
+persoalan variabilitas ketidapastian objek dunia nyata dalam lingkungan CPS yang dikarakterisasi oleh 
+strategi adaptasi untuk meningkatkan kualitas pengenalan objek, terdiri dari kemampuan mengidentifikasi 
+objek, jarak, dan memberikan notifikasi suara kepada pengguna. Selain itu penelitian ini juga memiliki 
+tujuan mengevaluasi spesifikasi performansi sistem pengenalan objek melalui pengukuran loss, validation 
+loss, precison-recall, dan average precision (AP) pada pengukuran Pascal VOC AP. 
+ 
+Table 2. Rancangan Eksperimen 
+No Unsur 
+Deskripsi 
+1 
+Tujuan 
+a. Mengembangkan model pengenalana objek berbasis CPS dengan menanamkan 
+kemampuan adaptasi otomatis (self-adaptation) untuk menangani ketidakpastian 
+b. Mengevaluasi performansi sistem pengenalan objek berbasis CPS 
+2 
+Objek 
+Studi 
+a. Spesifikasi adaptasi model pengenalan objek berbasis CPS 
+b. Persyaratan artifak pengenalan objek berbasis CPS 
+3 
+Domain 
+Smart glasses 
+4 
+Fokus 
+a. Strategi adaptasi sistem pengenalan objek berbasis CPS 
+b. Spesifikasi performansi sistem pengenalan objek berbasis CPS 
+5 
+Pertanyaan 
+Evaluasi 
+(PE) 
+a. PE1-Bagaimana mengembangkan sistem pengenalan objek berbasis CPS untuk 
+menangani variabilitas ketidapastian 
+b. PE2-Berapa ukuran performansi dari setiap elemen artifak sistem pengenalan objek 
+berbasis CPS 
+6 
+Variabel 
+(V) 
+a. Response (V1-kegagalan sistem; V2-strategi fungsional dan non fungsional sistem; 
+V3-stimulus baru) 
+b. Pengukuran (V4-Pascal VOC AP (Average Precision) evaluation) 
+ 
+Secara umum, proses eksperimen dilakukan dengan memfokuskan pada bagian domain dengan fokus 
+pada Tabel 2. Sehingga fokus eksperimen dilakukan menjadi dua bagian, yaitu strategi adaptasi sistem 
+pengenalan objek berbasis CPS dan spesifikasi performansi sistem pengenalan objek berbasis CPS. Strategi 
+adaptasi sistem dilakukan dengan melakukan perancangan algoritma pada arsitektur smart glasses. Dengan 
+mengambil studi kasus untuk penyandang tunanetra, dan strategi perancangan akan berfokus pada 
+peningkatan kualitas pengenalan objek. 
+ 
+X. Wohlin, P. Runeson, M. Höst, M. C. Ohlsson, B. Regnell, and A. Wesslén, Experimentation in Software 
+Engineering. Berlin, Heidelberg: Springer Berlin Heidelberg, 2012. 
+ 
+ 
+Commented [DL54]: Tambahkan bagian “rancangan 
+eksperimen” ini 
+ 
+Kemudian menguraikan tahapan penelitian secara visual/ 
+gambar yang jelas + termasuk pargraf penjelasannya + 
+jangan lupa mencantumkan semua sitasi referensi yang 
+diadopsi dan/atau menginspirasi dalam menyusun semua 
+tahapan penelitian tersebut 
+Commented [DL55]: Contoh detail nya ini 
+ 
+Silahkan disesuaikan dengan kebutuhan penelitian ini ya 
+
+
+===== PAGE 6 =====
+ACM Transactions on xxxxxxxx, Vol. xx, No. x, Article x, Publication date: Month YYYY 
+ 
+ 
+3.1 Arsitektur Sistem yang Diusulkan 
+Sistem yang diusulkan adalah pipeline terpadu real-time people counting berbasis 
+deep learning yang terdiri dari enam komponen berurutan: input video, 
+preprocessing, 
+deteksi 
+objek 
+(YOLO26), 
+pelacakan 
+multi-objek 
+adaptif 
+(DiffMOT/OC-SORT), advanced counting logic, dan evaluasi output. Arsitektur yang 
+ditunjukkan pada tabel 1 dirancang agar setiap komponen dapat diuji secara 
+independen namun menghasilkan output yang kohesif sebagai satu sistem seperti. 
+Tabel 1. Komponen Arsitektur Sistem Real-Time People Counting 
+Komponen 
+Teknologi / Metode 
+Fungsi Utama 
+Input 
+Video CCTV / Rekaman Video 
+Sumber data aliran frame sekuensial 
+Preprocessing 
+Augmentasi, Standarisasi, 
+Resize 
+Normalisasi data sebelum inferensi 
+Deteksi Objek 
+YOLO26 (NMS-Free, STAL) 
+Menghasilkan bounding box per-frame 
+Pelacakan (Server) 
+DiffMOT (Diffusion-based) 
+Pelacakan non-linear pada kerumunan 
+padat 
+Pelacakan (Edge) 
+OC-SORT (Observation-Centric) 
+Fallback ringan untuk perangkat 
+terbatas 
+Counting Logic 
+RoI Polygon, Zone Trajectory, ID 
+State Memory 
+Validasi lintasan dan pencegahan 
+double-counting 
+Output 
+Jumlah Orang Real-Time 
+Data kapasitas demografis ruang publik 
+Aliran data dimulai dari frame video yang diproses oleh YOLO26 untuk 
+menghasilkan bounding box per-frame. Hasil deteksi diteruskan ke modul tracker 
+yang mempertahankan identitas objek antar-frame. Output tracker berupa track ID, 
+riwayat lintasan, skor kepercayaan, dan status objek (aktif, hilang, atau diaktifkan 
+kembali) kemudian diproses oleh modul counting logic untuk menghasilkan 
+hitungan berbasis zona yang bebas double-counting. Sistem mendukung dua 
+skenario deployment: skenario server menggunakan DiffMOT untuk akurasi 
+pelacakan maksimal, dan skenario edge menggunakan OC-SORT sebagai fallback 
+efisien. 
+3.2 Data Eksperimen dan Preprocessing 
+Data yang digunakan dalam penelitian ini bersumber dari tiga dataset publik yang 
+merupakan standar komunitas peneliti MOT dan crowd counting. Pemilihan dataset 
+standar komunitas bertujuan memastikan hasil penelitian dapat dibandingkan 
+secara adil dengan penelitian sebelumnya. 
+Preprocessing yang diterapkan mencakup: normalisasi piksel dengan skala 1/255 
+untuk konversi rentang [0,255] ke [0,1], resize ke resolusi 640×640 piksel sebagai 
+keseimbangan akurasi dan efisiensi komputasi, serta frame sampling untuk 
+mengontrol throughput pada video rekaman. Format anotasi disesuaikan dengan 
+standar YOLO berupa koordinat bounding box ternormalisasi (x_center, y_center, 
+width, height) dengan satu kelas target: orang/pejalan kaki. Augmentasi domain 
+mencakup oklusi sintetis, variasi brightness/contrast, Gaussian noise, dan 
+horizontal flip untuk meningkatkan ketahanan model terhadap variasi kondisi 
+nyata. Pembagian data mengikuti split train/validation/test standar masing-masing 
+benchmark untuk menjaga objektivitas evaluasi. Karakteristik dan statistik dari 
+dataset yang digunakan dalam penelitian ini disajikan pada Tabel 2. 
+Tabel 2. Statistik Dataset yang Digunakan 
+Commented [DL56]: Buat gambar arsitektur nya + 
+penjelasan dari gambnar tersebut secara detail 
+ 
+Silahkan lihat contoh2 gambar arsitektur pada paper2 
+yang terbit di jurnal bereputasi 
+
+
+===== PAGE 7 =====
+ACM Transactions on xxxxxxxx, Vol. xx, No. x, Article x, Publication date: Month YYYY 
+ 
+Dataset 
+Karakteristik Utama 
+Penggunaan dalam Eksperimen 
+MOT20 [5] 
+Kerumunan padat, >200 pejalan 
+kaki/frame, oklusi ekstrem, 8 sekuens 
+video 
+Pelatihan & evaluasi deteksi + 
+tracking (S1, S2) 
+DanceTrack 
+[8] 
+Gerak non-linear, penampilan seragam, 
+100 sekuens, split train/val/test resmi 
+Evaluasi tracking gerak kompleks 
+(S2) 
+CrowdHuman 
+>15.000 gambar, ~22 orang/gambar, 
+anotasi full-body & visible-body 
+Fine-tuning kemampuan deteksi 
+kepadatan tinggi (S1) 
+Video CCTV 
+Publik 
+Variasi kepadatan & pencahayaan, 
+kondisi nyata 
+Validasi pipeline end-to-end (S3) 
+3.3 Tahapan Pengembangan Sistem 
+Pengembangan sistem dilakukan dalam empat tahap berurutan seperti ditunjukkan 
+pada Gambar 2. Setiap tahap memiliki tujuan dan prosedur spesifik yang saling 
+bergantung. 
+ 
+Gambar 2. Diagram Alur Tahapan Pengembangan Sistem 
+3.3.1 Tahap 1 – Fine-Tuning Detektor YOLO26 
+Pada tahap ini, model YOLO26 dilatih ulang menggunakan kombinasi dataset 
+CrowdHuman dan MOT20 untuk meningkatkan kemampuan generalisasi pada 
+kondisi kepadatan objek yang tinggi. Arsitektur NMS-Free End-to-End yang 
+dilengkapi dengan mekanisme Small-Target-Aware Label Assignment (STAL) 
+dioptimalkan menggunakan fungsi loss ProgLoss dengan ukuran batch sebesar 
+64. Sebagai acuan evaluasi, digunakan model YOLOv10 dan RT-DETR yang 
+merupakan metode deteksi end-to-end yang telah banyak digunakan dalam 
+penelitian akademik. 
+3.3.2 Tahap 2 – Integrasi Tracker Adaptif 
+Tahap ini berfokus pada integrasi DiffMOT [10] sebagai tracker utama yang 
+memanfaatkan Diffusion Probabilistic Models untuk memprediksi lintasan 
+Commented [DL57]: Cantumkan semua sitasi referensi 
+yang diadopsi dan/atau menginspirasi dalam menyusun 
+semua tahapan pengembangan tersebut  
+
+
+===== PAGE 8 =====
+ACM Transactions on xxxxxxxx, Vol. xx, No. x, Article x, Publication date: Month YYYY 
+ 
+objek yang bersifat non-linear. Selain itu, OC-SORT diintegrasikan sebagai 
+tracker cadangan melalui mekanisme Observation-Centric Re-Update (ORU) 
+dan Observation-Centric Momentum (OCM) untuk mendukung pemulihan 
+identitas objek setelah terjadi oklusi. Pemilihan tracker dilakukan secara 
+adaptif berdasarkan profil perangkat keras yang terdeteksi pada saat 
+inisialisasi sistem. 
+3.3.3 Tahap 3 – Implementasi Advanced Counting Logic 
+Pada tahap ini dikembangkan tiga komponen utama, yaitu: (a) RoI Polygon 
+untuk mendefinisikan zona deteksi aktif dalam bentuk poligon non-linear; (b) 
+Zone-to-Zone Trajectory Analysis untuk memverifikasi kelengkapan transisi 
+objek antar zona sehingga aktivitas loitering tidak terhitung sebagai 
+pergerakan yang valid; dan (c) ID State Memory dengan lima status seperti 
+ditunjukkan pada Gambar 3 untuk penguncian identitas permanen guna 
+mencegah double-counting. 
+ 
+Gambar 3. State Machine ID State Memory 
+3.3.4 Tahap 4 – Integrasi dan Pengujian Pipeline 
+Pada tahap akhir, seluruh komponen yang telah dikembangkan diintegrasikan 
+ke dalam satu pipeline end-to-end. Sistem kemudian diuji menggunakan 
+rekaman CCTV dari fasilitas publik untuk mengevaluasi kinerja deteksi, 
+pelacakan, dan penghitungan objek. Selain itu, dilakukan penyesuaian 
+parameter RoI dan zona pengamatan berdasarkan karakteristik geometris 
+area pemantauan yang digunakan. 
+3.4 Rencana Diskusi Hasil 
+Penelitian ini berada pada tahap perancangan dan eksperimen belum dijalankan, 
+bagian ini mendeskripsikan fenomena yang diantisipasi akan diamati serta 
+kerangka interpretasi hasilnya. Diskusi aktual akan diisi berdasarkan data 
+eksperimen yang diperoleh. 
+Pada evaluasi deteksi (Skenario 1), fenomena yang diantisipasi adalah penurunan 
+mAP pada objek berukuran sangat kecil (< 32×32 piksel) dan pada frame dengan 
+kepadatan lebih dari 100 orang. Fitur STAL pada YOLO26 diharapkan dapat 
+memitigasi penurunan ini dibandingkan baseline. Perbandingan FPS antara 
+
+
+===== PAGE 9 =====
+ACM Transactions on xxxxxxxx, Vol. xx, No. x, Article x, Publication date: Month YYYY 
+ 
+YOLO26, YOLOv10, dan RT-DETR akan disajikan dalam bentuk tabel dan grafik bar 
+untuk memvisualisasikan trade-off akurasi–kecepatan secara eksplisit. 
+Pada evaluasi pelacakan (Skenario 2), fenomena yang diantisipasi adalah perbedaan 
+pola kegagalan antara DiffMOT dan OC-SORT: DiffMOT diprediksi lebih tangguh 
+pada skenario gerak non-linear (DanceTrack) tetapi dengan latensi lebih tinggi, 
+sementara OC-SORT diprediksi lebih stabil pada throughput real-time. Hasil 
+perbandingan HOTA, MOTA, dan IDF1 akan disajikan dalam tabel komparasi, 
+disertai analisis identity switch rate dan track fragmentation rate sebagai indikator 
+kualitas asosiasi ID. 
+Pada validasi pipeline end-to-end (Skenario 3), sumber utama counting error yang 
+diantisipasi adalah: (a) identity switch yang tidak tertangkap ID State Memory 
+akibat re-ID yang gagal, (b) false positive deteksi pada area di luar RoI yang lolos 
+filter, dan (c) lintasan yang terfragmentasi sehingga transisi zona tidak tercatat 
+lengkap. Analisis per-sumber error ini akan disajikan dalam breakdown tabel error 
+rate untuk memandu perbaikan pada iterasi berikutnya. 
+3.5 Rencana Evaluasi Sistem dan Ancaman terhadap Validitas 
+Evaluasi sistem dirancang dalam tiga skenario bertahap yang mengukur komponen 
+secara individual sebelum menguji pipeline secara keseluruhan ditunjukkan pada 
+tabel 2.  
+Tabel 2. Ringkasan Rencana Skenario Eksperimen 
+Skenario 
+Fokus 
+Data 
+Metrik Utama 
+S1 
+(Deteksi) 
+Akurasi & kecepatan 
+YOLO26 vs baseline 
+CrowdHuman, MOT20 val 
+mAP@0.50, 
+mAP@0.50:0.95, FPS 
+S2 
+(Pelacakan) 
+Kualitas asosiasi ID: 
+DiffMOT vs OC-SORT 
+MOT20, DanceTrack 
+benchmark 
+HOTA, MOTA, IDF1, FPS 
+S3 
+(Pipeline) 
+Akurasi hitung end-to-
+end pada kondisi 
+nyata 
+Rekaman CCTV fasilitas 
+publik 
+Counting Error Rate, 
+Latency, FPS 
+Kinerja sistem diukur menggunakan metrik standar komunitas MOT: HOTA [14] 
+untuk keseimbangan kualitas deteksi dan asosiasi identitas, MOTA [15] untuk 
+akurasi pelacakan keseluruhan, IDF1 [15] untuk konsistensi identitas sepanjang 
+lintasan, dan FPS untuk kelayakan real-time. Counting error rate dihitung sebagai 
+selisih absolut antara hitungan sistem dan ground truth anotasi manual, 
+dinormalisasi terhadap total hitungan aktual. Target Tingkat Kesiapterapan 
+Teknologi (TKT) adalah level 3–4, yaitu validasi konsep secara eksperimental pada 
+lingkungan yang dikontrol. 
+Ancaman terhadap Validitas. Empat aspek validitas diidentifikasi sebagai berikut: 
+3.5.1 Validitas Internal: Ancaman utama adalah variasi performa model yang 
+dipengaruhi oleh pemilihan hyperparameter pelatihan. Untuk memitigasi hal 
+ini, proses fine-tuning akan menggunakan protokol pelatihan yang 
+terdokumentasi secara konsisten dan direplikasi minimal tiga kali untuk 
+memastikan stabilitas hasil. 
+3.5.2 Validitas Construct: Metrik HOTA, MOTA, dan IDF1 telah diterima secara luas 
+oleh komunitas MOT sebagai ukuran yang valid untuk kualitas pelacakan. 
+Namun, counting error rate sebagai metrik utama Skenario 3 belum memiliki 
+standar universal; definisi operasionalnya akan dideklarasikan secara 
+eksplisit dalam laporan untuk menghindari ambiguitas interpretasi. 
+3.5.3 Validitas Kesimpulan: Ukuran dataset uji yang terbatas pada Skenario 3 
+Commented [DL58]: Disesuaikan lagi dengan 
+rekomendasi rancangan eksperimen di awal pembahasan 
+bagian paper ini ya 
+
+
+===== PAGE 10 =====
+ACM Transactions on xxxxxxxx, Vol. xx, No. x, Article x, Publication date: Month YYYY 
+ 
+(rekaman CCTV lokal) dapat membatasi kekuatan statistik kesimpulan. 
+Variasi kondisi pengujian (kepadatan rendah/sedang/tinggi, pencahayaan 
+siang/malam) akan direncanakan secara eksplisit untuk memastikan 
+cakupan skenario yang representatif. 
+3.5.4 Validitas Eksternal: Sistem divalidasi pada skenario ruang publik tertentu 
+(fasilitas kampus atau layanan publik), sehingga generalisasi ke lingkungan 
+yang sangat berbeda seperti area outdoor terbuka atau kondisi cuaca 
+ekstrem belum dapat dijamin pada tahap TKT 3–4 ini. Keterbatasan 
+generalisasi ini akan dinyatakan secara eksplisit dalam bagian kesimpulan 
+penelitian. 
+ 
+Bagian isi paper (body of the paper) sangat bergantung pada topik dan jenis penelitian, 
+misalnya apakah teoritical research, applied resarch, action research, case studies, 
+surveys, experiments. Cara praktisnya dapat melihat contoh jurnal yang bereputasi 
+untuk setiap kategori penelitian yang akan ditulis. Bidang computer science untuk 
+applied resarch dapat mencakup: 
+ 
+Bagian awal mendeskripsikan arsitektur sistem yang diusulkan, termasuk dapat juga 
+memuat algoritma baru atau formalisme, atau serangkaian teorema yang disertai 
+dengan pembuktian (proof), jika diperlukan. 
+ 
+Bagian selanjutnya menyajikan deskripsi penerapan atau eksperimen, dapat terdiri 
+dari: 
+a. Data eksperimen atau data yang digunakan dalam penelitian, sebutkan dari mana 
+data untuk eksperimen diperoleh, jika memungkinkan akan lebih baik jika 
+menggunakan data yang dipakai sebagai standar oleh komunitas peneliti, jelaskan 
+statistik data tersebut dan bagaimana data dipergunakan dalam eksperiment, 
+serta jelaskan pula pre-processing yang dilakukan terhadap data (jika dilakukan). 
+b. Deskripsi tahapan-tahapan pengembangan atau eksperimen, jelaskan tujuan dan 
+prosedurnya dalam bentuk narasi, namun jika cukup kompleks dapat ditulis dalam 
+bentuk algoritma atau bagan/ diagram alir. 
+c. Diskusi hasil, menjelaskan fenomena yang diperoleh dari hasil pengembangan 
+atau eksperimen tersebut, yaitu memaparkan hasil pengembangan atau 
+eksperimen apa adanya (jujur), dan gunakan tabel dan/atau grafik untuk 
+memperjelas (termasuk penjelasan dari setiap tabel/grafik tersebut), berikan 
+penjelasan temuan utama atau temuan penting yang dapat disimpulkan. 
+ 
+Bagian akhir mendeskripsikan evaluasi sistem, dapat berisi penjelasan cara 
+mengukur kinerja sistem atau cara mengevaluasinya, melakukan analisis dan 
+menyimpulkan pembahasan secara menyeluruh dari hasil pengembangan atau 
+eksperimen yang sudah dilakukan, tampilkan hasil evaluasi dan validasi/ hasil 
+pengujian yang telah dilakukan. Secara teknis, dapat juga mendeskripsikan ancaman 
+terhadap validitas (threats to validity), terdiri dari validitas internal, validitas 
+construct, validitas kesimpulan, dan validitas eksternal. 
+ 
+ KESIMPULAN DAN PEKERJAAN KEDEPAN 
+Paragraf awal mendeskripsikan rangkuman kontribusi makalah ini, serta menjawab 
+pertanyaan penelitian berdasarkan gap masalah yang ada di bagian pendahuluan dan 
+pekerjaan terkait, serta singkron dengan tujuan penelitian. 
+Parargaf selanjutnya membahas rangkuman kelebihan dan kekurangan dari hasil 
+penelitian di dalam makalah ini. 
+
+
+===== PAGE 11 =====
+ACM Transactions on xxxxxxxx, Vol. xx, No. x, Article x, Publication date: Month YYYY 
+ 
+Paragraf akhir mendeskripsikan penelitian lanjutan (future work). Future works yang 
+akan dilakukan sebagai tahapan berikutnya dari penelitian kita, boleh dari temuan-
+temuan hasil eksperimen. Dapat berupa langkah berikutnya setelah temuan diperoleh. 
+Saran bisa berupa teori, implementasi (praktis), atau untuk penelitian berikutnya. 
+Jika kesimpulan menolak hipotesis, maka perlu disarankan penelitian lebih lanjut 
+untuk menguji teori-teori yang ada, dan jika kesimpulan menerima hipotesis, maka 
+saran diarahkan ke langkah praktis bagaimana supaya hasil penelitian bisa 
+diimplementasikan lebih lanjut. 
+
+
+===== PAGE 12 =====
+ACM Transactions on xxxxxxxx, Vol. xx, No. xx, Article xx, Publication date: Month YYYY 
+ 
+Aradea 
+ 
+UCAPAN TERIMAKASIH 
+Ucapan terima kasih dan pemberitahuan tentang sponsor penelitian ini, ucapan 
+terima kasih pada kolega (bukan anggota peeliti) yang pernah diajak berdiskusi atau 
+terlibat secara tidak langsung, ucapan terima kasih kepada (anonymous) reviewers 
+yang memberikan saran-saran yang konstruktif. 
+REFERENSI 
+Menuliskan semua sumber publikasi yang dirujuk langsung (atau semua daftar 
+referensi harus dirujuk minimal sekali didalam teks makalah). Ikuti cara penulisan 
+referensi dan cara merujuknya sesuai dengan aturan dari jurnal yang dituju. 
+Gunakan sumber referensi dari jurnal dan konferensi yang berreputasi. 
+ 
+ 
+TIPS PENULISAN MAKALAH ILMIAH 
+1. Top-down design: mulai dari outline, selanjutnya isi detailnya. 
+2. Inside-out writing: mulai dari body of paper, selanjutnya tulis pendahuluan, 
+pekerjaan terkait, kesimpulan, dan terakhir abstrak dan judul. 
+3. Table & diagram: periksa keterbacaan tabel dan diagram. 
+4. Dependency analysis: periksa apakah paper sudah self-contained dan terpapar 
+secara runut. 
+5. Factuality: pastikan semua yang dinyatakan dalam makalah adalah fakta yang 
+benar. 
+6. Interpretability: periksa setiap kalimat apakah bisa menimbulkan salah persepsi 
+(bermakna ganda), jika ya maka perbaiki. 
+7. Optimisation: hilangkan bagian-bagian yang tidak perlu (kurang relevan), jika 
+memungkinkan ringkas kalimat yang panjang tanpa menghilangkan isi pesan 
+utama yang ingin disampaikan. 
+8. Readibility: apakah isi makalah dapat terbaca dengan baik? Apakah bagian-
+bagiannya terhubung satu sama lainnya (koherensi). 
+ 
+Catatan: 
+• 
+Periksa manuskrip berulang-ulang untuk memastikan tidak ada kesalahan tata 
+bahasa, cara penulisan, dan alur pikiran. 
+• 
+Minta 
+batuan 
+kolega 
+untuk 
+mereview 
+makalah 
+serta 
+memastikan 
+keterbacaannya. 
+• 
+Lebih baik menginvestasikan waktu lebih lama untuk memastikan makalah 
+sudah tertulis dengan baik, daripada mengirim makalah yang masih 
+mengandung kesalahan dan akibatnya bisa fatal. 
