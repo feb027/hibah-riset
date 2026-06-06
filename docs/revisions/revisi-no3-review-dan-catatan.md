@@ -10,9 +10,9 @@ File copy-ready:
 
 Gambar pendukung:
 
-- `docs/diagrams/revisi-no3-architecture-gpt-image-2.png`
-- `docs/diagrams/revisi-no3-research-workflow-gpt-image-2.png`
-- `docs/diagrams/revisi-no3-id-state-memory-gpt-image-2.png`
+- `docs/diagrams/revisi-no3-architecture.png`
+- `docs/diagrams/revisi-no3-research-workflow.png`
+- `docs/diagrams/revisi-no3-id-state-memory.png`
 
 ## Komentar dosen yang ditangani
 

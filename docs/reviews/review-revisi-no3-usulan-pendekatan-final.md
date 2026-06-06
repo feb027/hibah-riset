@@ -54,9 +54,9 @@ Hal-hal berikut masih wajib dilakukan saat menyusun dokumen Word, tetapi tidak m
 
 1. Konversi tabel Markdown menjadi tabel Word normal.
 2. Sisipkan tiga gambar secara manual dari path berikut:
-   - `docs/diagrams/revisi-no3-architecture-gpt-image-2.png`
-   - `docs/diagrams/revisi-no3-research-workflow-gpt-image-2.png`
-   - `docs/diagrams/revisi-no3-id-state-memory-gpt-image-2.png`
+   - `docs/diagrams/revisi-no3-architecture.png`
+   - `docs/diagrams/revisi-no3-research-workflow.png`
+   - `docs/diagrams/revisi-no3-id-state-memory.png`
 3. Hapus teks placeholder `[Sisipkan Gambar ...]` setelah gambar benar-benar dimasukkan ke Word.
 4. Gunakan satu caption resmi per gambar sesuai teks artifact.
 5. Konversi `[S###]` dan sitasi naratif Wohlin dkk. ke format sitasi final yang konsisten dengan paper.

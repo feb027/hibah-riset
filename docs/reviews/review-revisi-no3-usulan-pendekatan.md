@@ -95,9 +95,9 @@ Namun ada risiko interpretasi:
 
 Tiga gambar yang dirujuk memang ada:
 
-- `docs/diagrams/revisi-no3-architecture-gpt-image-2.png`
-- `docs/diagrams/revisi-no3-research-workflow-gpt-image-2.png`
-- `docs/diagrams/revisi-no3-id-state-memory-gpt-image-2.png`
+- `docs/diagrams/revisi-no3-architecture.png`
+- `docs/diagrams/revisi-no3-research-workflow.png`
+- `docs/diagrams/revisi-no3-id-state-memory.png`
 
 Semua berukuran 1536×1024 px. Namun review ini hanya memastikan keberadaan dan ukuran, bukan memvalidasi isi visual per label. Risiko yang harus dicek manual sebelum Word:
 
@@ -105,7 +105,7 @@ Semua berukuran 1536×1024 px. Namun review ini hanya memastikan keberadaan dan 
 - Apakah istilah di gambar sama dengan istilah di narasi, misalnya `inside ROI`, `cooldown`, `expired`, `DiffMOT`, `OC-SORT`.
 - Apakah arah panah state machine masuk akal dan tidak bertentangan dengan paragraf.
 - Apakah resolusi tetap terbaca setelah diperkecil di Word.
-- Apakah file bernama `gpt-image` tidak terlihat di naskah final; nama file tidak masalah secara teknis, tetapi jangan sampai muncul dalam caption atau daftar gambar.
+- Apakah nama file teknis tidak terlihat di naskah final; nama file tidak masalah secara teknis, tetapi jangan sampai muncul dalam caption atau daftar gambar.
 - Caption sebaiknya hanya satu kali dalam Word, bukan alt text Markdown plus caption tebal.
 
 ### 6. Alignment evaluasi sudah baik, tetapi perlu definisi operasional

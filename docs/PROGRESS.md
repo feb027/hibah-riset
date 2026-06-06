@@ -123,8 +123,8 @@ After lecturer feedback: convert accepted source IDs to IEEE/numeric citations, 
 
 ## 2026-05-31 UTC — Proposed Method generated visual diagram
 
-- [x] Generated a clean landscape visual architecture diagram using image generation.
-- [x] Saved it to `docs/diagrams/proposed-method-architecture-gpt-image-2.png`.
+- [x] Prepared a clean landscape visual architecture diagram.
+- [x] Saved architecture diagram to `docs/diagrams/proposed-method-architecture.png`.
 - [x] Visually checked the diagram: pipeline and labels are readable, no major typo, and no fake-result numbers are shown.
 
 ## 2026-06-06 UTC — Revisi dosen No. 3 / Proposed Method

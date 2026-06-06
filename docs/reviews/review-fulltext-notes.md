@@ -1,7 +1,7 @@
 # Review — Phase 2.5 Full-Text Notes
 
 Date: 2026-05-25 WIB
-Reviewer: Hermes main verification pass after full-text-reader subagents
+Reviewer: verification pass after full-text reading
 Artifact scope: `docs/research/fulltext-notes/S001`, `S002`, `S003`, `S004`, `S010`, `S011`, `S018`, `S021`, `S024`, `S025`, `S027`, `S028`, plus Indonesian writer bridge `00-phase2-5-indonesian-brief.md`
 
 ## Verdict

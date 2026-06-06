@@ -1,6 +1,6 @@
 # Pre-Plan — SOTA, Pekerjaan Terkait, dan Pendahuluan PUU 2026
 
-> For Hermes/Codex/subagents: jalankan fase berurutan. Jangan masuk fase penulisan final sebelum gate sumber dan evidence matrix lolos.
+> Jalankan fase berurutan. Jangan masuk fase penulisan final sebelum gate sumber dan evidence matrix lolos.
 
 **Goal:** menghasilkan draft akademik **PEKERJAAN TERKAIT** dan **PENDAHULUAN** yang lebih tajam dari proposal lolos, berbasis SOTA terbaru sampai 25 Mei 2026 WIB.
 

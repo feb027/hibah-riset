@@ -11,7 +11,7 @@
 4. `docs/diagrams/proposed-method-architecture.mmd` — diagram arsitektur sistem.
 5. `docs/reviews/review-usulan-pendekatan.md` — hasil review; verdict `READY_FOR_DISCUSSION`.
 
-6. `docs/diagrams/proposed-method-architecture-gpt-image-2.png` — diagram visual hasil image generation untuk bahan presentasi/diskusi.
+6. `docs/diagrams/proposed-method-architecture.png` — diagram visual arsitektur untuk bahan presentasi/diskusi.
 
 ## Inti yang perlu disampaikan ke dosen
 
