@@ -1,0 +1,1071 @@
+Analisis Status Indeksasi Referensi 
+Dokumen ini merangkum status indeksasi seluruh 38 referensi (S001–S038) dalam daftar sumber penelitian. Indeksasi diperiksa berdasarkan basis data Scopus (SCImago quartile), IEEE Xplore, dan SINTA 
+(khusus jurnal Indonesia). Catatan: SINTA hanya berlaku untuk jurnal yang diterbitkan di Indonesia — seluruh jurnal/prosiding dalam daftar ini adalah internasional, sehingga tidak ada yang memiliki peringkat 
+SINTA. 
+ 
+Ringkasan Cepat Berdasarkan Kategori 
+Jurnal Scopus Q1: S008, S012 (IEEE Access), S013, S028 (Scientific Reports), S014 (PLOS ONE), S025 (IJCV), S029 (CAAI Transactions), S030 (IEEE IoT Journal), S032 (Applied Soft Computing), S034 
+(Energy & Buildings) 
+Jurnal Scopus Q2: S009, S018 (Applied Sciences MDPI), S010 (Computers MDPI), S011 (Journal of Imaging), S020 (Machine Vision & Applications), S027 (Discover Computing), S031 (J. Real-Time Image 
+Processing) 
+Prosiding terindeks Scopus (top-tier): S003 (NeurIPS 2024), S004, S006, S015, S016, S021, S024, S033 (CVPR), S005, S007 (ICLR), S017 (WACV), S022, S023 (AAAI), S019, S026 (Springer 
+LNCS/ECCV), S036 (CVPR Workshop), S037 (CVPR 2022) 
+Tidak terindeks Scopus: S001 (arXiv preprint), S002 (dokumentasi vendor Ultralytics), S035 (dokumentasi vendor NVIDIA), S038 (arXiv/dataset benchmark CrowdHuman) 
+ 
+Tabel Status Indeksasi Lengkap 
+Kode 
+Tipe Sumber 
+Judul (ringkas) 
+Venue/Jurnal 
+Status Indeksasi 
+Kuartil Scopus 
+/ Keterangan 
+S001 
+Preprint / Analisis 
+sekunder 
+YOLO26: An 
+Analysis of NMS-
+Free End to End 
+Framework for 
+Real-Time Object 
+Detection 
+arXiv preprint 
+(2026) 
+Tidak terindeks 
+Scopus/SINTA/IEEE 
+(preprint, bukan 
+peer-reviewed) 
+— — arXiv 
+diindeks Google 
+Scholar dan 
+Semantic Scholar, 
+tetapi bukan 
+jurnal/prosiding 
+Scopus resmi. 
+Tidak ada kuartil. 
+S002 
+Dokumentasi 
+vendor 
+Ultralytics 
+YOLO26 
+Documentation 
+Dokumentasi 
+vendor/software 
+resmi (2026) 
+Tidak terindeks 
+(bukan publikasi 
+akademik) 
+— — Dokumen 
+teknis resmi 
+Ultralytics, bukan 
+paper akademik. 
+Tidak dapat 
+ditelusuri di 
+Scopus. 
+S003 
+Prosiding 
+konferensi 
+YOLOv10: Real-
+Time End-to-End 
+Object Detection 
+NeurIPS 2024 
+Scopus (terindeks 
+sebagai prosiding 
+IEEE/NeurIPS) 
+Setara Q1 
+(NeurIPS 
+termasuk top 
+venue AI/ML yang 
+terindeks Scopus 
+sebagai prosiding 
+konferensi) — 
+NeurIPS adalah 
+konferensi tier-A 
+yang terindeks 
+Scopus sebagai 
+conference 
+proceedings. 
+Tidak memiliki 
+kuartil jurnal 
+karena bukan 
+jurnal. 
+
+Kode 
+Tipe Sumber 
+Judul (ringkas) 
+Venue/Jurnal 
+Status Indeksasi 
+Kuartil Scopus 
+/ Keterangan 
+S004 
+Prosiding 
+konferensi 
+DETRs Beat 
+YOLOs on Real-
+time Object 
+Detection / RT-
+DETR 
+IEEE/CVF 
+CVPR 2024 
+Scopus (terindeks 
+sebagai prosiding 
+IEEE/CVF CVPR) 
+Setara Q1 (CVPR 
+termasuk top 
+venue computer 
+vision, terindeks 
+Scopus sebagai 
+conference 
+proceedings) — 
+CVPR/IEEE 
+adalah konferensi 
+prestisius yang 
+terindeks Scopus. 
+Proceedings 
+IEEE/CVF 
+tersedia di IEEE 
+Xplore dan 
+terdaftar di 
+Scopus. 
+S005 
+Prosiding 
+konferensi 
+D-FINE: Redefine 
+Regression Task 
+in DETRs as Fine-
+grained 
+Distribution 
+Refinement 
+ICLR 2025 
+Scopus (ICLR 
+terindeks Scopus 
+sebagai prosiding 
+konferensi) 
+Setara Q1 (ICLR 
+adalah top venue 
+ML/AI yang 
+terindeks Scopus 
+sebagai 
+conference 
+proceedings) — 
+ICLR adalah 
+konferensi tier-A di 
+bidang machine 
+learning yang 
+terindeks Scopus. 
+S006 
+Prosiding 
+konferensi 
+DEIM: DETR with 
+Improved 
+Matching for Fast 
+Convergence 
+IEEE/CVF 
+CVPR 2025 
+Scopus (terindeks 
+sebagai prosiding 
+IEEE/CVF CVPR) 
+Setara Q1 (sama 
+dengan S004) — 
+Proceedings 
+CVPR 2025 
+tersedia di IEEE 
+Xplore dan 
+OpenAccess CVF, 
+terindeks Scopus. 
+S007 
+Prosiding 
+konferensi 
+RF-DETR: Neural 
+Architecture 
+Search for Real-
+Time Detection 
+Transformers 
+ICLR 2026 
+Scopus (ICLR 
+terindeks Scopus 
+sebagai prosiding 
+konferensi) 
+Setara Q1 (ICLR 
+2026, sama 
+dengan S005) — 
+ICLR 2026 adalah 
+edisi terbaru dari 
+ICLR yang 
+terindeks Scopus. 
+S008 
+Jurnal 
+A Decade of You 
+Only Look Once 
+(YOLO) for Object 
+Detection: A 
+Review 
+IEEE Access, 
+2025, vol. 13 
+Scopus Q1 + IEEE 
+Q1 (Scopus: 
+Computer Science 
+miscellaneous; 
+SJR ~0.849; 
+CiteScore 9.0; IF 
+3.6) — IEEE 
+Access adalah 
+jurnal open-
+access resmi 
+IEEE yang 
+terindeks Scopus 
+
+Kode 
+Tipe Sumber 
+Judul (ringkas) 
+Venue/Jurnal 
+Status Indeksasi 
+Kuartil Scopus 
+/ Keterangan 
+Q1 dan Web of 
+Science SCIE. 
+S009 
+Jurnal 
+Key 
+Considerations for 
+Real-Time Object 
+Recognition on 
+Edge Computing 
+Devices 
+Applied 
+Sciences, 2025, 
+15(13), Article 
+7533 
+Scopus Q2 + SCIE 
+(WoS) 
+Q2 (Scopus: 
+Computer Science 
+Applications; SJR 
+~0.521; CiteScore 
+5.5; IF 2.5) — 
+Applied Sciences 
+(MDPI, ISSN 
+2076-3417) 
+terindeks Scopus 
+dan WoS SCIE. Di 
+Indonesia 
+termasuk jurnal 
+yang cukup diakui 
+untuk publikasi 
+internasional. 
+Bukan SINTA 
+(SINTA hanya 
+untuk jurnal 
+Indonesia). 
+S010 
+Jurnal 
+Real-Time 
+Passenger Flow 
+Analysis in Tram 
+Stations Using 
+YOLO-Based 
+Computer Vision 
+and Edge AI on 
+Jetson Nano 
+Computers, 
+2025, 14(11), 
+Article 476 
+Scopus Q2 + ESCI 
+(WoS) 
+Q2 (Scopus: 
+Computer Science 
+miscellaneous; 
+SJR ~0.805; 
+CiteScore Q1; IF 
+4.2) — Computers 
+(MDPI, ISSN 
+2073-431X) 
+terindeks Scopus 
+(CiteScore Q1 di 
+Computer Science 
+miscellaneous) 
+dan WoS ESCI. 
+JCR Q2 
+(Computer 
+Science, 
+Interdisciplinary 
+Applications). 
+S011 
+Jurnal 
+Vision-Based 
+People Counting 
+and Tracking for 
+Urban 
+Environments 
+Journal of 
+Imaging, 2026, 
+12(1), Article 27 
+Scopus Q2 + ESCI 
+(WoS) 
+Q2 (Scopus: 
+Radiology & 
+Imaging Q1 di 
+CiteScore; JCR 
+Q2 Imaging 
+Science; IF 3.3) — 
+Journal of Imaging 
+(MDPI, ISSN 
+2313-433X) 
+terindeks Scopus, 
+PubMed, dan 
+WoS ESCI. 
+S012 
+Jurnal 
+YOLOv9-Based 
+Human Face 
+Detection and 
+Counting Under 
+Human-Animal 
+IEEE Access, 
+2025, vol. 13 
+Scopus Q1 + IEEE 
+Q1 (sama dengan 
+S008; IEEE 
+Access Scopus 
+Q1, SJR ~0.849) 
+— IEEE Access, 
+
+Kode 
+Tipe Sumber 
+Judul (ringkas) 
+Venue/Jurnal 
+Status Indeksasi 
+Kuartil Scopus 
+/ Keterangan 
+Faces, Complex 
+Imaging 
+Environments, and 
+Image Qualities 
+sama dengan 
+S008. 
+S013 
+Jurnal 
+Sentinel for 
+confidence-aware 
+multi-object 
+tracking 
+Scientific 
+Reports, 2026, 
+16, Article 
+13571 
+Scopus Q1 + SCIE 
+(WoS) 
+Q1 (Scopus: 
+Multidisciplinary 
+Sciences; SJR 
+~0.7+; CiteScore 
+~9; IF 3.9) — 
+Scientific Reports 
+(Nature Portfolio, 
+ISSN 2045-2322) 
+adalah mega-
+journal terindeks 
+Scopus Q1 dan 
+WoS SCIE. 
+S014 
+Jurnal 
+LightTrack-ReID: 
+A lightweight and 
+occlusion-robust 
+framework for 
+multi-object 
+tracking 
+PLOS One, 
+21(3), 
+e0342246, 2026 
+Scopus Q1 + SCIE 
+(WoS) 
+Q1 (Scopus: 
+Multidisciplinary 
+Sciences; PLOS 
+ONE adalah jurnal 
+prestisius open-
+access, SJR 
+~0.9+; IF ~2.9) — 
+PLOS ONE (ISSN 
+1932-6203) 
+terindeks Scopus 
+Q1, WoS SCIE, 
+dan PubMed. 
+S015 
+Prosiding 
+konferensi 
+Focusing on 
+Tracks for Online 
+Multi-Object 
+Tracking 
+IEEE/CVF 
+CVPR 2025 
+Scopus (terindeks 
+sebagai prosiding 
+IEEE/CVF CVPR) 
+Setara Q1 (sama 
+dengan 
+S004/S006) — 
+Proceedings 
+CVPR 2025 
+terindeks Scopus 
+melalui IEEE 
+Xplore. 
+S016 
+Prosiding 
+konferensi 
+Multiple Object 
+Tracking as ID 
+Prediction 
+IEEE/CVF 
+CVPR 2025 
+Scopus (terindeks 
+sebagai prosiding 
+IEEE/CVF CVPR) 
+Setara Q1 (sama 
+dengan 
+S004/S006/S015) 
+— Proceedings 
+CVPR 2025 
+terindeks Scopus. 
+S017 
+Prosiding 
+konferensi 
+DragonTrack: 
+Transformer-
+Enhanced 
+Graphical Multi-
+Person Tracking in 
+Complex 
+Scenarios 
+IEEE/CVF 
+WACV 2025 
+Scopus (terindeks 
+sebagai prosiding 
+IEEE/CVF WACV) 
+Setara Q1/Q2 
+(WACV adalah 
+konferensi 
+IEEE/CVF yang 
+terindeks Scopus, 
+sedikit di bawah 
+CVPR) — WACV 
+(Winter 
+Conference on 
+Applications of 
+Computer Vision) 
+adalah konferensi 
+IEEE/CVF yang 
+
+Kode 
+Tipe Sumber 
+Judul (ringkas) 
+Venue/Jurnal 
+Status Indeksasi 
+Kuartil Scopus 
+/ Keterangan 
+terindeks Scopus 
+melalui IEEE 
+Xplore. 
+S018 
+Jurnal 
+OcclusionTrack: 
+Multi-Object 
+Tracking in Dense 
+Scenes 
+Applied 
+Sciences, 
+15(24), 13030, 
+2025 
+Scopus Q2 + SCIE 
+(WoS) 
+Q2 (sama dengan 
+S009; Applied 
+Sciences MDPI 
+Scopus Q2) — 
+Applied Sciences 
+(MDPI, ISSN 
+2076-3417), sama 
+dengan S009. 
+S019 
+Prosiding 
+konferensi 
+(Springer LNCS) 
+Handling Heavy 
+Occlusion in 
+Dense Crowd 
+Tracking by 
+Focusing on the 
+Heads 
+AI 2023: 
+Advances in 
+Artificial 
+Intelligence, 
+Springer LNCS 
+Scopus (Springer 
+LNCS terindeks 
+Scopus sebagai 
+conference 
+proceedings) 
+Tidak ada kuartil 
+jurnal; Springer 
+LNCS terindeks 
+Scopus sebagai 
+prosiding 
+konferensi — 
+Springer LNCS 
+(Lecture Notes in 
+Computer 
+Science) secara 
+umum terindeks 
+Scopus, namun 
+tidak memiliki 
+kuartil jurnal. 
+Indeksasi 
+bergantung pada 
+volume spesifik. 
+S020 
+Jurnal 
+BoostTrack: 
+boosting the 
+similarity measure 
+and detection 
+confidence for 
+improved multiple 
+object tracking 
+Machine Vision 
+and 
+Applications, 
+35(3), 2024 
+Scopus Q2 + SCIE 
+(WoS) 
+Q2 (Scopus: 
+Computer Science 
+(AI); SJR ~0.578; 
+IF ~3.0; Springer) 
+— Machine Vision 
+and Applications 
+(Springer, ISSN 
+0932-8092) 
+terindeks Scopus 
+Q2 dan WoS 
+SCIE. 
+S021 
+Prosiding 
+konferensi 
+DiffMOT: A Real-
+time Diffusion-
+based Multiple 
+Object Tracker 
+with Non-linear 
+Prediction 
+IEEE/CVF 
+CVPR 2024 
+Scopus (terindeks 
+sebagai prosiding 
+IEEE/CVF CVPR) 
+Setara Q1 (sama 
+dengan S004) — 
+Proceedings 
+CVPR 2024 
+terindeks Scopus 
+melalui IEEE 
+Xplore. 
+S022 
+Prosiding 
+konferensi 
+DiffusionTrack: 
+Diffusion Model for 
+Multi-Object 
+Tracking 
+AAAI 2024, 
+38(5), 3991-
+3999 
+Scopus (AAAI 
+terindeks Scopus 
+sebagai prosiding 
+konferensi) 
+Setara Q1 (AAAI 
+adalah top-tier AI 
+conference yang 
+terindeks Scopus) 
+— Proceedings of 
+the AAAI 
+Conference on 
+Artificial 
+Intelligence 
+
+Kode 
+Tipe Sumber 
+Judul (ringkas) 
+Venue/Jurnal 
+Status Indeksasi 
+Kuartil Scopus 
+/ Keterangan 
+terindeks Scopus. 
+AAAI adalah 
+konferensi 
+prestisius AI yang 
+diakui secara 
+internasional. 
+S023 
+Prosiding 
+konferensi 
+Hybrid-SORT: 
+Weak Cues Matter 
+for Online Multi-
+Object Tracking 
+AAAI 2024, 
+38(7), 6504-
+6512 
+Scopus (AAAI 
+terindeks Scopus) 
+Setara Q1 (sama 
+dengan S022) — 
+Proceedings AAAI 
+2024 terindeks 
+Scopus. 
+S024 
+Prosiding 
+konferensi 
+Observation-
+Centric SORT: 
+Rethinking SORT 
+for Robust Multi-
+Object Tracking 
+IEEE/CVF 
+CVPR 2023 
+Scopus (terindeks 
+sebagai prosiding 
+IEEE/CVF CVPR) 
+Setara Q1 (sama 
+dengan 
+S004/S021) — 
+Proceedings 
+CVPR 2023 
+terindeks Scopus 
+melalui IEEE 
+Xplore. 
+S025 
+Jurnal 
+HOTA: A Higher 
+Order Metric for 
+Evaluating Multi-
+object Tracking 
+International 
+Journal of 
+Computer 
+Vision, 129(2), 
+548-578 
+Scopus Q1 + SCIE 
+(WoS) 
+Q1 (Scopus: 
+Computer Vision & 
+Pattern 
+Recognition; SJR 
+sangat tinggi; IF 
+~19.5; Springer) 
+— IJCV 
+(International 
+Journal of 
+Computer Vision, 
+Springer, ISSN 
+0920-5691) 
+adalah jurnal 
+prestisius Q1 di 
+computer vision. 
+S026 
+Prosiding 
+konferensi 
+(Springer 
+LNCS/ECCV 
+Workshop) 
+Performance 
+Measures and a 
+Data Set for Multi-
+target, Multi-
+camera Tracking 
+Computer 
+Vision – ECCV 
+2016 
+Workshops, 
+LNCS, 17-35; 
+Springer 
+Scopus (Springer 
+LNCS terindeks 
+Scopus) 
+Tidak ada kuartil 
+jurnal; ECCV 
+Workshop 
+Springer LNCS 
+terindeks Scopus 
+sebagai prosiding 
+— ECCV 
+(European 
+Conference on 
+Computer Vision) 
+adalah top-tier 
+conference yang 
+diterbitkan 
+Springer LNCS 
+dan terindeks 
+Scopus. 
+S027 
+Jurnal 
+Deep learning for 
+crowd counting in 
+complex 
+environments: 
+Discover 
+Computing 29, 
+artikel 101 
+(2026), Springer 
+Nature 
+Scopus Q2 + SCIE 
+(WoS) 
+Q2 (Scopus: 
+Information 
+Systems & Library 
+Sciences; SJR 
+~0.449; CiteScore 
+
+Kode 
+Tipe Sumber 
+Judul (ringkas) 
+Venue/Jurnal 
+Status Indeksasi 
+Kuartil Scopus 
+/ Keterangan 
+challenges and 
+novel trends 
+3.2; IF ~2.5 
+perkiraan) — 
+Discover 
+Computing 
+(Springer, formerly 
+Information 
+Retrieval Journal, 
+ISSN 2948-2992) 
+terindeks Scopus 
+dan WoS SCIE 
+sejak 2024. 
+S028 
+Jurnal 
+Crowd counting at 
+the edge using 
+weighted 
+knowledge 
+distillation 
+Scientific 
+Reports 15, 
+artikel 11932 
+(2025) 
+Scopus Q1 + SCIE 
+(WoS) 
+Q1 (sama dengan 
+S013; Scientific 
+Reports Nature 
+Portfolio, Scopus 
+Q1, IF 3.9) — 
+Scientific Reports, 
+sama dengan 
+S013. 
+S029 
+Jurnal 
+Deep learning in 
+crowd counting: A 
+survey 
+CAAI 
+Transactions on 
+Intelligence 
+Technology, 
+9(5), 1043-1077 
+(2024) 
+Scopus Q1 + SCIE 
+(WoS) 
+Q1 (Scopus: 
+Computer Science 
+AI; SJR ~1.785; IF 
+10.54; 
+Wiley/CAAI) — 
+CAAI Transactions 
+on Intelligence 
+Technology 
+(Wiley, ISSN 
+2468-6557) 
+adalah jurnal Q1 
+bergengsi yang 
+terindeks Scopus. 
+S030 
+Jurnal 
+Federated 
+Learning for 
+Crowd Counting in 
+Smart Surveillance 
+Systems 
+IEEE Internet of 
+Things Journal, 
+11(3), 5200-
+5209 (2024) 
+Scopus Q1 + IEEE 
++ SCIE (WoS) 
+Q1 (Scopus: 
+Computer 
+Networks & 
+Communications; 
+SJR ~2.483; IF 
+tinggi ~8.2; IEEE) 
+— IEEE Internet of 
+Things Journal 
+(IEEE, ISSN 2327-
+4662) adalah 
+jurnal Q1 
+prestisius yang 
+terindeks Scopus 
+dan WoS SCIE. 
+S031 
+Jurnal 
+TinyCount: an 
+efficient crowd 
+counting network 
+for intelligent 
+surveillance 
+Journal of Real-
+Time Image 
+Processing, 21, 
+artikel 153 
+(2024) 
+Scopus Q2 + SCIE 
+(WoS) 
+Q2 (Scopus: 
+Computer Vision & 
+Signal Processing; 
+SJR ~0.578; IF 
+~3.0; Springer) — 
+Journal of Real-
+Time Image 
+Processing 
+(Springer, ISSN 
+1861-8200) 
+
+Kode 
+Tipe Sumber 
+Judul (ringkas) 
+Venue/Jurnal 
+Status Indeksasi 
+Kuartil Scopus 
+/ Keterangan 
+terindeks Scopus 
+Q2 dan WoS 
+SCIE. 
+S032 
+Jurnal 
+Efficient crowd 
+density estimation 
+with edge 
+intelligence via 
+structural 
+reparameterization 
+and knowledge 
+transfer 
+Applied Soft 
+Computing, 
+154, artikel 
+111366 (2024) 
+Scopus Q1 + SCIE 
+(WoS) 
+Q1 (Scopus: 
+Computer Science 
+AI; SJR ~1.511; IF 
+~8.2; Elsevier) — 
+Applied Soft 
+Computing 
+(Elsevier, ISSN 
+1568-4946) 
+adalah jurnal Q1 
+prestisius yang 
+terindeks Scopus 
+dan WoS SCIE. 
+S033 
+Prosiding 
+konferensi 
+CrowdDiff: Multi-
+Hypothesis Crowd 
+Density Estimation 
+using Diffusion 
+Models 
+IEEE/CVF 
+CVPR 2024 
+Scopus (terindeks 
+sebagai prosiding 
+IEEE/CVF CVPR) 
+Setara Q1 (sama 
+dengan 
+S004/S021/S033) 
+— Proceedings 
+CVPR 2024 
+terindeks Scopus 
+melalui IEEE 
+Xplore. 
+S034 
+Jurnal 
+High-accuracy 
+occupancy 
+counting at 
+crowded 
+entrances for 
+smart buildings 
+Energy and 
+Buildings, 319, 
+artikel 114509 
+(2024) 
+Scopus Q1 + SCIE 
+(WoS) 
+Q1 (Scopus: 
+Civil/Structural 
+Engineering & 
+Energy; SJR 
+tinggi; IF 7.1; 
+Elsevier) — 
+Energy and 
+Buildings 
+(Elsevier, ISSN 
+0378-7788) 
+adalah jurnal Q1 
+bergengsi yang 
+terindeks Scopus 
+dan WoS SCIE. 
+S035 
+Dokumentasi 
+vendor 
+Gst-nvdsanalytics 
+— NVIDIA 
+DeepStream 
+Documentation 
+Dokumentasi 
+vendor NVIDIA 
+DeepStream 
+SDK 9.0 
+Tidak terindeks 
+(bukan publikasi 
+akademik) 
+— — 
+Dokumentasi 
+teknis resmi 
+NVIDIA, bukan 
+jurnal atau 
+prosiding 
+akademik. Tidak 
+dapat ditelusuri di 
+Scopus. 
+S036 
+Preprint/Workshop 
+paper 
+MOT20: A 
+benchmark for 
+multi object 
+tracking in 
+crowded scenes 
+arXiv 2020; 
+Workshop 
+CVPR 2019 
+(4th BMTT MOT 
+Challenge) 
+Sebagian terindeks 
+Scopus (melalui 
+CVF Workshop 
+CVPR yang 
+terindeks), namun 
+versi arXiv tidak 
+terindeks Scopus 
+secara mandiri 
+Tidak ada kuartil 
+jurnal; jika dikutip 
+dari CVPR 
+Workshop, setara 
+prosiding 
+IEEE/CVF yang 
+terindeks Scopus 
+— Makalah ini 
+sering dikutip 
+
+Kode 
+Tipe Sumber 
+Judul (ringkas) 
+Venue/Jurnal 
+Status Indeksasi 
+Kuartil Scopus 
+/ Keterangan 
+sebagai arXiv 
+(2003.09003). 
+Versi workshop 
+CVPR 2019 dapat 
+terindeks Scopus 
+melalui IEEE. 
+Perlu verifikasi 
+versi mana yang 
+dikutip. 
+S037 
+Prosiding 
+konferensi 
+DanceTrack: Multi-
+Object Tracking in 
+Uniform 
+Appearance and 
+Diverse Motion 
+IEEE/CVF 
+CVPR 2022 
+Scopus (terindeks 
+sebagai prosiding 
+IEEE/CVF CVPR) 
+Setara Q1 (sama 
+dengan 
+S004/S021) — 
+Proceedings 
+CVPR 2022 
+terindeks Scopus 
+melalui IEEE 
+Xplore. 
+S038 
+Preprint/Dataset 
+paper 
+CrowdHuman: A 
+Benchmark for 
+Detecting Human 
+in a Crowd 
+arXiv/dataset 
+benchmark 
+(2018) 
+Tidak terindeks 
+Scopus secara 
+resmi (hanya arXiv 
+preprint/dataset 
+report) 
+— — 
+CrowdHuman 
+adalah benchmark 
+dataset yang 
+dipublikasikan 
+sebagai arXiv 
+preprint 
+(1805.00123). 
+Tidak diterbitkan 
+di jurnal atau 
+prosiding 
+konferensi Scopus 
+resmi. Namun 
+sering dikutip 
+karena signifikansi 
+dataset-nya. 
+ 
+Catatan Metodologi Pengecekan 
+1. Kuartil Scopus diambil dari SCImago Journal Rank (SJR) terbaru (2024) yang dipublikasikan di scimagojr.com. 
+2. Konferensi top AI/CV (CVPR, NeurIPS, ICLR, AAAI, WACV) terindeks Scopus sebagai conference proceedings IEEE atau publisher terkait, bukan sebagai jurnal. Oleh karena itu tidak memiliki kuartil SJR 
+layaknya jurnal, namun setara Q1 dalam hal prestise dan penerimaan akademik. 
+3. SINTA (Science and Technology Index) adalah sistem peringkat jurnal Kementerian Dikti Indonesia yang hanya berlaku untuk jurnal yang diterbitkan oleh lembaga Indonesia. Tidak ada referensi dalam 
+daftar ini yang termasuk jurnal SINTA. 
+4. Preprint arXiv dan dokumentasi vendor tidak dianggap sebagai sumber terindeks Scopus. arXiv berguna sebagai referensi teknis, tetapi tidak memiliki peer-review formal dan tidak dihitung sebagai 
+publikasi Scopus. 
+5. S036 (MOT20) dipublikasikan pertama kali sebagai workshop CVPR 2019 (terindeks Scopus via IEEE) dan kemudian sebagai arXiv 2020. Status indeksasi bergantung pada versi yang dikutip. 
+6. Springer LNCS (S019, S026) terindeks Scopus sebagai conference proceedings, tetapi tidak masuk indeks WoS SCIE karena bukan jurnal. 
