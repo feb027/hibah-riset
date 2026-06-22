@@ -1,0 +1,27 @@
+# Tier 1 smoke test — pinned for reproducibility.
+# Tested on Colab (Python 3.10+, T4/A100).
+# Keep these loose (~) for ultralytics which pulls torchvision + CUDA wheels automatically.
+
+# Core ML
+ultralytics>=8.3.0,<9.0.0     # YOLOv8/10/11/12/26 + RT-DETR via unified API
+torch>=2.0.0
+torchvision>=0.15.0
+
+# Computer vision / IO
+opencv-python>=4.8.0
+numpy>=1.24.0,<2.1.0
+Pillow>=10.0.0
+
+# Tracking evaluation (for future Tier 2; safe to include now)
+motmetrics>=1.4.0
+
+# Notebook / viz
+matplotlib>=3.7.0
+ipython>=8.0.0
+
+# Utility
+pyyaml>=6.0
+tqdm>=4.65.0
+
+# Colab-only (commented; uncomment in notebook if needed):
+# yt-dlp>=2024.4.9          # for downloading public sample videos

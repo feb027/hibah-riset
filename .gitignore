@@ -3,6 +3,8 @@ __pycache__/
 *.py[cod]
 .pytest_cache/
 .venv/
+.mypy_cache/
+.ruff_cache/
 
 # Office temp files
 ~$*.docx
@@ -11,3 +13,35 @@ __pycache__/
 # Generated local scratch
 /tmp/
 .DS_Store
+
+# Experiment artifacts (regenerable, besar)
+data/raw/
+data/processed/
+data/cache/
+models/weights/
+models/checkpoints/
+experiments/*/runs/
+experiments/*/outputs/
+experiments/*/logs/
+experiments/*/predictions/
+experiments/*/results/*.json
+experiments/*/results/*.csv
+experiments/*/results/*.png
+experiments/*/results/*.mp4
+experiments/*/videos/
+
+# Model files
+*.pt
+*.pth
+*.onnx
+*.engine
+*.trt
+*.tflite
+*.weights
+
+# Notebook checkpoints
+.ipynb_checkpoints/
+
+# Local config / secrets
+.env
+*.local.yaml

@@ -261,6 +261,67 @@ if method_path.exists():
         if missing:
             errors.append(f'docs/drafts/usulan-pendekatan.md cites IDs missing from references.bib: {", ".join(missing)}')
 
+# ---------------------------------------------------------------------------
+# Phase 7 — Tier 1 experiment scaffold (2026-06-22)
+#
+# Scope: code + notebook + experiment card + pre-plan must exist.
+# Execution (smoke test run on Colab) is NOT required to PASS validation —
+# Tier 1 outcome is verified post-run by reviewer.
+# ---------------------------------------------------------------------------
+PHASE7_REQUIRED = [
+    'src/__init__.py',
+    'src/detector.py',
+    'src/pipeline.py',
+    'src/eval_detection.py',
+    'src/utils/__init__.py',
+    'src/utils/video_io.py',
+    'requirements.txt',
+    'pyproject.toml',
+    '.gitignore',
+    'notebooks/01_smoke_test_detector.ipynb',
+    'configs/s1_detector_smoke.yaml',
+    'experiments/s1_detector_smoke/README.md',
+    'scripts/smoke_test_detector.py',
+    'scripts/download_mot17_mini.py',
+    'scripts/download_mall_dataset.py',
+    'data/README.md',
+    'models/README.md',
+    'docs/plans/2026-06-22-phase7-tier1-experiment.md',
+    'docs/experiments/s1-detector-smoke-test.md',
+]
+for rel in PHASE7_REQUIRED:
+    if not (ROOT / rel).exists():
+        errors.append(f'Phase 7 missing required file: {rel}')
+
+# detector.py must declare DETECTOR_CATALOGUE and map to source-ledger IDs.
+detector_py = ROOT / 'src/detector.py'
+if detector_py.exists():
+    text = detector_py.read_text(encoding='utf-8', errors='replace')
+    if 'DETECTOR_CATALOGUE' not in text:
+        errors.append('src/detector.py missing DETECTOR_CATALOGUE')
+    for sid in ['S001', 'S002', 'S003', 'S004']:
+        if sid not in text:
+            errors.append(f'src/detector.py missing source-ledger mapping: {sid}')
+
+# notebook + configs must not include overclaim phrasing.
+for rel in ['notebooks/01_smoke_test_detector.ipynb', 'configs/s1_detector_smoke.yaml',
+            'docs/experiments/s1-detector-smoke-test.md']:
+    p = ROOT / rel
+    if not p.exists():
+        continue
+    text = p.read_text(encoding='utf-8', errors='replace').lower()
+    for token in ['sota performance', 'outperforms', 'state-of-the-art']:
+        if token in text:
+            warnings.append(f'{rel} contains overclaim-adjacent phrase: "{token}" (review post-run)')
+
+# .gitignore must exclude data/, models/*.pt, experiments runs
+gitignore = ROOT / '.gitignore'
+if gitignore.exists():
+    gi = gitignore.read_text(encoding='utf-8', errors='replace')
+    for required_pattern in ['data/', '*.pt', 'experiments/']:
+        if required_pattern not in gi:
+            errors.append(f'.gitignore missing required exclude pattern: {required_pattern}')
+
 if warnings:
     print('VALIDATION WARNINGS')
     for w in warnings:

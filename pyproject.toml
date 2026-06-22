@@ -1,0 +1,36 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "hibah-people-counting"
+version = "0.1.0-phase7"
+description = "Real-time people counting pipeline for hibah riset PUU 2026. Tier 1: detector smoke test."
+requires-python = ">=3.10"
+readme = "README.md"
+authors = [
+    {name = "Hibah Riset Team"},
+]
+license = {text = "Research use only"}
+
+# Minimal runtime deps; ultralytics is the workhorse.
+dependencies = [
+    "ultralytics>=8.3.0,<9.0.0",
+    "opencv-python>=4.8.0",
+    "numpy>=1.24.0,<2.1.0",
+    "pyyaml>=6.0",
+    "tqdm>=4.65.0",
+]
+
+[project.optional-dependencies]
+notebook = ["matplotlib>=3.7.0", "ipython>=8.0.0"]
+tracking = ["motmetrics>=1.4.0"]
+download = ["yt-dlp>=2024.4.9"]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["src*"]
+exclude = ["data*", "experiments*", "notebooks*", "docs*", "scripts*", "references*", "prompts*"]
+
+[tool.setuptools.package-data]
+"src" = ["py.typed"]

@@ -1,5 +1,35 @@
 # Progress Log — Hibah Riset PUU 2026
 
+## 2026-06-22 WIB — Phase 7 Tier 1 experiment scaffold
+
+- [x] Created scaffolding for eksperimen terbatas: `src/`, `configs/`, `data/`,
+      `notebooks/`, `experiments/`, `models/`.
+- [x] Wrote `src/detector.py` dengan `DETECTOR_CATALOGUE` yang memetakan
+      setiap detector ke source-ledger (S003 YOLOv10, S004 RT-DETR,
+      S001/S002 YOLO26 caution, YOLOv11n sebagai baseline Ultralytics).
+- [x] Wrote `src/pipeline.py` (end-to-end smoke test) + `src/eval_detection.py`
+      (agregasi statistik) + `src/utils/video_io.py` (probe video, draw, write).
+- [x] Wrote `notebooks/01_smoke_test_detector.ipynb` — Colab-ready dengan
+      fallback synthetic video jika URL sample mati.
+- [x] Wrote `configs/s1_detector_smoke.yaml` + eksperimen card di
+      `experiments/s1_detector_smoke/README.md` dan mirror di
+      `docs/experiments/s1-detector-smoke-test.md`.
+- [x] Wrote `scripts/smoke_test_detector.py` + dataset helpers
+      (`download_mot17_mini.py`, `download_mall_dataset.py`).
+- [x] Updated `.gitignore` agar exclude `data/`, `*.pt`, `experiments/*/runs/`,
+      dst — tidak meng-commit artefak eksperimen besar.
+- [x] Wrote `docs/plans/2026-06-22-phase7-tier1-experiment.md` dengan
+      latar belakang eskalasi scope dari "kepustakaan" ke "implementation terbatas".
+- [x] Updated `scripts/validate_research_artifacts.py` dengan Phase 7 gate
+      (cek scaffold + mapping detector ke source-ledger).
+- [ ] Smoke test dijalankan di Colab oleh mahasiswa.
+- [ ] Artefak run (CSV, JSON, MP4) disalin ke `experiments/s1_detector_smoke/`.
+- [ ] Reviewer pass menulis `docs/reviews/review-s1-smoke.md`.
+
+**Batasan jujur**: scaffold adalah kode, bukan hasil eksperimen. Tidak ada
+klaim akurasi atau FPS sampai run aktual di Colab selesai. Tier 1 = smoke
+test inference-only (no training, no fine-tuning).
+
 ## 2026-05-25 WIB — Phase 0 setup
 
 - [x] Verified current local date: 25 Mei 2026 WIB.

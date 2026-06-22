@@ -1,0 +1,77 @@
+# Tier 1 — Detector Smoke Test
+# Source ledger references:
+#   S001 YOLO26 (caution - preprint)
+#   S002 Ultralytics YOLO26 docs (caution - vendor)
+#   S003 YOLOv10 (peer-reviewed - NeurIPS 2024) <-- academic anchor
+#   S004 RT-DETR  (peer-reviewed - CVPR 2024)
+
+experiment:
+  name: s1_detector_smoke
+  description: >
+    Inference-only smoke test of people detector on a short video.
+    No training, no fine-tuning, no quantitative SOTA claim.
+  scenario_id: S1
+  scope: tier_1
+  status: draft_code   # becomes "smoke_passed" only AFTER run on Colab
+
+detector:
+  # Default = S003 YOLOv10 small (peer-reviewed academic anchor).
+  # Alternatives exist in src/detector.py::DETECTOR_CATALOGUE.
+  primary: yolov10s
+  alternatives:
+    - yolov11n
+    - yolo26n        # S001/S002 - caution
+    - rtdetr-l       # S004
+
+thresholds:
+  confidence: 0.25
+  iou: 0.45
+  person_only: true
+
+runtime:
+  device: cuda:0   # Colab T4. Use "cpu" if no GPU.
+  max_frames: 200  # cap to keep Colab free run under ~2 min
+  fp16: true       # Colab T4 supports half precision
+
+inputs:
+  video:
+    primary: synthetic_or_url
+    fallback: synthetic_generated
+    notes: >
+      Use a short crowd clip (CC0 from Pexels). If download fails, the notebook
+      generates a synthetic 10-second clip with moving rectangles to validate
+      that the pipeline runs end-to-end. Synthetic data is NOT for evaluation.
+
+outputs:
+  annotated_video: "annotated_<detector>.mp4"
+  per_frame_csv:   "per_frame_<detector>.csv"
+  summary_json:    "summary_<detector>.json"
+  diagnostic_plot: "diagnostic_<detector>.png"
+
+metrics_recorded:
+  # These are runtime/diagnostic numbers, NOT SOTA claims.
+  - fps_avg
+  - latency_p50_ms
+  - latency_p95_ms
+  - latency_mean_ms
+  - mean_persons_per_frame
+  - max_persons_in_frame
+  - total_frames_processed
+
+metrics_NOT_recorded:
+  # Out of scope for Tier 1.
+  - mAP
+  - precision_recall
+  - HOTA / IDF1 / MOTA     # belongs to Tier 2 (tracker)
+  - MAE / MAPE counting    # belongs to Tier 3 (counting logic)
+
+anti_overclaim:
+  forbidden_phrases:
+    - "YOLO26 is the best detector"
+    - "SOTA performance"
+    - "outperforms [other paper]"
+    - "real-time at <X ms"  # only valid AFTER measuring on target hardware
+  required_disclaimers:
+    - "Inference-only smoke test on Colab T4."
+    - "No training; no fine-tuning."
+    - "Sample video is synthetic or short CC0 clip; not a benchmark."
