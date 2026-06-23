@@ -1,0 +1,18 @@
+# S1 Quantitative Evaluation Config (Medium Tier)
+# S1 quant is a real benchmark. We measure mAP on a labelled dataset.
+# Dataset: INRIA Person (Pedestrian).
+# Metric: mAP@0.5:0.95.
+# Target: Compare Medium-tier YOLO models.
+config:
+  dataset: inria
+  metrics:
+    - mAP
+    - AP50
+    - AP75
+  detectors:
+    - yolov10m
+    - yolo26m
+    - yolov11m
+  confidence_threshold: 0.25
+  iou_threshold: 0.5
+  output_dir: experiments/s1_quant_medium

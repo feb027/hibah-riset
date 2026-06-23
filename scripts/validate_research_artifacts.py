@@ -335,9 +335,15 @@ PHASE8_REQUIRED = [
     'scripts/download_inria.py',
     'scripts/download_crowdhuman.py',
     'notebooks/02_s1_quant_inria.ipynb',
+    'notebooks/03_s1_quant_medium.ipynb',
+    'notebooks/04_s1_quant_large_xl.ipynb',
     'configs/s1_quant_inria.yaml',
+    'configs/s1_quant_medium.yaml',
+    'configs/s1_quant_large.yaml',
     'docs/plans/2026-06-22-phase8-s1-quant.md',
     'docs/experiments/s1-quant-inria.md',
+    'docs/experiments/s1-quant-medium.md',
+    'docs/experiments/s1-quant-large.md',
 ]
 for rel in PHASE8_REQUIRED:
     if not (ROOT / rel).exists():
