@@ -22,13 +22,38 @@
       latar belakang eskalasi scope dari "kepustakaan" ke "implementation terbatas".
 - [x] Updated `scripts/validate_research_artifacts.py` dengan Phase 7 gate
       (cek scaffold + mapping detector ke source-ledger).
-- [ ] Smoke test dijalankan di Colab oleh mahasiswa.
-- [ ] Artefak run (CSV, JSON, MP4) disalin ke `experiments/s1_detector_smoke/`.
+- [x] Smoke test dijalankan di Colab oleh mahasiswa.
+- [x] Artefak run (CSV, JSON) disalin ke `experiments/s1_detector_smoke/`.
 - [ ] Reviewer pass menulis `docs/reviews/review-s1-smoke.md`.
 
 **Batasan jujur**: scaffold adalah kode, bukan hasil eksperimen. Tidak ada
 klaim akurasi atau FPS sampai run aktual di Colab selesai. Tier 1 = smoke
 test inference-only (no training, no fine-tuning).
+
+## 2026-06-22 WIB — Phase 8 S1 Quantitative Evaluation (tier 1)
+
+- [x] Extend `src/detector.py` ke N/S/M tiers (yolov10n/s/m, yolov11n/s/m,
+      yolo26n/s/m) plus `detectors_by_tier()` helper. Anchor S003 tetap
+      YOLOv10, YOLO26 tetap caution (S001/S002).
+- [x] Tulis `src/eval_mAP.py` (pycocotools-based detector quant: mAP@0.5:0.95,
+      AP50, AP75, AR) + `src/eval_counting.py` (MAE, MAPE, RMSE).
+- [x] Tulis `scripts/download_inria.py` (50 MB, no registrasi) +
+      `scripts/download_crowdhuman.py` (15 GB, butuh registrasi manual).
+- [x] Tulis `notebooks/02_s1_quant_inria.ipynb` — Colab-ready untuk S1
+      quant pertama pakai INRIA sebagai baseline pipeline validator.
+- [x] Tulis `configs/s1_quant_inria.yaml` + eksperimen card
+      `docs/experiments/s1-quant-inria.md` + plan
+      `docs/plans/2026-06-22-phase8-s1-quant.md`.
+- [x] Updated `scripts/validate_research_artifacts.py` dengan Phase 8 gate
+      (cek eval libs + notebook + plan).
+- [ ] Mahasiswa menjalankan `02_s1_quant_inria.ipynb` di Colab.
+- [ ] Artefak mAP JSON disalin ke `experiments/s1_quant_inria/`.
+- [ ] CrowdHuman notebook (`03_s1_quant_crowdhuman.ipynb`) dibuat setelah
+      INRIA pipeline lulus.
+
+**Batasan jujur**: Phase 8 = scaffold code + notebook, bukan hasil.
+Hasil mAP baru valid setelah Colab run selesai dan reviewer pass menulis
+`docs/reviews/review-s1-quant.md`.
 
 ## 2026-05-25 WIB — Phase 0 setup
 

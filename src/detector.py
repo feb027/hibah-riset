@@ -23,38 +23,101 @@ logger = logging.getLogger(__name__)
 
 # Canonical detector catalogue. Map short alias -> ultralytics model id.
 # Anchored to source-ledger.md (see AGENTS.md / references.bib).
+#
+# Tiering (per Ultralytics model size nomenclature):
+#   N = nano  (~2.5M params)
+#   S = small (~11M params)
+#   M = medium (~25M params)
+#   L = large (~45M params)
+#   X = xlarge
+#
+# Honest framing for the paper:
+#   - Within the same tier (e.g. yolov10n vs yolo26n vs yolov11n) we can
+#     fairly compare speed/accuracy. S003 vs S001/S002.
+#   - Across tiers (e.g. yolov10s vs yolo26n) the comparison is dominated
+#     by model size, not by architectural family. Do not claim "X is faster
+#     than Y" when X is nano and Y is small.
 DETECTOR_CATALOGUE: dict[str, dict] = {
+    # ---- NANO tier (apples-to-apples comparison) ----
     "yolov10n": {
         "model": "yolov10n.pt",
         "source_id": "S003",
-        "description": "YOLOv10 nano (NeurIPS 2024). Academic anchor for NMS-free YOLO.",
+        "description": "YOLOv10 nano (NeurIPS 2024). Tier-N anchor for NMS-free YOLO.",
         "size": "nano",
-    },
-    "yolov10s": {
-        "model": "yolov10s.pt",
-        "source_id": "S003",
-        "description": "YOLOv10 small (NeurIPS 2024). Default for Tier 1 smoke test.",
-        "size": "small",
+        "tier": "N",
     },
     "yolov11n": {
         "model": "yolo11n.pt",
         "source_id": None,
-        "description": "YOLOv11 nano (Ultralytics 2024). Generic baseline, not yet in source ledger.",
+        "description": "YOLOv11 nano (Ultralytics 2024). Tier-N baseline, not yet in source ledger.",
         "size": "nano",
+        "tier": "N",
     },
     "yolo26n": {
         "model": "yolo26n.pt",
         "source_id": "S001/S002",
         "description": "YOLO26 nano. S001 is preprint, S002 is vendor doc. Caution status in source ledger.",
         "size": "nano",
+        "tier": "N",
     },
+    # ---- SMALL tier (apples-to-apples comparison) ----
+    "yolov10s": {
+        "model": "yolov10s.pt",
+        "source_id": "S003",
+        "description": "YOLOv10 small (NeurIPS 2024). Tier-S anchor.",
+        "size": "small",
+        "tier": "S",
+    },
+    "yolov11s": {
+        "model": "yolo11s.pt",
+        "source_id": None,
+        "description": "YOLOv11 small (Ultralytics 2024). Tier-S baseline.",
+        "size": "small",
+        "tier": "S",
+    },
+    "yolo26s": {
+        "model": "yolo26s.pt",
+        "source_id": "S001/S002",
+        "description": "YOLO26 small. Caution: S001 preprint, S002 vendor doc.",
+        "size": "small",
+        "tier": "S",
+    },
+    # ---- MEDIUM tier (apples-to-apples comparison) ----
+    "yolov10m": {
+        "model": "yolov10m.pt",
+        "source_id": "S003",
+        "description": "YOLOv10 medium (NeurIPS 2024). Tier-M anchor.",
+        "size": "medium",
+        "tier": "M",
+    },
+    "yolov11m": {
+        "model": "yolo11m.pt",
+        "source_id": None,
+        "description": "YOLOv11 medium (Ultralytics 2024). Tier-M baseline.",
+        "size": "medium",
+        "tier": "M",
+    },
+    "yolo26m": {
+        "model": "yolo26m.pt",
+        "source_id": "S001/S002",
+        "description": "YOLO26 medium. Caution: S001 preprint, S002 vendor doc.",
+        "size": "medium",
+        "tier": "M",
+    },
+    # ---- TRANSFORMER alternative (not tier-comparable to YOLO above) ----
     "rtdetr-l": {
         "model": "rtdetr-l.pt",
         "source_id": "S004",
-        "description": "RT-DETR large (CVPR 2024). Transformer end-to-end detector baseline.",
+        "description": "RT-DETR large (CVPR 2024). Transformer end-to-end detector baseline. NOT tier-comparable to YOLO nano/small/medium.",
         "size": "large",
+        "tier": "L-transformer",
     },
 }
+
+
+def detectors_by_tier(tier: str) -> list[str]:
+    """Return aliases for a given tier: 'N', 'S', 'M', or 'L-transformer'."""
+    return sorted(k for k, v in DETECTOR_CATALOGUE.items() if v.get("tier") == tier)
 
 
 @dataclass

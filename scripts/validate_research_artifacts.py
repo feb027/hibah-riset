@@ -322,6 +322,47 @@ if gitignore.exists():
         if required_pattern not in gi:
             errors.append(f'.gitignore missing required exclude pattern: {required_pattern}')
 
+# ---------------------------------------------------------------------------
+# Phase 8 — S1 Quantitative Evaluation (2026-06-22)
+#
+# Scope: mAP evaluation code + notebook + experiment card + plan must exist.
+# Execution (S1 quant run on Colab) is NOT required to PASS validation —
+# Tier 1 quant outcome is verified post-run by reviewer.
+# ---------------------------------------------------------------------------
+PHASE8_REQUIRED = [
+    'src/eval_mAP.py',
+    'src/eval_counting.py',
+    'scripts/download_inria.py',
+    'scripts/download_crowdhuman.py',
+    'notebooks/02_s1_quant_inria.ipynb',
+    'configs/s1_quant_inria.yaml',
+    'docs/plans/2026-06-22-phase8-s1-quant.md',
+    'docs/experiments/s1-quant-inria.md',
+]
+for rel in PHASE8_REQUIRED:
+    if not (ROOT / rel).exists():
+        errors.append(f'Phase 8 missing required file: {rel}')
+
+# eval_mAP.py must have evaluate_map function and use pycocotools
+eval_map_py = ROOT / 'src/eval_mAP.py'
+if eval_map_py.exists():
+    text = eval_map_py.read_text(encoding='utf-8', errors='replace')
+    if 'def evaluate_map' not in text:
+        errors.append('src/eval_mAP.py missing evaluate_map function')
+    if 'pycocotools' not in text:
+        errors.append('src/eval_mAP.py missing pycocotools import')
+    if 'MapResult' not in text:
+        errors.append('src/eval_mAP.py missing MapResult dataclass')
+
+# notebooks/02_s1_quant_inria.ipynb must import eval_mAP and detector
+nb2 = ROOT / 'notebooks/02_s1_quant_inria.ipynb'
+if nb2.exists():
+    text = nb2.read_text(encoding='utf-8', errors='replace')
+    if 'eval_mAP' not in text:
+        errors.append('notebooks/02_s1_quant_inria.ipynb missing eval_mAP import')
+    if 'PeopleDetector' not in text:
+        errors.append('notebooks/02_s1_quant_inria.ipynb missing PeopleDetector import')
+
 if warnings:
     print('VALIDATION WARNINGS')
     for w in warnings:
