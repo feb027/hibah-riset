@@ -1,0 +1,16 @@
+{
+  "detector": "yolov11n",
+  "source_id": null,
+  "video_path": "/content/sample_data/crowd_sample.mp4",
+  "fps_video": 25.0,
+  "fps_processed": 25.0,
+  "fps_avg": 47.65515074142474,
+  "latency_p50_ms": 16.913976500063654,
+  "latency_p95_ms": 32.77624384986665,
+  "latency_mean_ms": 20.984090585002377,
+  "total_frames": 200,
+  "total_person_detections": 2513,
+  "mean_persons_per_frame": 12.565,
+  "max_persons_in_frame": 18,
+  "max_persons_frame_index": 91
+}

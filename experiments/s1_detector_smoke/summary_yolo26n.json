@@ -1,0 +1,16 @@
+{
+  "detector": "yolo26n",
+  "source_id": "S001/S002",
+  "video_path": "/content/sample_data/crowd_sample.mp4",
+  "fps_video": 25.0,
+  "fps_processed": 25.0,
+  "fps_avg": 46.63391815617205,
+  "latency_p50_ms": 17.991452499927618,
+  "latency_p95_ms": 32.97983019998582,
+  "latency_mean_ms": 21.44361957001138,
+  "total_frames": 200,
+  "total_person_detections": 2484,
+  "mean_persons_per_frame": 12.42,
+  "max_persons_in_frame": 18,
+  "max_persons_frame_index": 92
+}
