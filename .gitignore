@@ -1,47 +1,56 @@
-# Python/cache
+# Python
 __pycache__/
 *.py[cod]
-.pytest_cache/
-.venv/
-.mypy_cache/
-.ruff_cache/
+*$py.class
+*.so
+.Python
+env/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
 
-# Office temp files
-~$*.docx
-~$*.xlsx
-
-# Generated local scratch
-/tmp/
-.DS_Store
-
-# Experiment artifacts (regenerable, besar)
-data/raw/
-data/processed/
-data/cache/
-models/weights/
-models/checkpoints/
-experiments/*/runs/
-experiments/*/outputs/
-experiments/*/logs/
-experiments/*/predictions/
-experiments/*/results/*.json
-experiments/*/results/*.csv
-experiments/*/results/*.png
-experiments/*/results/*.mp4
-experiments/*/videos/
-
-# Model files
-*.pt
-*.pth
-*.onnx
-*.engine
-*.trt
-*.tflite
-*.weights
-
-# Notebook checkpoints
-.ipynb_checkpoints/
-
-# Local config / secrets
+# Virtual environments
 .env
-*.local.yaml
+.venv
+env/
+venv/
+ENV/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# Pytest
+.pytest_cache/
+htmlcov/
+.coverage
+.tox/
+
+# IDEs
+.vscode/
+.idea/
+.agents/
+
+# Large files & Outputs
+*.mp4
+*.avi
+*.mkv
+*.pt
+models/
+data/
+experiments/*.mp4
+experiments/*.avi
+!experiments/sanity_check/
+!experiments/zeroshot/
