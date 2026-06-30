@@ -4,9 +4,9 @@ import cv2
 from pathlib import Path
 
 # Konfigurasi Path
-ODGT_PATH = r"g:\semester 6\hibah-riset\models\annotation_val.odgt"
-IMAGES_DIR = r"g:\semester 6\hibah-riset\models\Images"
-OUTPUT_DIR = r"g:\semester 6\hibah-riset\experiments\sanity_check"
+ODGT_PATH = r"c:\projects\hibah-riset\models\annotation_val.odgt"
+IMAGES_DIR = r"c:\projects\hibah-riset\models\Images"
+OUTPUT_DIR = r"c:\projects\hibah-riset\experiments\sanity_check"
 
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 

@@ -12,7 +12,7 @@ df = pd.read_csv(csv_path)
 
 # Set up the matplotlib figure
 fig, axes = plt.subplots(1, 2, figsize=(14, 6))
-fig.suptitle('YOLO Models Comparison on CPU (AMD RX 6600 PC)', fontsize=16)
+fig.suptitle('YOLO Models Comparison on CPU (Laptop i5-5200U)', fontsize=16)
 
 # Plot 1: FPS comparison
 axes[0].bar(df['Model'], df['Avg_FPS'], color=['#4C72B0', '#DD8452', '#55A868'])
@@ -32,7 +32,7 @@ for i, v in enumerate(df['Avg_Confidence']):
 plt.tight_layout()
 
 # Save the plot
-output_img = "experiments/yolo_comparison_plot.png"
+output_img = "experiments/output-i5-5200u.png"
 os.makedirs("experiments", exist_ok=True)
 plt.savefig(output_img, dpi=300)
 print(f"Plot saved to {output_img}")
