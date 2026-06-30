@@ -29,14 +29,14 @@ Visualisasi *Ground Truth* dari dataset *CrowdHuman* setelah dikonversi ke forma
 ![Sanity Check - Ground Truth](../../experiments/sanity_check/273275,e99d80007220d4b6_verified.jpg)
 
 ### 3.2. Kinerja Baseline (Kecepatan vs Confidence)
-Pengujian batas dasar FPS dan tingkat *Confidence* pada GPU T4, CPU Desktop, dan Laptop.
+Pengujian batas dasar FPS dan tingkat *Confidence* pada GPU T4, CPU Desktop, dan Laptop. Hasil pengujian menunjukkan kesenjangan performa yang masif antar perangkat. Server GPU T4 mendominasi kecepatan eksekusi, sementara CPU Desktop i5-12400F masih berada dalam batas yang dapat ditoleransi untuk implementasi *edge*. Sebaliknya, CPU Low-Spec i5-5200U hanya mampu memproses di bawah 5 FPS, menggarisbawahi pentingnya perangkat keras yang memadai.
 
 **Laptop Low-Spec (i5-5200U):** ![Grafik Komparasi Laptop](../../experiments/output-i5-5200u.png)
 **Edge CPU Desktop (i5-12400F):** ![Grafik Komparasi CPU](../../experiments/output-cpu.png)
 **Server GPU (T4):** ![Grafik Komparasi GPU](../../experiments/output-colab.png)
 
 ### 3.3. Profiling Latensi NMS
-Pengukuran waktu spesifik untuk tahap *inference* murni dan *post-processing* dari 20 iterasi pengujian pada gambar kerumunan.
+Pengukuran waktu spesifik untuk tahap *inference* murni dan *post-processing* dari 20 iterasi pengujian pada gambar kerumunan. Analisis pada tabel di bawah menunjukkan bahwa meskipun arsitektur konvensional (YOLO11n) memiliki *inference* yang sangat cepat di GPU, ia tertahan oleh hambatan latensi *post-processing* (NMS) yang tinggi (5.48 ms). Sebaliknya, arsitektur *NMS-Free* (YOLO10n dan YOLO26n) sukses menekan *overhead* ini hingga nyaris nol (~0.4 ms), menjadikannya jauh lebih efisien untuk sistem *real-time*.
 
 **Tabel 1: Hasil Uji CPU Low-Spec (Laptop i5-5200U)**
 | Model | Inference (ms) | Post-Process (ms) | Karakteristik Arsitektur |
@@ -60,12 +60,14 @@ Pengukuran waktu spesifik untuk tahap *inference* murni dan *post-processing* da
 | **YOLO26n** | 12.16 | **0.44 ms** | NMS-Free |
 
 ### 3.4. Kemampuan Bawaan (Zero-Shot Evaluation)
-Pengujian performa arsitektur bawaan (tanpa *fine-tuning* spesifik *CrowdHuman*) dalam mendeteksi adegan teater padat.
+Pengujian performa arsitektur bawaan (tanpa *fine-tuning* spesifik *CrowdHuman*) dalam mendeteksi adegan teater padat. Berdasarkan visualisasi di bawah, model prapelatihan COCO standar gagal mengidentifikasi keseluruhan orang dalam kerumunan yang saling menutupi (*heavy occlusion*), hanya mampu mendeteksi sebagian kecil dari total >50 orang yang ada. Fakta ini menjadi landasan kuat mengapa proses *fine-tuning* wajib dilakukan.
+
+*   **YOLO10n (NMS-Free):** (![Zero-Shot YOLO10](../../experiments/zeroshot/TeaterAnak_YOLO10_ZeroShot.jpg))
 *   **YOLO11n (Ada NMS):** Mendeteksi 9 objek. (![Zero-Shot YOLO11](../../experiments/zeroshot/GPU-T4/yolo11n.png))
 *   **YOLO26n (NMS-Free):** Mendeteksi 12 objek. (![Zero-Shot YOLO26](../../experiments/zeroshot/GPU-T4/yolo26n.png))
 
 ### 3.5. Analisis Penskalaan Resolusi
-Dampak perubahan *input resolution* terhadap FPS dan jumlah deteksi diuji di dua lingkungan perangkat keras.
+Dampak perubahan *input resolution* terhadap FPS dan jumlah deteksi diuji di dua lingkungan perangkat keras. Analisis kurva memperlihatkan *trade-off* operasional: penurunan resolusi secara proporsional meningkatkan FPS namun mengorbankan akurasi deteksi *micro-objects* di kerumunan. Pada perangkat *Edge CPU*, resolusi `480x480` ditemukan sebagai titik seimbang (*sweet spot*) yang mampu menstabilkan FPS tanpa mendegradasi akurasi terlalu parah.
 
 **Uji CPU Low-Spec (i5-5200U):** ![Grafik Resolusi vs FPS CPU Laptop](../../experiments/resolusi_scaling_i5_5200u.png)
 **Uji CPU Desktop (i5-12400F):** ![Grafik Resolusi vs FPS CPU](../../experiments/resolusi_scaling.png)
@@ -73,6 +75,9 @@ Dampak perubahan *input resolution* terhadap FPS dan jumlah deteksi diuji di dua
 
 ### 3.6. Prototipe Sistem Counting Logic & GUI
 Sebagai pembuktian konsep kelayakan arsitektur sistem, sebuah purwarupa subsistem perhitungan (*Counting Logic*) telah dibangun dan terintegrasi sukses mendahului jadwal *fine-tuning* model.
+
+![Demo Prototipe GUI](../../experiments/counting_demo.jpg)
+
 *   **Aplikasi Desktop GUI Interaktif:** Sistem dilengkapi antarmuka visual adaptif di mana garis batas (*virtual line*) dapat digambar secara interaktif (*click & drag*) oleh pengguna, menyesuaikan dengan ragam perspektif kamera CCTV di lapangan.
 *   **State Machine & Debouncing Matematis:** Logika hitung dirombak dari sekadar deteksi irisan garis menjadi **State Machine** memori (*Lifecycle*: `TRACKING` -> `COUNTED` -> `COOLDOWN`). Digabungkan dengan kalkulasi *Cross Product Vector* untuk keakuratan 100% dari mana arah kedatangan, sistem ini terbukti berhasil menganulir potensi hitung ganda (*double-count*) akibat *oklusi* jangka pendek atau pergerakan mondar-mandir pejalan kaki di batas zona. Seluruh logika ini lulus 100% pada *Test-Driven Development* (TDD) *framework*.
 
