@@ -1,18 +1,20 @@
-from core.counting.models import Line, Point, TrackedObject, TrackState
-from core.counting.detector import LineCrossDetector
+from core.counting.models import Line, Point, TrackedObject, TrackState, Polygon
+from core.counting.detector import LineCrossDetector, PolygonDetector
 
 class PeopleCounter:
     """Manages tracking history and counts people crossing a virtual line using a robust State Machine."""
 
-    def __init__(self, virtual_line: Line, cooldown_threshold: int = 30) -> None:
-        """Initialize the counter with debouncing mechanism.
+    def __init__(self, virtual_line: Line, cooldown_threshold: int = 30, roi: Polygon = None) -> None:
+        """Initialize the counter with debouncing mechanism and optional ROI.
         
         Args:
             virtual_line: The predefined boundary line.
             cooldown_threshold: Number of frames an ID must wait before being able to be counted again.
+            roi: Optional Polygon defining the Region of Interest. Detections outside are ignored.
         """
         self.virtual_line = virtual_line
         self.cooldown_threshold = cooldown_threshold
+        self.roi = roi
         self.count_in = 0
         self.count_out = 0
         
@@ -26,6 +28,12 @@ class PeopleCounter:
             track_id: Unique identifier for the object.
             current_centroid: Current coordinate of the object's centroid.
         """
+        # Jika ROI didefinisikan, abaikan centroid di luar ROI
+        if self.roi is not None:
+            if not PolygonDetector.is_inside(self.roi, current_centroid):
+                # Jika objek berada di luar ROI, jangan update state/history
+                return
+
         if track_id not in self._tracks:
             self._tracks[track_id] = TrackedObject(id=track_id)
             

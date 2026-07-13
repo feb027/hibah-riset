@@ -1,4 +1,4 @@
-from core.counting.models import Line, Point
+from core.counting.models import Line, Point, Polygon
 
 class LineCrossDetector:
     """Mathematical service to detect if a trajectory intersects a virtual line."""
@@ -50,3 +50,29 @@ class LineCrossDetector:
             return True, "IN"
         else:
             return True, "OUT"
+
+class PolygonDetector:
+    """Mathematical service to detect if a point is inside a polygon."""
+    
+    @staticmethod
+    def is_inside(polygon: Polygon, point: Point) -> bool:
+        """Check if a point is inside a polygon using the ray casting algorithm."""
+        pts = polygon.points
+        n = len(pts)
+        if n < 3:
+            return False
+            
+        inside = False
+        p1 = pts[0]
+        for i in range(1, n + 1):
+            p2 = pts[i % n]
+            if point.y > min(p1.y, p2.y):
+                if point.y <= max(p1.y, p2.y):
+                    if point.x <= max(p1.x, p2.x):
+                        if p1.y != p2.y:
+                            xinters = (point.y - p1.y) * (p2.x - p1.x) / (p2.y - p1.y) + p1.x
+                            if p1.x == p2.x or point.x <= xinters:
+                                inside = not inside
+            p1 = p2
+            
+        return inside

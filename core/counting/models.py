@@ -14,6 +14,11 @@ class Line:
     start: Point
     end: Point
 
+@dataclass(frozen=True)
+class Polygon:
+    """Represents a polygonal Region of Interest (ROI) defined by a sequence of points."""
+    points: List[Point]
+
 class TrackState(Enum):
     """Lifecycle states of a tracked object for robust counting."""
     UNSEEN = auto()

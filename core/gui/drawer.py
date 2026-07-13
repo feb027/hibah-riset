@@ -1,4 +1,5 @@
-from core.counting.models import Point, Line
+from typing import List
+from core.counting.models import Point, Line, Polygon
 
 class LineDrawerState:
     """Manages the state of the interactive line drawing process.
@@ -50,3 +51,32 @@ class LineDrawerState:
         assert self.point2 is not None
         
         return Line(start=self.point1, end=self.point2)
+
+class PolygonDrawerState:
+    """Manages the state of drawing a polygon on the screen."""
+    def __init__(self) -> None:
+        self.points: List[Point] = []
+        self._is_complete: bool = False
+        
+    @property
+    def is_complete(self) -> bool:
+        return self._is_complete
+        
+    def add_point(self, x: int, y: int) -> None:
+        if self._is_complete:
+            self.reset()
+        self.points.append(Point(float(x), float(y)))
+        
+    def finish(self) -> None:
+        """Mark the polygon as finished/closed."""
+        if len(self.points) >= 3:
+            self._is_complete = True
+            
+    def reset(self) -> None:
+        self.points = []
+        self._is_complete = False
+        
+    def get_polygon(self) -> Polygon:
+        if not self.is_complete:
+            raise ValueError("Polygon is not complete yet.")
+        return Polygon(points=list(self.points))
