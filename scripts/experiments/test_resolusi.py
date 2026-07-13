@@ -2,9 +2,9 @@ import os
 from ultralytics import YOLO
 import matplotlib.pyplot as plt
 
-IMAGES_DIR = r"g:\semester 6\hibah-riset\models\Images"
-test_image = os.path.join(IMAGES_DIR, "273275,e99d80007220d4b6.jpg")
-OUTPUT_PLOT = r"g:\semester 6\hibah-riset\experiments\resolusi_scaling.png"
+IMAGES_DIR = r"c:\projects\hibah-riset\experiments\sanity_check"
+test_image = os.path.join(IMAGES_DIR, "273275,e99d80007220d4b6_verified.jpg")
+OUTPUT_PLOT = r"c:\projects\hibah-riset\experiments\resolusi_scaling_i5_5200u.png"
 
 def main():
     resolutions = [256, 320, 416, 480, 512, 640]

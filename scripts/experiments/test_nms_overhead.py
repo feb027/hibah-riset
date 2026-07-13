@@ -2,8 +2,8 @@ import os
 from ultralytics import YOLO
 
 # Kita pakai gambar teater anak-anak yang paling padat
-IMAGES_DIR = r"g:\semester 6\hibah-riset\models\Images"
-test_image = os.path.join(IMAGES_DIR, "273275,e99d80007220d4b6.jpg")
+IMAGES_DIR = r"c:\projects\hibah-riset\experiments\sanity_check"
+test_image = os.path.join(IMAGES_DIR, "273275,e99d80007220d4b6_verified.jpg")
 
 models = ["yolo11n.pt", "yolov10n.pt", "yolo26n.pt"]
 
