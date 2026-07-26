@@ -27,47 +27,107 @@ from pathlib import Path
 
 import numpy as np
 
-__all__ = ["load_odgt_ground_truth", "evaluate_detections", "FPPI_REFERENCE_POINTS"]
+__all__ = [
+    "load_odgt_ground_truth",
+    "subset_ground_truth",
+    "evaluate_detections",
+    "FPPI_REFERENCE_POINTS",
+]
 
 # Sembilan titik FPPI berjarak logaritmik, sesuai protokol Caltech/CrowdHuman.
 FPPI_REFERENCE_POINTS = np.logspace(-2.0, 0.0, 9)
 
 
 def load_odgt_ground_truth(odgt_path, exclude_ignore_from_gt=True):
-    """Baca .odgt menjadi {image_id: {"boxes": ndarray, "ignore": ndarray}}.
+    """Baca .odgt menjadi {image_id: {"boxes", "ignore", "attrs"}}.
 
     Kotak dikembalikan dalam format xyxy. Kotak bertanda ignore dipisahkan ke
     kunci "ignore" agar dapat diperlakukan netral saat pencocokan, bukan sebagai
     target yang wajib ditemukan.
+
+    "attrs" memuat atribut per kotak untuk analisis terpisah:
+
+    - `visibility` = luas vbox dibagi luas fbox. CrowdHuman menganotasi kotak
+      badan penuh (fbox) sekaligus kotak bagian yang terlihat (vbox), sehingga
+      rasionya adalah ukuran oklusi yang sudah tersedia di anotasi dan tidak
+      perlu diperkirakan. Bernilai 1,0 bila vbox tidak tersedia.
+    - `height` = tinggi fbox dalam piksel. Untuk pejalan kaki, tinggi lebih
+      mewakili jarak ke kamera daripada luas kotak.
     """
     ground_truth = {}
 
     with open(odgt_path, "r") as f:
         for line in f:
             record = json.loads(line)
-            positives, ignored = [], []
+            positives, ignored, visibility, height = [], [], [], []
 
             for gt in record.get("gtboxes", []):
-                if gt["tag"] != "person":
-                    # Tag selain person (mis. "mask") adalah region ignore bawaan.
-                    x, y, w, h = gt["fbox"]
-                    ignored.append([x, y, x + w, y + h])
-                    continue
-
                 x, y, w, h = gt["fbox"]
                 box = [x, y, x + w, y + h]
+
+                if gt["tag"] != "person":
+                    # Tag selain person (mis. "mask") adalah region ignore bawaan.
+                    ignored.append(box)
+                    continue
+
                 is_ignored = gt.get("extra", {}).get("ignore", 0) == 1
                 if is_ignored and exclude_ignore_from_gt:
                     ignored.append(box)
+                    continue
+
+                positives.append(box)
+                height.append(max(h, 0.0))
+
+                full_area = max(w, 0.0) * max(h, 0.0)
+                vbox = gt.get("vbox")
+                if vbox and full_area > 0:
+                    vis_area = max(vbox[2], 0.0) * max(vbox[3], 0.0)
+                    visibility.append(min(vis_area / full_area, 1.0))
                 else:
-                    positives.append(box)
+                    visibility.append(1.0)
 
             ground_truth[record["ID"]] = {
                 "boxes": np.array(positives, dtype=np.float64).reshape(-1, 4),
                 "ignore": np.array(ignored, dtype=np.float64).reshape(-1, 4),
+                "attrs": {
+                    "visibility": np.array(visibility, dtype=np.float64),
+                    "height": np.array(height, dtype=np.float64),
+                },
             }
 
     return ground_truth
+
+
+def subset_ground_truth(ground_truth, mask_fn):
+    """Batasi target ke subkelompok, sisanya dijadikan region ignore.
+
+    `mask_fn(attrs)` mengembalikan mask boolean atas kotak satu citra.
+
+    Kotak di luar kelompok TIDAK boleh sekadar dihilangkan. Kalau dihilangkan,
+    deteksi yang mengenai orang-orang itu berbalik menjadi false positive dan
+    presisi kelompok yang sedang dinilai runtuh, padahal deteksinya benar.
+    Memindahkannya ke status ignore membuat deteksi tersebut netral, sehingga
+    metrik yang keluar benar-benar menggambarkan kelompok yang dimaksud.
+    """
+    subset = {}
+
+    for image_id, gt in ground_truth.items():
+        boxes, ignore, attrs = gt["boxes"], gt["ignore"], gt["attrs"]
+
+        if len(boxes) == 0:
+            subset[image_id] = {"boxes": boxes, "ignore": ignore, "attrs": attrs}
+            continue
+
+        mask = np.asarray(mask_fn(attrs), dtype=bool)
+        outside = boxes[~mask]
+
+        subset[image_id] = {
+            "boxes": boxes[mask],
+            "ignore": np.vstack([ignore, outside]) if len(outside) else ignore,
+            "attrs": {k: v[mask] for k, v in attrs.items()},
+        }
+
+    return subset
 
 
 def _iou_matrix(boxes_a, boxes_b):
@@ -171,8 +231,10 @@ def evaluate_detections(predictions, ground_truth, iou_thr=0.5, ioa_thr=0.5):
         all_scores.append(s)
         all_labels.append(lab)
 
+    kosong = {"mr2": 1.0, "ap50": 0.0, "recall_max": 0.0, "n_gt": n_gt, "n_images": n_images}
+
     if not all_scores or n_gt == 0:
-        return {"mr2": 1.0, "ap50": 0.0, "recall_max": 0.0, "n_gt": n_gt, "n_images": n_images}
+        return kosong
 
     scores = np.concatenate(all_scores)
     labels = np.concatenate(all_labels)
@@ -180,6 +242,13 @@ def evaluate_detections(predictions, ground_truth, iou_thr=0.5, ioa_thr=0.5):
     # Buang deteksi yang jatuh di region ignore sebelum akumulasi.
     keep = labels >= 0
     scores, labels = scores[keep], labels[keep]
+
+    # Bisa habis seluruhnya saat menilai subkelompok: kotak di luar kelompok
+    # berstatus ignore, sehingga model yang hanya mendeteksi orang di luar
+    # kelompok tidak menyisakan satu pun deteksi yang dihitung. Itu berarti
+    # tidak ada target kelompok ini yang ditemukan - miss rate penuh, bukan galat.
+    if len(scores) == 0:
+        return kosong
 
     order = np.argsort(-scores)
     labels = labels[order]
