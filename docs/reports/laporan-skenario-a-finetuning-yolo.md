@@ -11,7 +11,7 @@ Empat arsitektur YOLO telah di-*fine-tune* pada dataset CrowdHuman dan dievaluas
 1. **Pada akurasi, ketiga arsitektur tier nano setara.** Rentang mAP@0.5:0.95 hanya 0,0058 — di bawah ambang yang dapat dibedakan dari variasi acak. Argumen pemilihan detektor karena itu tidak dapat berdiri di atas akurasi agregat.
 2. **Arsitektur *NMS-free* memangkas latensi *post-processing* 2,9×** dengan pemisahan distribusi yang utuh, dan biayanya **datar** terhadap kepadatan kerumunan.
 3. **Peringkat kecepatan berubah menurut kombinasi perangkat dan runtime.** YOLO26n tercepat pada jalur CPU+ONNX, tetapi bukan pada CPU+PyTorch maupun GPU+PyTorch. Ini **bukan temuan baru** — fenomenanya dikenal sebagai *latency monotonicity* yang lemah lintas platform, dan angka CPU-nya sendiri sudah dipublikasikan vendor. Disajikan sebagai verifikasi independen pada bobot hasil fine-tuning, bukan kontribusi (Bagian 7.4).
-4. **Pemotongan tepi bingkai adalah sumbu kesulitan yang dominan** — jauh melampaui oklusi. Orang yang kotak badan penuhnya menembus tepi citra (18,8% anotasi) mengalami penurunan recall 21 poin dan AP 31 poin, yaitu **2,9–3,7 kali lipat** biaya oklusi berat. Ini berimplikasi langsung pada penempatan garis hitung.
+4. **Pemotongan tepi bingkai adalah sumbu kesulitan yang dominan** — jauh melampaui oklusi. Orang yang kotak badan penuhnya menembus tepi citra (15,3% anotasi) mengalami penurunan recall 20–21 poin dan AP 28–31 poin, yaitu **1,9–2,5 kali lipat** biaya oklusi berat. Ini berimplikasi langsung pada penempatan garis hitung.
 5. **Terdapat lantai *under-count* struktural sebesar 7,4–10,0%** yang terkunci di lapisan detektor dan tidak dapat diperbaiki oleh *tracker* maupun *counting logic* di hilirnya.
 6. **Tidak ada keunggulan akurasi yang dapat dikaitkan dengan arsitektur *NMS-free*.** Selisih pada batas atas recall merupakan artefak titik ukur, bukan kualitas deteksi (Bagian 6.3).
 
@@ -227,74 +227,102 @@ Sebagai pembanding, baseline pada paper CrowdHuman asli mencapai MR⁻² sekitar
 
 ### 6.5 Analisis Terpisah: Pemotongan Bingkai, Oklusi, dan Ukuran Objek
 
-Recall agregat mencampur orang yang berdiri sendirian dengan orang yang hanya tampak kepalanya. Bagian ini memisahkannya, dijalankan pada subset 500 citra (9.918 kotak target) melalui `scripts/experiments/eval_breakdown.py`.
+Recall agregat mencampur orang yang berdiri sendirian dengan orang yang hanya tampak kepalanya. Bagian ini memisahkannya, dijalankan pada **seluruh 4.370 citra validasi (99.481 target)** melalui `scripts/experiments/eval_breakdown.py`.
+
+Sebaran target:
+
+| Dimensi | Kelompok | Jumlah | Proporsi |
+|---|---|---|---|
+| Pemotongan | utuh dalam bingkai | 84.284 | 84,7% |
+| | terpotong tepi | 15.197 | **15,3%** |
+| Oklusi | terlihat penuh | 62.881 | 63,2% |
+| | teroklusi sebagian | 22.382 | 22,5% |
+| | teroklusi berat | 14.218 | 14,3% |
+| Ukuran | besar (>=150 px) | 52.697 | 53,0% |
+| | sedang (50-150 px) | 36.528 | 36,7% |
+| | kecil (<50 px) | 10.256 | 10,3% |
+
+**Catatan konfigurasi.** Angka pada bagian ini berasal dari jalan pengukuran dengan ambang NMS 0,9. Ambang itu **tidak berpengaruh pada ketiga arsitektur *NMS-free***, sehingga angka YOLOv10n, YOLO26n, dan YOLO26s sahih apa adanya. Angka **YOLOv11n terpengaruh** dan ditandai tanda bintang; jalan pengukuran set penuh pada konfigurasi bawaan (ambang NMS 0,7) belum dijalankan (lihat Batasan).
 
 #### 6.5.1 Pemotongan Bingkai adalah Sumbu Kesulitan Dominan
 
 | Arsitektur | Recall utuh | Recall terpotong | AP utuh | AP terpotong |
 |---|---|---|---|---|
-| YOLOv10n | 0,9558 | **0,7432** | 0,8732 | **0,5623** |
-| YOLO26n | 0,9513 | 0,7426 | 0,8722 | 0,5617 |
-| YOLO26s | 0,9642 | 0,7517 | 0,9081 | 0,5813 |
-| YOLOv11n | 0,9393 | 0,7174 | 0,8729 | 0,5446 |
+| YOLOv10n | 0,9456 | **0,7445** | 0,8534 | **0,5695** |
+| YOLO26n | 0,9431 | 0,7438 | 0,8520 | 0,5670 |
+| YOLO26s | 0,9584 | 0,7495 | 0,8952 | 0,5863 |
+| YOLOv11n* | 0,9177 | 0,7365 | 0,7514 | 0,5493 |
 
-*n = 8.053 utuh, 1.865 terpotong (18,8%).*
+Orang yang kotak badan penuhnya menembus tepi citra mengalami **penurunan recall 20-21 poin dan AP 28-31 poin**, konsisten di seluruh arsitektur.
 
-Orang yang kotak badan penuhnya menembus tepi citra mengalami **penurunan recall 21–22 poin dan AP 31–33 poin**. Efeknya konsisten di keempat arsitektur dan berukuran besar — jauh di atas seluruh selisih antar model dalam laporan ini.
+Dibandingkan biaya oklusi berat pada kelompok yang utuh dalam bingkai (12,3-15,3 poin AP, Bagian 6.5.2), **pemotongan bingkai 1,86-2,50 kali lebih mahal** (YOLOv10n 1,95x; YOLO26n 1,86x; YOLO26s 2,50x).
+
+> **Koreksi terhadap versi sebelumnya.** Laporan versi awal mencantumkan rasio 2,85-3,67x berdasarkan subset 500 citra. Pada set penuh rasionya turun menjadi 1,86-2,50x, karena biaya oklusi ternyata jauh lebih besar daripada yang terukur di subset (YOLOv10n: 9,3 poin di subset menjadi 14,5 poin di set penuh). **Angka set penuh yang berlaku.**
 
 **Posisi terhadap literatur.** Analisis kinerja yang distratifikasi menurut *truncation* **bukan metodologi baru**. Hoiem et al. [S043] memformalkannya sejak 2012 dengan `truncated` dan `occluded` sebagai atribut terpisah; KITTI [S044] menjadikan rasio truncation bagian formal definisi tingkat kesulitan Easy/Moderate/Hard; dan PASCAL VOC [S045] sudah menyediakan flag `truncated` sejak 2006. Laporan ini karena itu **tidak mengklaim kebaruan metodologis**. Yang belum ditemukan pembandingnya adalah **besaran spesifiknya pada CrowdHuman dengan anotasi full-body**, beserta implikasinya bagi penempatan zona hitung.
 
-**Penjelasan mekanistik harus hati-hati.** Dugaan yang paling jelas — bahwa biayanya tinggi karena titik tengah kotak amodal jatuh di luar bingkai — **tidak dapat dipakai**. Zhou et al. [S046] sudah menyatakan persis masalah itu dan menyelesaikannya dengan mengganti kepala prediksi menjadi jarak ke empat sisi, dan kepala *anchor-free* pada YOLOv8/v10/v11/v26 yang dipakai di sini **sudah memakai formulasi tersebut**. Penjelasan yang lebih tahan uji: regresi harus mengekstrapolasi ke wilayah yang sama sekali tidak memiliki bukti piksel, ditambah efek batas dari *zero padding* yang membuat lapisan konvolusi menyandikan lokasi absolut [S047].
+**Penjelasan mekanistik harus hati-hati.** Dugaan yang paling jelas - bahwa biayanya tinggi karena titik tengah kotak amodal jatuh di luar bingkai - **tidak dapat dipakai**. Zhou et al. [S046] sudah menyatakan persis masalah itu dan menyelesaikannya dengan mengganti kepala prediksi menjadi jarak ke empat sisi, dan kepala *anchor-free* pada YOLOv8/v10/v11/v26 yang dipakai di sini **sudah memakai formulasi tersebut**. Penjelasan yang lebih tahan uji: regresi harus mengekstrapolasi ke wilayah yang sama sekali tidak memiliki bukti piksel, ditambah efek batas dari *zero padding* yang membuat lapisan konvolusi menyandikan lokasi absolut [S047].
 
-Perlu dicatat pula bahwa laporan ini **belum memisahkan "terpotong" dari "kebetulan berada dekat tepi"**. Efek posisi terhadap kinerja detektor terdokumentasi terpisah dari truncation, sehingga kontrol untuk itu belum tersedia di sini (lihat Batasan).
+Perlu dicatat pula bahwa laporan ini **belum memisahkan "terpotong" dari "kebetulan berada dekat tepi"** (lihat Batasan).
 
-Dibandingkan biaya oklusi berat pada kelompok yang utuh dalam bingkai (8,9–11,0 poin AP), **pemotongan bingkai 2,85–3,67 kali lebih mahal** (YOLOv10n 3,33x; YOLOv11n 2,99x; YOLO26n 2,85x; YOLO26s 3,67x).
+**Implikasi operasional langsung.** Pada kamera pintu masuk atau gerbang, garis hitung dan RoI lazim ditempatkan dekat tepi bingkai - justru di wilayah dengan kinerja detektor terburuk. Rekomendasi untuk Skenario D dan E: **tempatkan RoI dan garis potong menjauh dari tepi bingkai**, atau pilih sudut kamera yang menempatkan zona hitung di bagian tengah citra. Ini perbaikan tanpa biaya komputasi, diperoleh sebelum satu baris kode *counting logic* pun diubah.
 
-**Implikasi operasional langsung.** Pada kamera pintu masuk atau gerbang, garis hitung dan RoI lazim ditempatkan dekat tepi bingkai — justru di wilayah dengan kinerja detektor terburuk. Rekomendasi untuk Skenario D dan E: **tempatkan RoI dan garis potong menjauh dari tepi bingkai**, atau pilih sudut kamera yang menempatkan zona hitung di bagian tengah citra. Ini perbaikan tanpa biaya komputasi, dan diperoleh sebelum satu baris kode *counting logic* pun diubah.
-
-#### 6.5.2 Biaya Oklusi
+#### 6.5.2 Biaya Oklusi, dan Artefak yang Menyertainya
 
 Diukur pada kotak yang utuh dalam bingkai, sehingga terpisah dari efek 6.5.1:
 
-| Arsitektur | AP terlihat penuh | AP teroklusi sebagian | AP teroklusi berat |
-|---|---|---|---|
-| YOLOv10n | 0,9092 | 0,8268 | 0,8158 |
-| YOLO26n | 0,9123 | 0,8289 | 0,8034 |
-| YOLO26s | 0,9382 | 0,8740 | 0,8491 |
-| YOLOv11n | 0,9083 | 0,8283 | 0,7984 |
+| Arsitektur | AP terlihat penuh | AP teroklusi sebagian | AP teroklusi berat | Biaya oklusi |
+|---|---|---|---|---|
+| YOLOv10n | 0,8966 | 0,7974 | 0,7511 | -14,5 poin |
+| YOLO26n | 0,8981 | 0,7987 | 0,7452 | -15,3 poin |
+| YOLO26s | 0,9309 | 0,8576 | 0,8074 | -12,3 poin |
+| YOLOv11n* | 0,8274 | 0,7245 | 0,7066 | -12,1 poin |
 
-AP menurun monoton pada keempat model; oklusi berat memangkas **8,9–11,0 poin AP**. Inilah angka kuantitatif pertama untuk pernyataan masalah inti proposal.
+AP menurun monoton pada seluruh arsitektur; oklusi berat memangkas **12,3-15,3 poin AP**. Inilah angka kuantitatif pertama untuk pernyataan masalah inti proposal.
 
-**Peringatan metodologis yang wajib menyertai tabel ini.** Pada metrik `recall_maks`, urutan kelompok **tidak** monoton — teroklusi berat tercatat setara atau sedikit di atas teroklusi sebagian. Selisihnya 1,5 ± 0,9 poin, dan hanya 1 dari 4 model melewati dua simpangan baku, sehingga **kedua kelompok itu tidak dapat dibedakan** pada metrik tersebut.
+**Artefak yang wajib dinyatakan: `recall_maks` tidak dapat dipakai di sini.** Pada ambang pencocokan 0,5, urutan kelompok terbalik - teroklusi berat tercatat di atas teroklusi sebagian di seluruh arsitektur.
 
-Terdapat penjelasan struktural yang belum terbantahkan: untuk dua kotak amodal setara dengan cakupan *c*, IoU keduanya = *c*/(2−*c*). Ambang kelompok teroklusi berat (visibility < 0,35, yaitu *c* > 0,65) menghasilkan IoU 0,48–0,54, **berimpit dengan ambang pencocokan 0,5**. Kelompok ini karena itu nyaris secara definisi memuat target yang cukup bertindih dengan penutupnya sehingga deteksi atas si penutup dapat terkredit sebagai *true positive* bagi target. Hipotesis ini dapat diuji dengan menaikkan ambang pencocokan ke 0,75 (opsi `--iou`); bila anomali runtuh, penyebabnya terkonfirmasi.
+Penyebabnya struktural dan dapat dihitung: untuk dua kotak amodal setara dengan cakupan *c*, IoU keduanya = *c*/(2-*c*). Ambang kelompok teroklusi berat (visibility < 0,35, yaitu *c* > 0,65) menghasilkan IoU 0,48-0,54, **berimpit dengan ambang pencocokan 0,5**. Kelompok ini karena itu nyaris secara definisi memuat target yang cukup bertindih dengan penutupnya sehingga **deteksi atas si penutup terkredit sebagai *true positive* bagi target**.
 
-Hipotesis ini **sudah diuji dan terkonfirmasi**: pada ambang pencocokan 0,75, urutan ketiga kelompok berbalik menjadi menurun monoton di keempat model (selisih *berat* dikurangi *sebagian*: −0,32 / −0,54 / −2,05 / −1,39, dari sebelumnya +1,61 / +1,25 / +0,42 / +0,86 pada ambang 0,5). Ramalannya spesifik, dapat dijatuhkan, dan bertahan.
+Hipotesis itu menghasilkan ramalan yang dapat dijatuhkan: naikkan ambang pencocokan di atas 0,54, dan urutannya harus pulih. **Diuji pada ambang 0,75, dan pulih di seluruh arsitektur:**
 
-**Konsekuensinya: `recall_maks` pada ambang 0,5 tidak layak dipakai untuk analisis per tingkat oklusi.** Gunakan AP, atau naikkan ambang pencocokan.
+| Arsitektur | Selisih berat - sebagian @ IoU 0,50 | @ IoU 0,75 |
+|---|---|---|
+| YOLOv10n | +1,61 (terbalik) | **-0,32** (menurun) |
+| YOLO26n | +1,25 (terbalik) | **-0,54** (menurun) |
+| YOLO26s | +0,42 (terbalik) | **-2,05** (menurun) |
+| YOLOv11n | +0,86 (terbalik) | **-1,39** (menurun) |
 
-**MR⁻² per subkelompok juga tidak layak dikutip.** Tabel per kelompok memberi hasil yang absurd di permukaan — YOLO26n mencatat MR⁻² 0,6161 pada "terlihat penuh" tetapi 0,4439 pada "teroklusi berat", seolah orang yang tertutup berat lebih mudah dideteksi. Penyebabnya artefak protokol: karena kotak di luar kelompok dipindah ke status *ignore*, subkelompok kecil menyingkirkan sebagian besar deteksi sebagai netral sehingga FPPI-nya rendah palsu. **MR⁻² tidak dapat dibandingkan antar subkelompok dengan jumlah target dan fraksi ignore yang berbeda**; simpan metrik itu untuk angka agregat protokol resmi (Bagian 6.1).
+Tandanya berbalik di keempat model. **Hipotesis kredit-okluder terkonfirmasi**, dan konsekuensinya: untuk analisis per tingkat oklusi gunakan AP, bukan `recall_maks` pada ambang 0,5.
 
-Justru karena artefak ini, temuan pemotongan bingkai menjadi lebih kuat: subkelompok "terpotong tepi" berukuran **lebih kecil** (15.197 lawan 84.284), sehingga artefak seharusnya membuat MR⁻²-nya tampak lebih baik. Nyatanya tetap jauh lebih buruk. **Efeknya bertahan melawan arah bias artefaknya sendiri.**
+**MR^-2 per subkelompok juga tidak layak dikutip.** Tabel per kelompok memberi hasil absurd - YOLO26n mencatat MR^-2 0,6161 pada "terlihat penuh" tetapi 0,4439 pada "teroklusi berat", seolah orang yang tertutup berat lebih mudah dideteksi. Penyebabnya artefak normalisasi: karena kotak di luar kelompok dipindah ke status *ignore*, subkelompok kecil menyingkirkan sebagian besar deteksi sebagai netral sehingga FPPI-nya rendah palsu. Simpan MR^-2 untuk angka agregat protokol resmi (Bagian 6.1).
+
+Justru karena artefak ini, temuan pemotongan bingkai menguat: subkelompok "terpotong tepi" berukuran **lebih kecil** (15.197 lawan 84.284), sehingga artefak seharusnya membuat MR^-2-nya tampak lebih baik. Nyatanya tetap jauh lebih buruk. **Efeknya bertahan melawan arah bias artefaknya sendiri.**
 
 #### 6.5.3 Objek Kecil
 
-| Arsitektur | AP besar (≥150 px) | AP sedang (50–150 px) | AP kecil (<50 px) |
+| Arsitektur | AP besar (>=150 px) | AP sedang (50-150 px) | AP kecil (<50 px) |
 |---|---|---|---|
-| YOLO26s | 0,8335 | 0,8616 | **0,5800** |
-| YOLO26n | 0,8141 | 0,8035 | 0,4566 |
-| YOLOv10n | 0,8153 | 0,8072 | 0,4330 |
-| YOLOv11n | 0,8108 | 0,8018 | 0,4326 |
+| YOLO26s | 0,8393 | 0,8516 | **0,6635** |
+| YOLO26n | 0,8166 | 0,7957 | 0,5427 |
+| YOLOv10n | 0,8193 | 0,7979 | 0,5187 |
+| YOLOv11n* | 0,7704 | 0,6827 | 0,4207 |
 
-*n = 6.372 / 2.985 / 561.*
-
-AP pada orang berukuran kecil **anjlok sekitar 45% relatif**. Bersama 6.5.1, inilah sumber utama lantai *under-count* yang tercatat pada Bagian 6.1.
+AP pada orang berukuran kecil **anjlok sekitar 35% relatif**. Bersama 6.5.1, inilah sumber utama lantai *under-count* pada Bagian 6.1.
 
 Arah perbaikan yang ditunjukkan bersifat operasional, bukan arsitektural: untuk kamera yang menyorot area jauh, menaikkan resolusi masukan pada zona jauh lebih tepat sasaran daripada memperbesar model.
 
-YOLO26n mencatat AP objek kecil tertinggi di tier nano (0,4566 lawan 0,4330 dan 0,4326), yang searah dengan klaim ProgLoss/STAL pada [S002]. Namun kelompok ini hanya memuat 561 kotak dari satu *run*, sehingga statusnya **indikasi, belum bukti**.
+YOLO26n mencatat AP objek kecil tertinggi di tier nano (0,5427 lawan 0,5187), searah dengan klaim ProgLoss/STAL pada [S002]. **Selisih ini tereplikasi**: pada subset 561 kotak selisihnya +0,0236, pada set penuh 10.256 kotak selisihnya +0,0240 - nyaris identik pada sampel 18 kali lebih besar. Statusnya karena itu naik dari indikasi menjadi **dukungan empiris**, meskipun tetap berasal dari satu *seed*.
 
-Perbedaan yang jauh lebih besar datang dari kapasitas: YOLO26s mengungguli YOLO26n sebesar 12,3 poin AP pada objek kecil, sekitar lima kali lipat seluruh selisih antar arsitektur pada tier yang sama.
+Perbedaan yang jauh lebih besar datang dari kapasitas: YOLO26s mengungguli YOLO26n sebesar **12,1 poin AP** pada objek kecil, sekitar lima kali lipat seluruh selisih antar arsitektur pada tier yang sama.
+
+#### 6.5.4 Ambang NMS Bukan Perancu yang Menyelamatkan
+
+Kekhawatiran metodologis bahwa perbandingan "arsitektur ber-NMS lawan *NMS-free*" bercampur dengan "hiperparameter tak ditala" diuji langsung dengan menaikkan ambang NMS dari nilai bawaan 0,7 menjadi 0,9.
+
+Ketiga arsitektur *NMS-free* berfungsi sebagai kontrol karena tidak terpengaruh parameter itu. Hasilnya: pada ambang 0,9, YOLOv11n tertinggal **10,2 poin AP** dari YOLOv10n, padahal pada ambang bawaan 0,7 keduanya praktis setara.
+
+**Menaikkan ambang NMS memperburuk, bukan memperbaiki.** Nilai bawaan 0,7 karena itu bukan penyebab ketertinggalan YOLOv11n - kalau ada, setelan bawaan justru menguntungkannya. Hanya satu arah yang diuji; ambang yang lebih rendah belum dicoba.
 
 ---
 
@@ -488,14 +516,25 @@ Empat konsekuensi langsung bagi tahap berikutnya:
 
 ## 10. Langkah Selanjutnya
 
-Diurutkan menurut nilai per satuan usaha:
+### 10.1 Sudah Diselesaikan
 
-1. **Uji ambang pencocokan 0,75** (`--iou 0.75`) — satu jalan inferensi, memisahkan hipotesis kredit-okluder dari efek oklusi sesungguhnya (Bagian 6.5.2). Uji dengan daya pembeda tertinggi per satuan usaha.
-2. **Sapu ambang NMS** (`--nms-iou`) pada YOLOv11n — memisahkan "arsitektur ber-NMS" dari "hiperparameter tak ditala".
-3. **Ulangi breakdown pada 4.370 citra penuh**, agar kelompok objek kecil melampaui 561 kotak.
-4. **Skenario B — evaluasi tracker.** Belum tersentuh. Lapisan ini yang menentukan stabilitas identitas dan karenanya menentukan galat hitungan.
-5. **Kuantisasi INT8 dan pengukuran ulang CPU** — sejalan dengan peta jalan tahun keempat proposal.
-6. **Pengulangan tiga *seed*** pada 60 epoch — kini naik prioritas dibanding penilaian sebelumnya, karena beberapa selisih yang menarik berukuran 1–2 poin sedangkan sebar antar model sekeluarga mencapai 1,7 poin. Tanpa estimasi varians, selisih sebesar itu tidak dapat diklaim.
+Tiga uji yang sebelumnya tercantum sebagai pekerjaan tertunda kini sudah dijalankan, dan hasilnya sudah masuk ke laporan ini:
+
+| Uji | Hasil | Bagian |
+|---|---|---|
+| Ambang pencocokan 0,75 | Hipotesis kredit-okluder **terkonfirmasi**; urutan kelompok oklusi pulih di keempat arsitektur | 6.5.2 |
+| Sapuan ambang NMS ke 0,9 | Nilai bawaan 0,7 **bukan** penyebab ketertinggalan YOLOv11n; menaikkannya justru memperburuk 10,2 poin | 6.5.4 |
+| Breakdown pada 4.370 citra penuh | Kelompok objek kecil naik dari 561 ke 10.256 kotak; selisih YOLO26n tereplikasi; **rasio pemotongan dikoreksi** dari 2,85-3,67x menjadi 1,86-2,50x | 6.5 |
+| Validasi akurasi model ONNX | Selisih nol pada keempat arsitektur; kecepatan ONNX tidak dibeli dengan akurasi | 7.2 |
+
+### 10.2 Yang Tersisa, Diurutkan Menurut Nilai per Satuan Usaha
+
+1. **Jalan pengukuran set penuh pada konfigurasi bawaan** (ambang NMS 0,7, ambang pencocokan 0,5). Seluruh angka YOLOv11n di Bagian 6.5 berasal dari jalan dengan ambang NMS 0,9 sehingga tidak sebanding dengan ketiga arsitektur lain. Satu jalan inferensi menutup celah ini dan menghasilkan tabel kanonik yang bersih.
+2. **Uji kanvas-padding.** Tempelkan citra pada kanvas berpadding sehingga kotak yang tadinya menembus tepi menjadi utuh, lalu ukur ulang. Bila recall pulih, penyebabnya memang pemotongan; bila tidak, penyebabnya efek batas arsitektural [S047]. Ini satu-satunya uji yang memisahkan dua penjelasan tersebut, dan temuan utama laporan bergantung padanya.
+3. **Sel GPU + ONNX** untuk melengkapi matriks perangkat x runtime (Bagian 7.4), sehingga konfound perangkat-lawan-runtime terurai penuh.
+4. **Skenario B - evaluasi tracker.** Belum tersentuh. Lapisan ini yang menentukan stabilitas identitas dan karenanya menentukan galat hitungan, sekaligus menjadi lapisan *deep learning* kedua dalam sistem.
+5. **Pengulangan tiga *seed*** pada 60 epoch. Prioritasnya naik dibanding penilaian awal: beberapa selisih yang menarik berukuran 1-2 poin sedangkan sebar antar model sekeluarga mencapai 1,7 poin, sehingga tanpa estimasi varians selisih sebesar itu tidak dapat diklaim sama sekali.
+6. **Kuantisasi INT8 dan pengukuran ulang CPU** - sejalan dengan peta jalan tahun keempat proposal.
 
 ---
 
@@ -511,7 +550,9 @@ Diurutkan menurut nilai per satuan usaha:
 | Penskalaan resolusi | `experiments/resolusi_scaling_results.csv` |
 | Audit kualitas anotasi | `scripts/data_prep/check_label_quality.py` |
 | Implementasi MR⁻² | `src/eval_mr2.py` |
-| Analisis oklusi, ukuran, pemotongan | `experiments/breakdown_results.csv` |
+| Analisis oklusi, ukuran, pemotongan (set penuh) | `experiments/breakdown_nms90.csv` |
+| Uji ambang pencocokan 0,75 (set penuh) | `experiments/breakdown_iou75.csv` |
+| Analisis awal (subset 500, dipertahankan untuk jejak koreksi) | `experiments/breakdown_results.csv` |
 | Validasi akurasi model ONNX | `experiments/crowdhuman_protocol_onnx.csv` |
 | Overlay deteksi kualitatif | `experiments/zeroshot/` |
 

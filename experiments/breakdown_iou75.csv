@@ -1,0 +1,45 @@
+arsitektur,nms_free,dimensi,kelompok,recall_maks,ap50,mr2,n_gt,iou_cocok,nms_iou
+yolov10n,ya,oklusi,terlihat penuh,0.6973,0.5418,0.859,62881,0.75,0.7
+yolov10n,ya,oklusi,teroklusi sebagian,0.5723,0.3775,0.8284,22382,0.75,0.7
+yolov10n,ya,oklusi,teroklusi berat,0.5805,0.3431,0.807,14218,0.75,0.7
+yolov10n,ya,ukuran,besar (dekat),0.712,0.513,0.8712,52697,0.75,0.7
+yolov10n,ya,ukuran,sedang,0.6372,0.44,0.8353,36528,0.75,0.7
+yolov10n,ya,ukuran,kecil (jauh),0.394,0.1654,0.8981,10256,0.75,0.7
+yolov10n,ya,pemotongan,utuh dalam bingkai,0.7094,0.5488,0.8166,84284,0.75,0.7
+yolov10n,ya,pemotongan,terpotong tepi,0.3332,0.1649,0.9124,15197,0.75,0.7
+yolov10n,ya,oklusi murni,terlihat penuh (utuh),0.773,0.6564,0.6838,51549,0.75,0.7
+yolov10n,ya,oklusi murni,teroklusi sebagian (utuh),0.6125,0.4176,0.7912,19784,0.75,0.7
+yolov10n,ya,oklusi murni,teroklusi berat (utuh),0.6093,0.3622,0.7877,12951,0.75,0.7
+yolov11n,tidak,oklusi,terlihat penuh,0.647,0.5289,0.862,62881,0.75,0.7
+yolov11n,tidak,oklusi,teroklusi sebagian,0.5061,0.361,0.8262,22382,0.75,0.7
+yolov11n,tidak,oklusi,teroklusi berat,0.5028,0.3256,0.8069,14218,0.75,0.7
+yolov11n,tidak,ukuran,besar (dekat),0.6622,0.5029,0.8743,52697,0.75,0.7
+yolov11n,tidak,ukuran,sedang,0.5673,0.4249,0.8319,36528,0.75,0.7
+yolov11n,tidak,ukuran,kecil (jauh),0.3293,0.1622,0.8912,10256,0.75,0.7
+yolov11n,tidak,pemotongan,utuh dalam bingkai,0.6452,0.5329,0.8091,84284,0.75,0.7
+yolov11n,tidak,pemotongan,terpotong tepi,0.3045,0.1606,0.9135,15197,0.75,0.7
+yolov11n,tidak,oklusi murni,terlihat penuh (utuh),0.7172,0.6427,0.6697,51549,0.75,0.7
+yolov11n,tidak,oklusi murni,teroklusi sebagian (utuh),0.5423,0.4003,0.7873,19784,0.75,0.7
+yolov11n,tidak,oklusi murni,teroklusi berat (utuh),0.5284,0.3437,0.7883,12951,0.75,0.7
+yolo26n,ya,oklusi,terlihat penuh,0.6922,0.5388,0.8595,62881,0.75,0.7
+yolo26n,ya,oklusi,teroklusi sebagian,0.5681,0.3676,0.8354,22382,0.75,0.7
+yolo26n,ya,oklusi,teroklusi berat,0.573,0.3308,0.8149,14218,0.75,0.7
+yolo26n,ya,ukuran,besar (dekat),0.7094,0.5098,0.8724,52697,0.75,0.7
+yolo26n,ya,ukuran,sedang,0.6287,0.4274,0.8434,36528,0.75,0.7
+yolo26n,ya,ukuran,kecil (jauh),0.388,0.1716,0.8922,10256,0.75,0.7
+yolo26n,ya,pemotongan,utuh dalam bingkai,0.7031,0.5407,0.8198,84284,0.75,0.7
+yolo26n,ya,pemotongan,terpotong tepi,0.3332,0.1682,0.9098,15197,0.75,0.7
+yolo26n,ya,oklusi murni,terlihat penuh (utuh),0.767,0.6523,0.6828,51549,0.75,0.7
+yolo26n,ya,oklusi murni,teroklusi sebagian (utuh),0.6067,0.4059,0.799,19784,0.75,0.7
+yolo26n,ya,oklusi murni,teroklusi berat (utuh),0.6013,0.3485,0.797,12951,0.75,0.7
+yolo26s,ya,oklusi,terlihat penuh,0.7359,0.6023,0.844,62881,0.75,0.7
+yolo26s,ya,oklusi,teroklusi sebagian,0.61,0.4398,0.7915,22382,0.75,0.7
+yolo26s,ya,oklusi,teroklusi berat,0.6018,0.3867,0.7783,14218,0.75,0.7
+yolo26s,ya,ukuran,besar (dekat),0.7272,0.552,0.8605,52697,0.75,0.7
+yolo26s,ya,ukuran,sedang,0.6857,0.5215,0.7919,36528,0.75,0.7
+yolo26s,ya,ukuran,kecil (jauh),0.4928,0.2706,0.8403,10256,0.75,0.7
+yolo26s,ya,pemotongan,utuh dalam bingkai,0.7488,0.6176,0.7796,84284,0.75,0.7
+yolo26s,ya,pemotongan,terpotong tepi,0.3489,0.181,0.9064,15197,0.75,0.7
+yolo26s,ya,oklusi murni,terlihat penuh (utuh),0.8168,0.7303,0.6161,51549,0.75,0.7
+yolo26s,ya,oklusi murni,teroklusi sebagian (utuh),0.6519,0.4855,0.7444,19784,0.75,0.7
+yolo26s,ya,oklusi murni,teroklusi berat (utuh),0.6314,0.4111,0.7542,12951,0.75,0.7
