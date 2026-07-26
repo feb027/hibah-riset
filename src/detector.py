@@ -145,7 +145,8 @@ def resolve_alias(weights: str | Path) -> str | None:
     """
     path = Path(weights)
 
-    if path.name in {"best.pt", "last.pt"}:
+    # Termasuk hasil export (.onnx, .engine), yang mewarisi nama checkpoint asalnya.
+    if path.stem in {"best", "last"}:
         # runs/detect/<name>/weights/best.pt -> runs/detect/<name>/args.yaml
         args_yaml = path.parent.parent / "args.yaml"
         if args_yaml.exists():
