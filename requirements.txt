@@ -15,6 +15,11 @@ Pillow>=10.0.0
 # Tracking evaluation (for future Tier 2; safe to include now)
 motmetrics>=1.4.0
 
+# ONNX export + CPU runtime (Skenario A benchmark edge; see test_cpu_onnx.py)
+onnx>=1.15.0
+onnxruntime>=1.17.0
+onnxslim>=0.1.31             # dipakai ultralytics untuk export(simplify=True)
+
 # Notebook / viz
 matplotlib>=3.7.0
 ipython>=8.0.0

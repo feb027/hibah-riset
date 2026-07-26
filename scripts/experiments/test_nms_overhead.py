@@ -45,6 +45,7 @@ if str(ROOT) not in sys.path:
 os.chdir(ROOT)
 
 from src.detector import describe_weights  # noqa: E402
+from src.utils.benchmark import summarize, warmup  # noqa: E402
 from src.utils.crowdhuman import densest_images  # noqa: E402
 
 DEFAULT_ODGT = "data/raw/crowdhuman/extracted/annotation_val.odgt"
@@ -61,21 +62,6 @@ def discover_weights():
     return found or FALLBACK_WEIGHTS
 
 
-def warmup(model, image_paths, rounds):
-    """Panaskan model sampai kondisi tunak sebelum pengukuran dimulai.
-
-    Pemanasan dilakukan atas SELURUH gambar uji, bukan satu gambar saja: ukuran
-    gambar CrowdHuman bervariasi, dan setiap ukuran baru memicu alokasi buffer
-    baru yang biayanya akan tercatat sebagai latensi kalau belum dihangatkan.
-    Jumlah putaran juga dinaikkan karena clock GPU perlu waktu naik ke frekuensi
-    kerjanya; pemanasan yang terlalu pendek menyisakan iterasi-iterasi awal yang
-    lambat dan membuat simpangan baku inference membengkak.
-    """
-    for _ in range(rounds):
-        for img_path in image_paths:
-            model(img_path, classes=[0], verbose=False)
-
-
 def benchmark(model, image_paths, iters):
     inference_ms, postprocess_ms, detections = [], [], []
 
@@ -88,35 +74,6 @@ def benchmark(model, image_paths, iters):
             detections.append(len(results[0].boxes))
 
     return inference_ms, postprocess_ms, detections
-
-
-def percentile(values, q):
-    """Persentil ke-q dengan interpolasi linear; aman untuk sampel kecil."""
-    if not values:
-        return 0.0
-    ordered = sorted(values)
-    if len(ordered) == 1:
-        return ordered[0]
-    pos = (len(ordered) - 1) * q
-    low = int(pos)
-    high = min(low + 1, len(ordered) - 1)
-    return ordered[low] + (ordered[high] - ordered[low]) * (pos - low)
-
-
-def summarize(values):
-    """Statistik latensi: median dan p95 sebagai angka utama, mean/sd pendamping.
-
-    Distribusi latensi menjulur ke kanan - beberapa iterasi lambat menarik
-    rata-rata naik tanpa mewakili perilaku biasa. Median lebih mewakili kondisi
-    tunak, sedangkan p95 yang menggambarkan beban puncak, dan justru p95 inilah
-    yang relevan untuk sistem real-time.
-    """
-    return {
-        "p50": statistics.median(values),
-        "p95": percentile(values, 0.95),
-        "mean": statistics.mean(values),
-        "sd": statistics.stdev(values) if len(values) > 1 else 0.0,
-    }
 
 
 def main():
@@ -150,7 +107,7 @@ def main():
         print(f"--- {weights}")
 
         model = YOLO(weights)
-        warmup(model, image_paths, args.warmup)
+        warmup(model, image_paths, args.warmup, classes=[0])
         inference_ms, postprocess_ms, detections = benchmark(model, image_paths, args.iters)
 
         inf = summarize(inference_ms)
