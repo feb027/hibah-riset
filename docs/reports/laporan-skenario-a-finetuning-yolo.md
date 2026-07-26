@@ -242,7 +242,11 @@ Recall agregat mencampur orang yang berdiri sendirian dengan orang yang hanya ta
 
 Orang yang kotak badan penuhnya menembus tepi citra mengalami **penurunan recall 21–22 poin dan AP 31–33 poin**. Efeknya konsisten di keempat arsitektur dan berukuran besar — jauh di atas seluruh selisih antar model dalam laporan ini.
 
-Sebabnya wajar: anotasi `fbox` bersifat amodal, sehingga detektor dituntut memprediksi kotak yang menjulur keluar bingkai dan menebak posisi bagian tubuh yang tidak terlihat sama sekali.
+**Posisi terhadap literatur.** Analisis kinerja yang distratifikasi menurut *truncation* **bukan metodologi baru**. Hoiem et al. [S043] memformalkannya sejak 2012 dengan `truncated` dan `occluded` sebagai atribut terpisah; KITTI [S044] menjadikan rasio truncation bagian formal definisi tingkat kesulitan Easy/Moderate/Hard; dan PASCAL VOC [S045] sudah menyediakan flag `truncated` sejak 2006. Laporan ini karena itu **tidak mengklaim kebaruan metodologis**. Yang belum ditemukan pembandingnya adalah **besaran spesifiknya pada CrowdHuman dengan anotasi full-body**, beserta implikasinya bagi penempatan zona hitung.
+
+**Penjelasan mekanistik harus hati-hati.** Dugaan yang paling jelas — bahwa biayanya tinggi karena titik tengah kotak amodal jatuh di luar bingkai — **tidak dapat dipakai**. Zhou et al. [S046] sudah menyatakan persis masalah itu dan menyelesaikannya dengan mengganti kepala prediksi menjadi jarak ke empat sisi, dan kepala *anchor-free* pada YOLOv8/v10/v11/v26 yang dipakai di sini **sudah memakai formulasi tersebut**. Penjelasan yang lebih tahan uji: regresi harus mengekstrapolasi ke wilayah yang sama sekali tidak memiliki bukti piksel, ditambah efek batas dari *zero padding* yang membuat lapisan konvolusi menyandikan lokasi absolut [S047].
+
+Perlu dicatat pula bahwa laporan ini **belum memisahkan "terpotong" dari "kebetulan berada dekat tepi"**. Efek posisi terhadap kinerja detektor terdokumentasi terpisah dari truncation, sehingga kontrol untuk itu belum tersedia di sini (lihat Batasan).
 
 Dibandingkan biaya oklusi berat pada kelompok yang utuh dalam bingkai (8,9–11,0 poin AP), **pemotongan bingkai 2,85–3,67 kali lebih mahal** (YOLOv10n 3,33x; YOLOv11n 2,99x; YOLO26n 2,85x; YOLO26s 3,67x).
 
@@ -476,7 +480,9 @@ Empat konsekuensi langsung bagi tahap berikutnya:
 7. **Evaluasi belum dilakukan pada domain target** (CCTV ruang publik/kampus). Risiko *domain shift* belum terukur.
 8. **Anomali `recall_maks` per tingkat oklusi belum tuntas dijelaskan** (Bagian 6.5.2). Hipotesis kredit-okluder belum diuji dengan menaikkan ambang pencocokan; sampai itu dilakukan, hanya AP per kelompok yang layak dikutip.
 9. **Perbandingan arsitektur ber-NMS belum teridentifikasi.** Kelompok kontrol hanya berisi satu model (YOLOv11n), dan ambang NMS memakai nilai bawaan Ultralytics yang tidak ditala untuk anotasi amodal. Label "NMS-free" karena itu bercampur dengan resep pelatihan, kapasitas, dan hiperparameter.
-10. **Analisis breakdown dijalankan pada subset 500 citra**, bukan 4.370 citra penuh. Kelompok objek kecil hanya memuat 561 kotak.
+10. **Kontrol efek posisi belum ada.** Analisis pemotongan bingkai belum memisahkan "terpotong" dari "kebetulan berada dekat tepi". Efek batas terdokumentasi terjadi bahkan pada objek utuh yang jauh dari tepi [S047], sehingga sebagian biaya yang diatribusikan ke pemotongan dapat berasal dari posisi. Uji pemisahnya: tempelkan citra pada kanvas berpadding sehingga kotak yang tadinya menembus tepi menjadi utuh, lalu ukur ulang.
+11. **Penjelasan mekanistik biaya pemotongan belum diuji.** Dugaan yang paling jelas sudah tertutup oleh [S046]; kandidat penggantinya belum diuji secara langsung.
+12. **Sel GPU + ONNX pada matriks perangkat × runtime belum diukur** (Bagian 7.4), sehingga penguraian konfound perangkat-lawan-runtime belum lengkap.
 
 ---
 
@@ -510,3 +516,48 @@ Diurutkan menurut nilai per satuan usaha:
 | Overlay deteksi kualitatif | `experiments/zeroshot/` |
 
 Seluruh script pengukuran memakai pemilihan citra uji deterministik berbasis kepadatan anotasi, protokol pemanasan bersama (`src/utils/benchmark.py`), dan pelaporan persentil, sehingga hasil antar perangkat dapat disandingkan langsung dan dapat direproduksi pada mesin lain.
+
+---
+
+## Daftar Pustaka
+
+Sitasi memakai kode sumber (`S###`) yang konsisten dengan `docs/research/source-ledger.md` dan `references/references.bib`.
+
+### Detektor dan arsitektur
+
+| Kode | Sumber | Status |
+|---|---|---|
+| [S001] | Chakrabarty. *YOLO26* — preprint. | Belum *peer-reviewed* |
+| [S002] | Ultralytics. *YOLO26 Model Documentation*. https://docs.ultralytics.com/models/yolo26/ | Dokumentasi vendor |
+| [S003] | Wang, Chen, Liu, Chen, Lin, Han, Ding. *YOLOv10: Real-Time End-to-End Object Detection*. NeurIPS 2024. arXiv:2405.14458 | *Peer-reviewed* |
+| [S004] | Zhao et al. *DETRs Beat YOLOs on Real-time Object Detection* (RT-DETR). CVPR 2024. arXiv:2304.08069 | *Peer-reviewed* |
+
+### Dataset dan protokol evaluasi
+
+| Kode | Sumber | Dipakai untuk |
+|---|---|---|
+| [S038] | Shao et al. *CrowdHuman: A Benchmark for Detecting Human in a Crowd*. 2018. arXiv:1805.00123 | Dataset utama Skenario A |
+| [S048] | Dollár, Wojek, Schiele, Perona. *Pedestrian Detection: An Evaluation of the State of the Art*. TPAMI 2012 | Sumber metrik MR⁻² |
+| [S043] | Hoiem, Chodpathumwan, Dai. *Diagnosing Error in Object Detectors*. ECCV 2012 | Kerangka baku stratifikasi galat |
+| [S044] | Geiger, Lenz, Urtasun. *Are We Ready for Autonomous Driving? The KITTI Vision Benchmark Suite*. CVPR 2012 | Truncation dalam definisi kesulitan |
+| [S045] | Everingham et al. *The Pascal Visual Object Classes (VOC) Challenge*. IJCV 2010 | Atribut anotasi `truncated`/`occluded` |
+
+### Latensi, perangkat keras, dan efek posisi
+
+| Kode | Sumber | Dipakai untuk |
+|---|---|---|
+| [S039] | Cai, Zhu, Han. *ProxylessNAS*. ICLR 2019. arXiv:1812.00332 | Peringkat latensi berbeda antar perangkat |
+| [S040] | Li et al. *HW-NAS-Bench*. ICLR 2021. arXiv:2103.10584 | Korelasi peringkat antar perangkat dapat ~0 |
+| [S041] | Lu, Yang, Jiang, Shi, Ren. *One Proxy Device Is Enough for Hardware-Aware NAS*. ACM SIGMETRICS 2022. arXiv:2111.01203 | Istilah baku *latency monotonicity* |
+| [S042] | Lazarevich et al. *YOLOBench*. ICCVW 2023. arXiv:2307.13901 | Benchmark 550+ YOLO × 4 platform |
+| [S046] | Zhou, Koltun, Krähenbühl. *Tracking Objects as Points*. ECCV 2020. arXiv:2004.01177 | Masalah pusat kotak amodal dan perbaikannya |
+| [S047] | Kayhan, van Gemert. *On Translation Invariance in CNNs*. CVPR 2020. arXiv:2003.07064 | Efek batas dari *zero padding* |
+
+### Perkakas
+
+| Sumber | Dipakai untuk |
+|---|---|
+| Jocher et al. *Ultralytics YOLO*. https://github.com/ultralytics/ultralytics | Kerangka pelatihan dan inferensi |
+| ONNX Runtime. https://onnxruntime.ai/ | Runtime *export* untuk pengukuran CPU |
+
+**Catatan verifikasi.** Entri [S039]–[S048] ditambahkan pada Juli 2026 setelah penelusuran kebaruan. Daftar penulis dan detail venue perlu diverifikasi ulang terhadap sumber aslinya sebelum naskah diserahkan — pengenal arXiv dan DOI pada `references/references.bib` adalah rujukan yang mengikat.

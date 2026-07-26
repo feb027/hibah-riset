@@ -249,3 +249,114 @@
   doi = {10.1007/978-3-642-29044-2},
   url = {https://doi.org/10.1007/978-3-642-29044-2}
 }
+
+% ============================================================================
+% S039-S048 - Sumber tambahan dari penelusuran kebaruan Skenario A (Juli 2026).
+% Ditambahkan agar laporan tidak terlihat mengabaikan literatur yang sudah
+% melaporkan fenomena serupa. Lihat docs/reports/laporan-skenario-a-finetuning-yolo.md
+% ============================================================================
+
+% S039 ICLR 2019 / arXiv 1812.00332 - "Models optimized for GPU do not run fast on CPU"
+@inproceedings{S039,
+  title = {ProxylessNAS: Direct Neural Architecture Search on Target Task and Hardware},
+  author = {Cai, Han and Zhu, Ligeng and Han, Song},
+  booktitle = {International Conference on Learning Representations (ICLR)},
+  year = {2019},
+  eprint = {1812.00332},
+  archivePrefix = {arXiv}
+}
+
+% S040 ICLR 2021 / arXiv 2103.10584 - korelasi peringkat antar perangkat bisa ~0
+@inproceedings{S040,
+  title = {HW-NAS-Bench: Hardware-Aware Neural Architecture Search Benchmark},
+  author = {Li, Chaojian and Yu, Zhongzhi and Fu, Yonggan and Zhang, Yongan and Zhao, Yang and You, Haoran and Yu, Qixuan and Wang, Yue and Lin, Yingyan},
+  booktitle = {International Conference on Learning Representations (ICLR)},
+  year = {2021},
+  eprint = {2103.10584},
+  archivePrefix = {arXiv}
+}
+
+% S041 ACM SIGMETRICS 2022 / arXiv 2111.01203 - memperkenalkan istilah "latency monotonicity"
+@article{S041,
+  title = {One Proxy Device Is Enough for Hardware-Aware Neural Architecture Search},
+  author = {Lu, Bingqian and Yang, Jianyi and Jiang, Weiwen and Shi, Yiyu and Ren, Shaolei},
+  journal = {Proceedings of the ACM on Measurement and Analysis of Computing Systems (POMACS)},
+  volume = {5},
+  number = {3},
+  year = {2022},
+  eprint = {2111.01203},
+  archivePrefix = {arXiv}
+}
+
+% S042 ICCV Workshops 2023 / arXiv 2307.13901 - 550+ model YOLO x 4 platform
+@inproceedings{S042,
+  title = {YOLOBench: Benchmarking Efficient Object Detectors on Embedded Systems},
+  author = {Lazarevich, Ivan and Grimaldi, Matteo and Kumar, Ravish and Mitra, Saptarshi and Khan, Shahrukh and Sah, Sudhakar},
+  booktitle = {IEEE/CVF International Conference on Computer Vision Workshops (ICCVW)},
+  year = {2023},
+  eprint = {2307.13901},
+  archivePrefix = {arXiv}
+}
+
+% S043 ECCV 2012 - kerangka baku stratifikasi galat detektor (truncation vs occlusion)
+@inproceedings{S043,
+  title = {Diagnosing Error in Object Detectors},
+  author = {Hoiem, Derek and Chodpathumwan, Yodsawalai and Dai, Qieyun},
+  booktitle = {European Conference on Computer Vision (ECCV)},
+  year = {2012},
+  pages = {340--353},
+  publisher = {Springer}
+}
+
+% S044 CVPR 2012 - rasio truncation sebagai bagian formal definisi Easy/Moderate/Hard
+@inproceedings{S044,
+  title = {Are We Ready for Autonomous Driving? The KITTI Vision Benchmark Suite},
+  author = {Geiger, Andreas and Lenz, Philip and Urtasun, Raquel},
+  booktitle = {IEEE Conference on Computer Vision and Pattern Recognition (CVPR)},
+  year = {2012}
+}
+
+% S045 IJCV 2010 - atribut anotasi baku "truncated" dan "occluded"
+@article{S045,
+  title = {The Pascal Visual Object Classes (VOC) Challenge},
+  author = {Everingham, Mark and Van~Gool, Luc and Williams, Christopher K. I. and Winn, John and Zisserman, Andrew},
+  journal = {International Journal of Computer Vision},
+  volume = {88},
+  number = {2},
+  pages = {303--338},
+  year = {2010}
+}
+
+% S046 ECCV 2020 / arXiv 2004.01177 - menyatakan DAN memperbaiki masalah pusat kotak
+% amodal di luar bingkai lewat head jarak-ke-4-sisi (ltrb), formulasi yang juga
+% dipakai kepala anchor-free YOLOv8/v10/v11/v26.
+@inproceedings{S046,
+  title = {Tracking Objects as Points},
+  author = {Zhou, Xingyi and Koltun, Vladlen and Kr\"{a}henb\"{u}hl, Philipp},
+  booktitle = {European Conference on Computer Vision (ECCV)},
+  year = {2020},
+  eprint = {2004.01177},
+  archivePrefix = {arXiv}
+}
+
+% S047 CVPR 2020 / arXiv 2003.07064 - zero padding membuat konvolusi menyandikan
+% lokasi absolut; efek batas bekerja bahkan jauh dari tepi citra
+@inproceedings{S047,
+  title = {On Translation Invariance in CNNs: Convolutional Layers Can Exploit Absolute Spatial Location},
+  author = {Kayhan, Osman Semih and van Gemert, Jan C.},
+  booktitle = {IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR)},
+  year = {2020},
+  eprint = {2003.07064},
+  archivePrefix = {arXiv}
+}
+
+% S048 TPAMI 2012 - sumber metrik MR^-2 (log-average miss rate)
+@article{S048,
+  title = {Pedestrian Detection: An Evaluation of the State of the Art},
+  author = {Doll\'{a}r, Piotr and Wojek, Christian and Schiele, Bernt and Perona, Pietro},
+  journal = {IEEE Transactions on Pattern Analysis and Machine Intelligence (TPAMI)},
+  volume = {34},
+  number = {4},
+  pages = {743--761},
+  year = {2012}
+}
