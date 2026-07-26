@@ -38,7 +38,24 @@ __all__ = [
 FPPI_REFERENCE_POINTS = np.logspace(-2.0, 0.0, 9)
 
 
-def load_odgt_ground_truth(odgt_path, exclude_ignore_from_gt=True):
+def _area_in_frame(box_xywh, frame):
+    """Luas bagian kotak yang berada di dalam bingkai citra.
+
+    `frame` berupa (lebar, tinggi), atau None bila ukuran citra tidak diketahui -
+    dalam hal itu seluruh kotak dianggap berada di dalam bingkai.
+    """
+    x, y, w, h = box_xywh
+    x1, y1, x2, y2 = x, y, x + w, y + h
+
+    if frame is not None:
+        img_w, img_h = frame
+        x1, y1 = max(x1, 0.0), max(y1, 0.0)
+        x2, y2 = min(x2, float(img_w)), min(y2, float(img_h))
+
+    return max(x2 - x1, 0.0) * max(y2 - y1, 0.0)
+
+
+def load_odgt_ground_truth(odgt_path, exclude_ignore_from_gt=True, images_dir=None):
     """Baca .odgt menjadi {image_id: {"boxes", "ignore", "attrs"}}.
 
     Kotak dikembalikan dalam format xyxy. Kotak bertanda ignore dipisahkan ke
@@ -47,19 +64,44 @@ def load_odgt_ground_truth(odgt_path, exclude_ignore_from_gt=True):
 
     "attrs" memuat atribut per kotak untuk analisis terpisah:
 
-    - `visibility` = luas vbox dibagi luas fbox. CrowdHuman menganotasi kotak
-      badan penuh (fbox) sekaligus kotak bagian yang terlihat (vbox), sehingga
-      rasionya adalah ukuran oklusi yang sudah tersedia di anotasi dan tidak
-      perlu diperkirakan. Bernilai 1,0 bila vbox tidak tersedia.
+    - `visibility` = luas vbox dibagi luas fbox, keduanya dipotong lebih dulu ke
+      batas bingkai bila `images_dir` diberikan. Pemotongan itu penting: fbox
+      CrowdHuman bersifat amodal, digambar sampai bagian badan yang berada di
+      luar bingkai. Tanpa pemotongan, orang yang berdiri di tepi citra dengan
+      kaki terpotong memperoleh rasio rendah dan tampak "teroklusi berat",
+      padahal ia sepenuhnya terlihat dan justru mudah dideteksi - sehingga
+      metriknya mencampur oklusi oleh orang lain dengan pemotongan oleh bingkai.
+    - `truncated` = 1.0 bila fbox menembus tepi citra. Memungkinkan kedua
+      fenomena itu dipisahkan saat analisis.
     - `height` = tinggi fbox dalam piksel. Untuk pejalan kaki, tinggi lebih
       mewakili jarak ke kamera daripada luas kotak.
+
+    Tanpa `images_dir`, ukuran citra tidak diketahui sehingga visibility dihitung
+    tanpa pemotongan dan `truncated` selalu 0. Analisis oklusi sebaiknya selalu
+    menyertakan `images_dir`.
     """
+    image_index = None
+    if images_dir is not None:
+        from PIL import Image  # impor lokal agar modul tetap ringan tanpa images_dir
+
+        from src.utils.crowdhuman import index_images
+
+        image_index = index_images(images_dir)
+
     ground_truth = {}
 
     with open(odgt_path, "r") as f:
         for line in f:
             record = json.loads(line)
-            positives, ignored, visibility, height = [], [], [], []
+
+            frame = None
+            if image_index is not None and record["ID"] in image_index:
+                # Image.open bersifat lazy: .size hanya membaca header berkas.
+                with Image.open(image_index[record["ID"]]) as img:
+                    frame = img.size
+
+            positives, ignored = [], []
+            visibility, truncated, height = [], [], []
 
             for gt in record.get("gtboxes", []):
                 x, y, w, h = gt["fbox"]
@@ -78,11 +120,17 @@ def load_odgt_ground_truth(odgt_path, exclude_ignore_from_gt=True):
                 positives.append(box)
                 height.append(max(h, 0.0))
 
-                full_area = max(w, 0.0) * max(h, 0.0)
+                if frame is not None:
+                    melewati_tepi = x < 0 or y < 0 or (x + w) > frame[0] or (y + h) > frame[1]
+                else:
+                    melewati_tepi = False
+                truncated.append(1.0 if melewati_tepi else 0.0)
+
+                area_dalam_bingkai = _area_in_frame(gt["fbox"], frame)
                 vbox = gt.get("vbox")
-                if vbox and full_area > 0:
-                    vis_area = max(vbox[2], 0.0) * max(vbox[3], 0.0)
-                    visibility.append(min(vis_area / full_area, 1.0))
+                if vbox and area_dalam_bingkai > 0:
+                    vis_area = _area_in_frame(vbox, frame)
+                    visibility.append(min(vis_area / area_dalam_bingkai, 1.0))
                 else:
                     visibility.append(1.0)
 
@@ -91,6 +139,7 @@ def load_odgt_ground_truth(odgt_path, exclude_ignore_from_gt=True):
                 "ignore": np.array(ignored, dtype=np.float64).reshape(-1, 4),
                 "attrs": {
                     "visibility": np.array(visibility, dtype=np.float64),
+                    "truncated": np.array(truncated, dtype=np.float64),
                     "height": np.array(height, dtype=np.float64),
                 },
             }

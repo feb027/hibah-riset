@@ -66,6 +66,21 @@ SIZE_GROUPS = [
     ("kecil (jauh)", "tinggi < 50 px", lambda a: a["height"] < 50),
 ]
 
+# Memisahkan pemotongan bingkai dari oklusi. Anotasi fbox bersifat amodal,
+# sehingga orang di tepi citra tampak "kurang terlihat" padahal tidak tertutup
+# siapa pun. Dimensi ini membuat pengaruh itu terbaca langsung di tabel.
+TRUNCATION_GROUPS = [
+    ("utuh dalam bingkai", "fbox tidak menembus tepi", lambda a: a["truncated"] < 0.5),
+    ("terpotong tepi", "fbox menembus tepi", lambda a: a["truncated"] >= 0.5),
+]
+
+# Oklusi murni: hanya orang yang seluruh fbox-nya berada di dalam bingkai,
+# sehingga rasio visibility benar-benar mengukur tertutupnya oleh orang lain.
+OCCLUSION_CLEAN_GROUPS = [
+    (f"{nama} (utuh)", f"{aturan}, tidak terpotong", (lambda fn: lambda a: fn(a) & (a["truncated"] < 0.5))(fn))
+    for nama, aturan, fn in OCCLUSION_GROUPS
+]
+
 
 def discover_weights():
     found = sorted(str(p) for p in Path("runs/detect").glob("*/weight*/best.pt"))
@@ -141,9 +156,15 @@ def main():
         raise FileNotFoundError(f"Tidak ada .jpg di bawah {args.images_dir}")
 
     print(f"\nMemuat ground truth dari {args.odgt} ...")
-    ground_truth = load_odgt_ground_truth(args.odgt, exclude_ignore_from_gt=True)
+    # images_dir wajib diberikan agar visibility dihitung terhadap bagian fbox
+    # yang berada di dalam bingkai - lihat docstring load_odgt_ground_truth.
+    ground_truth = load_odgt_ground_truth(
+        args.odgt, exclude_ignore_from_gt=True, images_dir=args.images_dir
+    )
 
     report_distribution(ground_truth, OCCLUSION_GROUPS, "tingkat oklusi")
+    report_distribution(ground_truth, TRUNCATION_GROUPS, "pemotongan bingkai")
+    report_distribution(ground_truth, OCCLUSION_CLEAN_GROUPS, "oklusi murni (tanpa yang terpotong)")
     report_distribution(ground_truth, SIZE_GROUPS, "ukuran objek")
 
     # Subset dibangun sekali saja, lalu dipakai untuk seluruh model.
@@ -151,9 +172,14 @@ def main():
         ("oklusi", name): subset_ground_truth(ground_truth, fn)
         for name, _, fn in OCCLUSION_GROUPS
     }
-    subsets.update(
-        {("ukuran", name): subset_ground_truth(ground_truth, fn) for name, _, fn in SIZE_GROUPS}
-    )
+    for dimensi, groups in [
+        ("ukuran", SIZE_GROUPS),
+        ("pemotongan", TRUNCATION_GROUPS),
+        ("oklusi murni", OCCLUSION_CLEAN_GROUPS),
+    ]:
+        subsets.update(
+            {(dimensi, name): subset_ground_truth(ground_truth, fn) for name, _, fn in groups}
+        )
 
     rows = []
     for weights in weights_list:
@@ -179,7 +205,12 @@ def main():
                 }
             )
 
-    for dimensi, groups in [("oklusi", OCCLUSION_GROUPS), ("ukuran", SIZE_GROUPS)]:
+    for dimensi, groups in [
+        ("oklusi", OCCLUSION_GROUPS),
+        ("oklusi murni", OCCLUSION_CLEAN_GROUPS),
+        ("pemotongan", TRUNCATION_GROUPS),
+        ("ukuran", SIZE_GROUPS),
+    ]:
         print(f"\n{'=' * 78}\nRECALL MAKSIMUM menurut {dimensi.upper()}\n{'=' * 78}")
 
         arsitektur = []

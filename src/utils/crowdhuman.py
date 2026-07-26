@@ -11,7 +11,20 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-__all__ = ["person_box_counts", "densest_images"]
+__all__ = ["index_images", "person_box_counts", "densest_images"]
+
+
+def index_images(images_dir):
+    """Petakan nama berkas tanpa ekstensi -> path, dicari rekursif.
+
+    Zip CrowdHuman mengekstrak gambar ke subfolder `Images/`, dan berkas dapat
+    dipindahkan lagi saat penyiapan dataset, sehingga lokasinya tidak boleh
+    diasumsikan sejajar dengan folder yang diberikan.
+    """
+    index = {p.stem: p for p in Path(images_dir).rglob("*.jpg")}
+    if not index:
+        raise FileNotFoundError(f"Tidak ada file .jpg di bawah {images_dir}")
+    return index
 
 
 def person_box_counts(odgt_path: str | Path, exclude_ignore: bool = True) -> dict[str, int]:
@@ -49,9 +62,7 @@ def densest_images(
     descending person count, with the image ID as tie-breaker so the same
     selection is produced on every machine and every run.
     """
-    available = {p.stem: p for p in Path(images_dir).rglob("*.jpg")}
-    if not available:
-        raise FileNotFoundError(f"Tidak ada file .jpg di bawah {images_dir}")
+    available = index_images(images_dir)
 
     counts = person_box_counts(odgt_path, exclude_ignore=exclude_ignore)
     present = [(img_id, c) for img_id, c in counts.items() if img_id in available]
