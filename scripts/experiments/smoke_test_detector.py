@@ -16,7 +16,8 @@ import sys
 from pathlib import Path
 
 # Allow `from src...` imports when running as a plain script.
-ROOT = Path(__file__).resolve().parent.parent
+# scripts/experiments/<file>.py -> repo root is two levels up from `scripts/`.
+ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 

@@ -37,6 +37,11 @@ logger = logging.getLogger(__name__)
 #   - Across tiers (e.g. yolov10s vs yolo26n) the comparison is dominated
 #     by model size, not by architectural family. Do not claim "X is faster
 #     than Y" when X is nano and Y is small.
+#   - `nms_free` records whether the architecture claims an end-to-end head
+#     that removes NMS from post-processing. It is an architectural fact used
+#     to group models in the S1 latency experiment, NOT a performance claim:
+#     whether removing NMS actually reduces measured latency is exactly what
+#     that experiment has to answer.
 DETECTOR_CATALOGUE: dict[str, dict] = {
     # ---- NANO tier (apples-to-apples comparison) ----
     "yolov10n": {
@@ -45,6 +50,7 @@ DETECTOR_CATALOGUE: dict[str, dict] = {
         "description": "YOLOv10 nano (NeurIPS 2024). Tier-N anchor for NMS-free YOLO.",
         "size": "nano",
         "tier": "N",
+        "nms_free": True,
     },
     "yolov11n": {
         "model": "yolo11n.pt",
@@ -52,6 +58,7 @@ DETECTOR_CATALOGUE: dict[str, dict] = {
         "description": "YOLOv11 nano (Ultralytics 2024). Tier-N baseline, not yet in source ledger.",
         "size": "nano",
         "tier": "N",
+        "nms_free": False,
     },
     "yolo26n": {
         "model": "yolo26n.pt",
@@ -59,6 +66,7 @@ DETECTOR_CATALOGUE: dict[str, dict] = {
         "description": "YOLO26 nano. S001 is preprint, S002 is vendor doc. Caution status in source ledger.",
         "size": "nano",
         "tier": "N",
+        "nms_free": True,
     },
     # ---- SMALL tier (apples-to-apples comparison) ----
     "yolov10s": {
@@ -67,6 +75,7 @@ DETECTOR_CATALOGUE: dict[str, dict] = {
         "description": "YOLOv10 small (NeurIPS 2024). Tier-S anchor.",
         "size": "small",
         "tier": "S",
+        "nms_free": True,
     },
     "yolov11s": {
         "model": "yolo11s.pt",
@@ -74,6 +83,7 @@ DETECTOR_CATALOGUE: dict[str, dict] = {
         "description": "YOLOv11 small (Ultralytics 2024). Tier-S baseline.",
         "size": "small",
         "tier": "S",
+        "nms_free": False,
     },
     "yolo26s": {
         "model": "yolo26s.pt",
@@ -81,6 +91,7 @@ DETECTOR_CATALOGUE: dict[str, dict] = {
         "description": "YOLO26 small. Caution: S001 preprint, S002 vendor doc.",
         "size": "small",
         "tier": "S",
+        "nms_free": True,
     },
     # ---- MEDIUM tier (apples-to-apples comparison) ----
     "yolov10m": {
@@ -89,6 +100,7 @@ DETECTOR_CATALOGUE: dict[str, dict] = {
         "description": "YOLOv10 medium (NeurIPS 2024). Tier-M anchor.",
         "size": "medium",
         "tier": "M",
+        "nms_free": True,
     },
     "yolov11m": {
         "model": "yolo11m.pt",
@@ -96,6 +108,7 @@ DETECTOR_CATALOGUE: dict[str, dict] = {
         "description": "YOLOv11 medium (Ultralytics 2024). Tier-M baseline.",
         "size": "medium",
         "tier": "M",
+        "nms_free": False,
     },
     "yolo26m": {
         "model": "yolo26m.pt",
@@ -103,6 +116,7 @@ DETECTOR_CATALOGUE: dict[str, dict] = {
         "description": "YOLO26 medium. Caution: S001 preprint, S002 vendor doc.",
         "size": "medium",
         "tier": "M",
+        "nms_free": True,
     },
     # ---- TRANSFORMER alternative (not tier-comparable to YOLO above) ----
     "rtdetr-l": {
@@ -111,6 +125,7 @@ DETECTOR_CATALOGUE: dict[str, dict] = {
         "description": "RT-DETR large (CVPR 2024). Transformer end-to-end detector baseline. NOT tier-comparable to YOLO nano/small/medium.",
         "size": "large",
         "tier": "L-transformer",
+        "nms_free": True,
     },
 }
 
@@ -118,6 +133,55 @@ DETECTOR_CATALOGUE: dict[str, dict] = {
 def detectors_by_tier(tier: str) -> list[str]:
     """Return aliases for a given tier: 'N', 'S', 'M', or 'L-transformer'."""
     return sorted(k for k, v in DETECTOR_CATALOGUE.items() if v.get("tier") == tier)
+
+
+def resolve_alias(weights: str | Path) -> str | None:
+    """Map a weights path back to its catalogue alias, or None if unknown.
+
+    Fine-tuned checkpoints are named `best.pt`/`last.pt`, so the architecture
+    cannot be read from the filename. For those, the sibling `args.yaml`
+    written by Ultralytics records the initial weights the run started from,
+    which is what identifies the architecture.
+    """
+    path = Path(weights)
+
+    if path.name in {"best.pt", "last.pt"}:
+        # runs/detect/<name>/weights/best.pt -> runs/detect/<name>/args.yaml
+        args_yaml = path.parent.parent / "args.yaml"
+        if args_yaml.exists():
+            for line in args_yaml.read_text().splitlines():
+                if line.startswith("model:"):
+                    path = Path(line.split(":", 1)[1].strip())
+                    break
+
+    for alias, spec in DETECTOR_CATALOGUE.items():
+        if spec["model"] == path.name:
+            return alias
+    return None
+
+
+def describe_weights(weights: str | Path) -> dict:
+    """Return catalogue metadata for a weights path, with safe fallbacks.
+
+    Always returns a dict so callers can print a table without branching.
+    `nms_free` is None when the architecture could not be identified - that
+    is reported as unknown rather than guessed.
+    """
+    alias = resolve_alias(weights)
+    if alias is None:
+        return {
+            "alias": Path(weights).stem,
+            "source_id": None,
+            "tier": None,
+            "nms_free": None,
+        }
+    spec = DETECTOR_CATALOGUE[alias]
+    return {
+        "alias": alias,
+        "source_id": spec["source_id"],
+        "tier": spec["tier"],
+        "nms_free": spec["nms_free"],
+    }
 
 
 @dataclass
