@@ -1,0 +1,5 @@
+arsitektur,source_id,nms_free,export_ok,export_detik,onnx_mb,pt_inference_p50,pt_inference_p95,pt_postprocess_p50,onnx_inference_p50,onnx_inference_p95,onnx_postprocess_p50,speedup_onnx,deteksi_pt,deteksi_onnx,error
+yolov10n,S003,ya,ya,0.9,9.3,25.13,26.13,0.14,11.93,13.12,0.204,2.11,154.3,156,
+yolov11n,-,tidak,ya,0.6,10.6,22.98,24.42,0.551,13.26,17.74,0.788,1.73,200.7,195.3,
+best,-,?,ya,0.7,9.8,22.48,24.81,0.134,10.05,18.01,0.233,2.24,179,166.7,
+best,-,?,ya,1.0,38.2,54.5,57.7,0.139,22.91,24.73,0.235,2.38,222,228.7,
