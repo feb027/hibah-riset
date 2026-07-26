@@ -150,6 +150,9 @@ def main():
 
         rows.append(
             {
+                # Path bobot disertakan agar tiap baris tetap dapat diidentifikasi
+                # walau arsitekturnya gagal dikenali (mis. args.yaml tidak ada).
+                "weights": weights,
                 "arsitektur": meta["alias"],
                 "source_id": meta["source_id"] or "-",
                 "nms_free": {True: "ya", False: "tidak", None: "?"}[meta["nms_free"]],
