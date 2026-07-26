@@ -101,8 +101,15 @@ def batch_for(weights, requested):
     return requested
 
 
-def predict_all(weights, image_paths, conf, batch, max_det):
-    """Inferensi sekali per model; hasilnya dipakai ulang untuk semua kelompok."""
+def predict_all(weights, image_paths, conf, batch, max_det, nms_iou):
+    """Inferensi sekali per model; hasilnya dipakai ulang untuk semua kelompok.
+
+    `nms_iou` diteruskan ke predictor. Sebelumnya tidak pernah diteruskan sama
+    sekali, sehingga model ber-NMS memakai nilai bawaan Ultralytics (0,7) yang
+    tidak pernah ditala untuk anotasi amodal CrowdHuman. Akibatnya perbandingan
+    "arsitektur ber-NMS lawan NMS-free" bercampur dengan "hiperparameter tak
+    ditala" - menyapu nilai ini memisahkan keduanya.
+    """
     from ultralytics import YOLO
 
     model = YOLO(weights)
@@ -111,7 +118,8 @@ def predict_all(weights, image_paths, conf, batch, max_det):
     for start in range(0, len(image_paths), batch):
         chunk = image_paths[start : start + batch]
         for path, result in zip(
-            chunk, model([str(p) for p in chunk], conf=conf, max_det=max_det, verbose=False)
+            chunk,
+            model([str(p) for p in chunk], conf=conf, max_det=max_det, iou=nms_iou, verbose=False),
         ):
             boxes = result.boxes
             predictions[Path(path).stem] = (
@@ -143,6 +151,17 @@ def main():
     parser.add_argument("--conf", type=float, default=0.001)
     parser.add_argument("--batch", type=int, default=16)
     parser.add_argument("--max-det", type=int, default=300)
+    parser.add_argument(
+        "--iou", type=float, default=0.5,
+        help="Ambang IoU pencocokan deteksi-target. Naikkan ke 0.75 untuk menguji hipotesis "
+             "kredit-okluder: dua fbox amodal yang bertindih dengan cakupan c memberi "
+             "IoU=c/(2-c), sehingga kelompok teroklusi berat (c>0.65) mendarat di IoU~0.48-0.50, "
+             "berimpit dengan ambang 0.5. Bila anomali berat>sebagian runtuh pada 0.75, "
+             "penyebabnya memang deteksi atas si penutup yang terkredit ke target.")
+    parser.add_argument(
+        "--nms-iou", type=float, default=0.7,
+        help="Ambang IoU untuk NMS di predictor (bawaan Ultralytics 0.7). Hanya berpengaruh "
+             "pada arsitektur ber-NMS.")
     parser.add_argument("--limit", type=int, default=None, help="Batasi jumlah citra (uji cepat)")
     parser.add_argument("--out", default=DEFAULT_OUTPUT_CSV)
     args = parser.parse_args()
@@ -187,11 +206,11 @@ def main():
         print(f"\n--- {meta['alias']}  ({weights})")
 
         predictions = predict_all(
-            weights, image_paths, args.conf, batch_for(weights, args.batch), args.max_det
+            weights, image_paths, args.conf, batch_for(weights, args.batch), args.max_det, args.nms_iou
         )
 
         for (dimensi, kelompok), subset_gt in subsets.items():
-            hasil = evaluate_detections(predictions, subset_gt)
+            hasil = evaluate_detections(predictions, subset_gt, iou_thr=args.iou)
             rows.append(
                 {
                     "arsitektur": meta["alias"],
@@ -202,6 +221,8 @@ def main():
                     "ap50": round(hasil["ap50"], 4),
                     "mr2": round(hasil["mr2"], 4),
                     "n_gt": hasil["n_gt"],
+                    "iou_cocok": args.iou,
+                    "nms_iou": args.nms_iou,
                 }
             )
 
