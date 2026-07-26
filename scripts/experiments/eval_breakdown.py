@@ -74,6 +74,18 @@ def discover_weights():
     return found
 
 
+def batch_for(weights, requested):
+    """Turunkan batch ke 1 untuk model ONNX ber-bentuk statis.
+
+    Ultralytics meng-export ONNX dengan `dynamic=False` secara bawaan, sehingga
+    dimensi batch terkunci di 1 dan pengiriman batch lebih besar ditolak runtime.
+    """
+    if str(weights).endswith(".onnx") and requested > 1:
+        print(f"    (batch diturunkan ke 1: {Path(weights).name} ber-bentuk statis)")
+        return 1
+    return requested
+
+
 def predict_all(weights, image_paths, conf, batch, max_det):
     """Inferensi sekali per model; hasilnya dipakai ulang untuk semua kelompok."""
     from ultralytics import YOLO
@@ -148,7 +160,9 @@ def main():
         meta = describe_weights(weights)
         print(f"\n--- {meta['alias']}  ({weights})")
 
-        predictions = predict_all(weights, image_paths, args.conf, args.batch, args.max_det)
+        predictions = predict_all(
+            weights, image_paths, args.conf, batch_for(weights, args.batch), args.max_det
+        )
 
         for (dimensi, kelompok), subset_gt in subsets.items():
             hasil = evaluate_detections(predictions, subset_gt)

@@ -49,6 +49,23 @@ def discover_weights():
     return found
 
 
+def batch_for(weights, requested):
+    """Turunkan batch ke 1 untuk model ONNX ber-bentuk statis.
+
+    Ultralytics meng-export ONNX dengan `dynamic=False` secara bawaan, sehingga
+    dimensi batch terkunci di 1 dan pengiriman batch lebih besar ditolak runtime.
+
+    Model tidak di-export ulang dengan bentuk dinamis secara sengaja: berkas
+    ONNX yang divalidasi akurasinya di sini harus persis berkas yang diukur
+    kecepatannya pada eksperimen CPU, dan model bentuk dinamis dapat berjalan
+    pada kecepatan berbeda.
+    """
+    if str(weights).endswith(".onnx") and requested > 1:
+        print(f"    (batch diturunkan ke 1: {Path(weights).name} ber-bentuk statis)")
+        return 1
+    return requested
+
+
 def predict_all(weights, image_paths, conf, batch, max_det):
     """Jalankan inferensi, kembalikan {image_id: (boxes_xyxy, scores)}.
 
@@ -120,7 +137,9 @@ def main():
         meta = describe_weights(weights)
         print(f"--- {meta['alias']}  ({weights})")
 
-        predictions = predict_all(weights, image_paths, args.conf, args.batch, args.max_det)
+        predictions = predict_all(
+            weights, image_paths, args.conf, batch_for(weights, args.batch), args.max_det
+        )
         strict = evaluate_detections(predictions, gt_strict)
         naive = evaluate_detections(predictions, gt_naive)
 
