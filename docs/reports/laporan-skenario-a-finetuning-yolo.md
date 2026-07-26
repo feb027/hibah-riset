@@ -10,8 +10,8 @@ Empat arsitektur YOLO telah di-*fine-tune* pada dataset CrowdHuman dan dievaluas
 
 1. **Pada akurasi, ketiga arsitektur tier nano setara.** Rentang mAP@0.5:0.95 hanya 0,0058 — di bawah ambang yang dapat dibedakan dari variasi acak. Argumen pemilihan detektor karena itu tidak dapat berdiri di atas akurasi agregat.
 2. **Arsitektur *NMS-free* memangkas latensi *post-processing* 2,9×** dengan pemisahan distribusi yang utuh, dan biayanya **datar** terhadap kepadatan kerumunan.
-3. **Peringkat kecepatan terbalik antara GPU dan CPU.** Di RTX 4090 dengan PyTorch, YOLO26n paling lambat di tier nano. Di CPU dengan ONNX, YOLO26n justru **tercepat** — 27% di atas YOLOv11n. Klaim YOLO26 memang seluruhnya tentang CPU/edge, sehingga benchmark GPU adalah lingkungan yang keliru untuk menilainya.
-4. **Pemotongan tepi bingkai adalah sumbu kesulitan yang dominan** — jauh melampaui oklusi. Orang yang kotak badan penuhnya menembus tepi citra (18,8% anotasi) mengalami penurunan recall 21 poin dan AP 31 poin, yaitu **3,0–3,7 kali lipat** biaya oklusi berat. Ini berimplikasi langsung pada penempatan garis hitung.
+3. **Peringkat kecepatan berubah menurut kombinasi perangkat dan runtime.** YOLO26n tercepat pada jalur CPU+ONNX, tetapi bukan pada CPU+PyTorch maupun GPU+PyTorch. Ini **bukan temuan baru** — fenomenanya dikenal sebagai *latency monotonicity* yang lemah lintas platform, dan angka CPU-nya sendiri sudah dipublikasikan vendor. Disajikan sebagai verifikasi independen pada bobot hasil fine-tuning, bukan kontribusi (Bagian 7.4).
+4. **Pemotongan tepi bingkai adalah sumbu kesulitan yang dominan** — jauh melampaui oklusi. Orang yang kotak badan penuhnya menembus tepi citra (18,8% anotasi) mengalami penurunan recall 21 poin dan AP 31 poin, yaitu **2,9–3,7 kali lipat** biaya oklusi berat. Ini berimplikasi langsung pada penempatan garis hitung.
 5. **Terdapat lantai *under-count* struktural sebesar 7,4–10,0%** yang terkunci di lapisan detektor dan tidak dapat diperbaiki oleh *tracker* maupun *counting logic* di hilirnya.
 6. **Tidak ada keunggulan akurasi yang dapat dikaitkan dengan arsitektur *NMS-free*.** Selisih pada batas atas recall merupakan artefak titik ukur, bukan kualitas deteksi (Bagian 6.3).
 
@@ -244,7 +244,7 @@ Orang yang kotak badan penuhnya menembus tepi citra mengalami **penurunan recall
 
 Sebabnya wajar: anotasi `fbox` bersifat amodal, sehingga detektor dituntut memprediksi kotak yang menjulur keluar bingkai dan menebak posisi bagian tubuh yang tidak terlihat sama sekali.
 
-Dibandingkan biaya oklusi berat pada kelompok yang utuh dalam bingkai (8,9–11,0 poin AP), **pemotongan bingkai 3,0–3,7 kali lebih mahal**.
+Dibandingkan biaya oklusi berat pada kelompok yang utuh dalam bingkai (8,9–11,0 poin AP), **pemotongan bingkai 2,85–3,67 kali lebih mahal** (YOLOv10n 3,33x; YOLOv11n 2,99x; YOLO26n 2,85x; YOLO26s 3,67x).
 
 **Implikasi operasional langsung.** Pada kamera pintu masuk atau gerbang, garis hitung dan RoI lazim ditempatkan dekat tepi bingkai — justru di wilayah dengan kinerja detektor terburuk. Rekomendasi untuk Skenario D dan E: **tempatkan RoI dan garis potong menjauh dari tepi bingkai**, atau pilih sudut kamera yang menempatkan zona hitung di bagian tengah citra. Ini perbaikan tanpa biaya komputasi, dan diperoleh sebelum satu baris kode *counting logic* pun diubah.
 
@@ -265,7 +265,13 @@ AP menurun monoton pada keempat model; oklusi berat memangkas **8,9–11,0 poin 
 
 Terdapat penjelasan struktural yang belum terbantahkan: untuk dua kotak amodal setara dengan cakupan *c*, IoU keduanya = *c*/(2−*c*). Ambang kelompok teroklusi berat (visibility < 0,35, yaitu *c* > 0,65) menghasilkan IoU 0,48–0,54, **berimpit dengan ambang pencocokan 0,5**. Kelompok ini karena itu nyaris secara definisi memuat target yang cukup bertindih dengan penutupnya sehingga deteksi atas si penutup dapat terkredit sebagai *true positive* bagi target. Hipotesis ini dapat diuji dengan menaikkan ambang pencocokan ke 0,75 (opsi `--iou`); bila anomali runtuh, penyebabnya terkonfirmasi.
 
-Sampai uji itu dijalankan, **hanya angka AP pada tabel di atas yang layak dikutip**, bukan `recall_maks` per tingkat oklusi.
+Hipotesis ini **sudah diuji dan terkonfirmasi**: pada ambang pencocokan 0,75, urutan ketiga kelompok berbalik menjadi menurun monoton di keempat model (selisih *berat* dikurangi *sebagian*: −0,32 / −0,54 / −2,05 / −1,39, dari sebelumnya +1,61 / +1,25 / +0,42 / +0,86 pada ambang 0,5). Ramalannya spesifik, dapat dijatuhkan, dan bertahan.
+
+**Konsekuensinya: `recall_maks` pada ambang 0,5 tidak layak dipakai untuk analisis per tingkat oklusi.** Gunakan AP, atau naikkan ambang pencocokan.
+
+**MR⁻² per subkelompok juga tidak layak dikutip.** Tabel per kelompok memberi hasil yang absurd di permukaan — YOLO26n mencatat MR⁻² 0,6161 pada "terlihat penuh" tetapi 0,4439 pada "teroklusi berat", seolah orang yang tertutup berat lebih mudah dideteksi. Penyebabnya artefak protokol: karena kotak di luar kelompok dipindah ke status *ignore*, subkelompok kecil menyingkirkan sebagian besar deteksi sebagai netral sehingga FPPI-nya rendah palsu. **MR⁻² tidak dapat dibandingkan antar subkelompok dengan jumlah target dan fraksi ignore yang berbeda**; simpan metrik itu untuk angka agregat protokol resmi (Bagian 6.1).
+
+Justru karena artefak ini, temuan pemotongan bingkai menjadi lebih kuat: subkelompok "terpotong tepi" berukuran **lebih kecil** (15.197 lawan 84.284), sehingga artefak seharusnya membuat MR⁻²-nya tampak lebih baik. Nyatanya tetap jauh lebih buruk. **Efeknya bertahan melawan arah bias artefaknya sendiri.**
 
 #### 6.5.3 Objek Kecil
 
@@ -307,10 +313,18 @@ Pengukuran memakai lima citra terpadat dari *validation set*, dipilih determinis
 
 **Temuan 2 — biaya post-processing NMS-free bersifat datar.** YOLO26s menghasilkan 199 deteksi dan YOLO26n 167 deteksi, namun keduanya membayar 0,164–0,170 ms. Tanpa NMS, biaya *post-processing* **tidak tumbuh mengikuti kepadatan kerumunan**. Bagi sistem *real-time* di ruang publik, sifat ini bernilai lebih tinggi daripada rata-ratanya: latensi tetap dapat diprediksi justru ketika kerumunan memuncak — saat sistem paling tidak boleh gagal.
 
-**Temuan 3 — di GPU, keunggulan itu tidak otomatis menjadi keuntungan bersih.** YOLO26n membutuhkan *inference* 2,554 ms, sekitar **20% lebih lambat** daripada YOLOv10n dan YOLOv11n pada tier sama. Selisih ini nyata: p95 YOLOv10n (2,454) masih di bawah p50 YOLO26n (2,554). Akibatnya:
+**Temuan 3 — selisih *inference* antar arsitektur di GPU TIDAK dapat diinterpretasikan.**
+
+Pengukuran GPU dalam laporan ini berada di rezim yang didominasi *overhead* peluncuran kernel, bukan komputasi. Buktinya ada di dalam tabel ini sendiri: YOLO26s memiliki sekitar **3,8 kali FLOPs** YOLO26n (20,7 lawan 5,4 GFLOPs menurut [S002]), tetapi hanya **5,5% lebih lambat** di GPU (2,695 lawan 2,554 ms). Pada CPU dengan ONNX, model yang sama berselisih **2,29 kali** (22,80 lawan 9,95 ms) — perilaku *compute-bound* yang memang diharapkan.
+
+Bila komputasi 3,8 kali lipat hanya menambah 5,5% waktu, maka selisih 0,42 ms antara YOLO26n dan YOLOv10n **tidak dapat diatribusikan ke arsitektur**; besarannya berada di dalam wilayah yang dikuasai *overhead* runtime. Angka *inference* GPU karena itu dilaporkan sebagai konteks, bukan sebagai perbandingan arsitektur.
+
+Kolom *post-processing* tidak terkena masalah ini: selisih 2,9 kali dengan pemisahan distribusi utuh terlalu besar untuk dijelaskan oleh *overhead*, dan sifatnya yang datar terhadap kepadatan merupakan properti algoritmik, bukan properti runtime.
+
+Dengan catatan itu, perbandingan yang tetap sah:
 
 - **YOLOv10n lawan YOLOv11n:** *inference* imbang, hemat 0,33 ms di *post-processing* → unggul 13% total. Keunggulan *NMS-free* terwujud.
-- **YOLO26n lawan YOLOv11n:** rugi 0,41 ms di *inference*, hemat 0,33 ms di *post-processing* → **imbang**. Keunggulan *NMS-free*-nya habis termakan.
+- **YOLO26n lawan YOLOv11n:** hemat 0,33 ms di *post-processing*, sedangkan selisih *inference*-nya tidak dapat diinterpretasi. Kesimpulan tentang total end-to-end di GPU karena itu **tidak dapat ditarik**.
 
 ### 7.2 Latensi CPU dan Dampak Export ONNX
 
@@ -343,6 +357,31 @@ Temuan ini menjelaskan mengapa evaluasi di GPU saja menyesatkan untuk menilai YO
 **Klaim vendor yang tidak tereproduksi persis.** Dokumentasi YOLO26 [S002] menyebut "up to 43% faster CPU inference". Terukur **24% lebih cepat** daripada YOLOv11n pada ONNX CPU — arah klaim benar, besarannya lebih kecil. Yang dilaporkan dalam naskah harus angka terukur sendiri, bukan angka vendor.
 
 **Klaim yang tidak terbukti maupun terbantah.** Klaim penghapusan DFL yang mempermudah export tidak dapat dibedakan: keempat model berhasil di-export dalam 0,6–1,0 detik tanpa galat. Tidak ada pembeda karena tidak ada yang bermasalah. Dilaporkan sebagai hasil nol.
+
+### 7.4 Posisi Terhadap Literatur: Ini Verifikasi, Bukan Temuan
+
+Penelusuran literatur menunjukkan bahwa perubahan peringkat latensi antar perangkat **sudah lama dilaporkan, punya nama teknis baku, dan sudah dipublikasikan untuk pasangan model yang sama**. Bagian ini karena itu diposisikan sebagai verifikasi independen, bukan kontribusi.
+
+| Sumber | Yang sudah dinyatakan |
+|---|---|
+| Cai et al., *ProxylessNAS*, ICLR 2019 | "Models optimized for GPU do not run fast on CPU and mobile phone, vice versa" |
+| Li et al., *HW-NAS-Bench*, ICLR 2021 | Korelasi peringkat antar perangkat dapat serendah ~0,00 |
+| Lu et al., *One Proxy Device Is Enough*, ACM SIGMETRICS 2022 | Memperkenalkan istilah **latency monotonicity**; kuat dalam satu platform, lemah lintas platform |
+| Lazarevich et al., *YOLOBench*, ICCVW 2023 | 550+ model YOLO × 4 platform; Pareto frontier berbeda nyata antar perangkat |
+| Dokumentasi Ultralytics YOLO26 | Tabel resmi: YOLO26n CPU ONNX 38,9 ms lawan YOLO11n 56,1 ms, sekaligus T4 TensorRT 1,7 lawan 1,5 ms |
+
+Angka CPU pada Bagian 7.2 karena itu **mereproduksi klaim vendor**, bukan menemukannya. Nilainya tetap ada: reproduksi itu dilakukan pada **bobot hasil fine-tuning CrowdHuman**, bukan bobot COCO bawaan, sehingga menjadi verifikasi independen yang relevan untuk penetapan anggaran latensi pipeline.
+
+**Konfound yang harus dinyatakan.** Perbandingan Bagian 7.2 mengubah dua variabel sekaligus — perangkat (GPU→CPU) dan runtime (PyTorch→ONNX). Menguraikannya dengan data yang tersedia:
+
+| Sel | YOLOv10n | YOLOv11n | YOLO26n | YOLO26s | Peringkat (tercepat lebih dulu) |
+|---|---|---|---|---|---|
+| GPU + PyTorch | 2,13 | 2,14 | 2,55 | 2,69 | v10n < v11n < 26n < 26s |
+| CPU + PyTorch | 24,97 | **21,14** | 23,06 | 56,35 | **v11n** < 26n < v10n < 26s |
+| CPU + ONNX | 13,17 | 13,21 | **9,95** | 22,80 | **26n** < v10n < v11n < 26s |
+| GPU + ONNX | — | — | — | — | *belum diukur* |
+
+**YOLO26n hanya menjadi tercepat pada kombinasi CPU + ONNX.** Pada CPU dengan PyTorch, justru YOLOv11n yang tercepat. Karena itu pernyataan "peringkat bergantung perangkat" **tidak akurat** — yang benar, peringkat bergantung pada kombinasi perangkat **dan** runtime, dan keunggulan YOLO26n terikat pada jalur ONNX. Sel GPU + ONNX perlu diisi untuk melengkapi matriks.
 
 ### 7.3 Penskalaan Resolusi
 
