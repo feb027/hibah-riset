@@ -6,9 +6,12 @@ Skenario D.
 
 Beberapa hal yang dijaga supaya angkanya sah:
 
-- Pengukuran dirata-ratakan atas beberapa gambar terpadat, bukan satu gambar
-  yang kebetulan muncul pertama dari filesystem. Jumlah deteksi pada satu
-  gambar tunggal terlalu bergantung pada isi gambar itu.
+- Pengukuran diambil atas beberapa gambar terpadat, bukan satu gambar yang
+  kebetulan muncul pertama dari filesystem. Jumlah deteksi pada satu gambar
+  tunggal terlalu bergantung pada isi gambar itu.
+- Pemanasan diulang di setiap resolusi. Tanpa itu, resolusi yang diuji lebih
+  dulu menanggung biaya alokasi buffer untuk bentuk tensor barunya, sehingga
+  kurva FPS-vs-resolusi melandai bukan karena sifat modelnya.
 - Semua model dibatasi ke kelas person supaya beban post-processing sebanding
   antara model pra-latih COCO dan model hasil fine-tune.
 - Label grafik diambil dari katalog detektor, jadi tidak ada daftar label
@@ -23,6 +26,7 @@ from __future__ import annotations
 import argparse
 import csv
 import os
+import statistics
 import sys
 from pathlib import Path
 
@@ -50,22 +54,28 @@ def discover_weights():
     return found or FALLBACK_WEIGHTS
 
 
-def measure(model, image_paths, res, iters):
-    """Rata-rata FPS end-to-end dan jumlah deteksi pada satu resolusi."""
-    total_ms = 0.0
-    total_det = 0
-    n = 0
+def measure(model, image_paths, res, iters, warmup_rounds):
+    """FPS end-to-end (dari median waktu frame) dan rata-rata deteksi per gambar.
 
+    Pemanasan diulang untuk setiap resolusi, bukan sekali di awal: mengubah
+    imgsz mengubah bentuk tensor masukan, dan alokasi buffer untuk bentuk baru
+    itu akan tercatat sebagai latensi kalau tidak dihangatkan lebih dulu.
+    Median dipakai karena distribusi waktu frame menjulur ke kanan, sehingga
+    beberapa iterasi lambat bisa menyeret rata-rata menjauh dari perilaku biasa.
+    """
+    for _ in range(warmup_rounds):
+        for img_path in image_paths:
+            model(img_path, imgsz=res, classes=[0], verbose=False)
+
+    frame_ms, detections = [], []
     for img_path in image_paths:
         for _ in range(iters):
             results = model(img_path, imgsz=res, classes=[0], conf=0.25, verbose=False)
             speed = results[0].speed
-            total_ms += speed["preprocess"] + speed["inference"] + speed["postprocess"]
-            total_det += len(results[0].boxes)
-            n += 1
+            frame_ms.append(speed["preprocess"] + speed["inference"] + speed["postprocess"])
+            detections.append(len(results[0].boxes))
 
-    avg_ms = total_ms / n
-    return 1000.0 / avg_ms, total_det / n
+    return 1000.0 / statistics.median(frame_ms), statistics.mean(detections)
 
 
 def main():
@@ -75,6 +85,7 @@ def main():
     parser.add_argument("--images-dir", default=DEFAULT_IMAGES_DIR)
     parser.add_argument("--images", type=int, default=5, help="Jumlah gambar terpadat")
     parser.add_argument("--iters", type=int, default=5, help="Pengulangan per gambar per resolusi")
+    parser.add_argument("--warmup", type=int, default=5, help="Putaran pemanasan di setiap resolusi")
     parser.add_argument("--plot", default="experiments/resolusi_scaling.png")
     parser.add_argument("--out", default="experiments/resolusi_scaling_results.csv")
     args = parser.parse_args()
@@ -97,12 +108,10 @@ def main():
         print(f"--- {label}  ({weights})")
 
         model = YOLO(weights)
-        for _ in range(3):
-            model(image_paths[0], imgsz=640, classes=[0], verbose=False)
 
         fps_points, det_points = [], []
         for res in RESOLUTIONS:
-            fps, det = measure(model, image_paths, res, args.iters)
+            fps, det = measure(model, image_paths, res, args.iters, args.warmup)
             fps_points.append(fps)
             det_points.append(det)
             print(f"    {res}x{res}  ->  {fps:6.1f} FPS  |  {det:5.1f} deteksi/gambar")

@@ -19,9 +19,16 @@ Tiga hal yang dijaga di sini karena menentukan sah-tidaknya angka yang keluar:
    args.yaml. Sifat itu dicetak apa adanya sebagai fakta arsitektur, tanpa
    label menghakimi seperti "cepat"/"lambat" - justru itu yang diukur.
 
+4. Pemanasan dijalankan atas seluruh gambar uji dan cukup panjang untuk
+   mencapai kondisi tunak, lalu latensi dilaporkan sebagai p50 dan p95.
+   Pemanasan pendek menyisakan iterasi awal yang lambat, yang menarik naik
+   rata-rata dan membengkakkan simpangan baku sampai selisih antar model
+   tenggelam di dalamnya.
+
 Contoh:
     python scripts/experiments/test_nms_overhead.py
     python scripts/experiments/test_nms_overhead.py --weights yolo11n.pt yolov10n.pt --images 10
+    python scripts/experiments/test_nms_overhead.py --warmup 25 --iters 50
 """
 from __future__ import annotations
 
@@ -54,14 +61,23 @@ def discover_weights():
     return found or FALLBACK_WEIGHTS
 
 
+def warmup(model, image_paths, rounds):
+    """Panaskan model sampai kondisi tunak sebelum pengukuran dimulai.
+
+    Pemanasan dilakukan atas SELURUH gambar uji, bukan satu gambar saja: ukuran
+    gambar CrowdHuman bervariasi, dan setiap ukuran baru memicu alokasi buffer
+    baru yang biayanya akan tercatat sebagai latensi kalau belum dihangatkan.
+    Jumlah putaran juga dinaikkan karena clock GPU perlu waktu naik ke frekuensi
+    kerjanya; pemanasan yang terlalu pendek menyisakan iterasi-iterasi awal yang
+    lambat dan membuat simpangan baku inference membengkak.
+    """
+    for _ in range(rounds):
+        for img_path in image_paths:
+            model(img_path, classes=[0], verbose=False)
+
+
 def benchmark(model, image_paths, iters):
-    from ultralytics import YOLO  # noqa: F401  (diimpor di main, dipakai lewat `model`)
-
     inference_ms, postprocess_ms, detections = [], [], []
-
-    # Warmup: alokasi CUDA dan kompilasi kernel tidak boleh masuk hitungan.
-    for _ in range(5):
-        model(image_paths[0], classes=[0], verbose=False)
 
     for img_path in image_paths:
         for _ in range(iters):
@@ -74,10 +90,33 @@ def benchmark(model, image_paths, iters):
     return inference_ms, postprocess_ms, detections
 
 
-def mean_sd(values):
-    if len(values) < 2:
-        return (values[0] if values else 0.0), 0.0
-    return statistics.mean(values), statistics.stdev(values)
+def percentile(values, q):
+    """Persentil ke-q dengan interpolasi linear; aman untuk sampel kecil."""
+    if not values:
+        return 0.0
+    ordered = sorted(values)
+    if len(ordered) == 1:
+        return ordered[0]
+    pos = (len(ordered) - 1) * q
+    low = int(pos)
+    high = min(low + 1, len(ordered) - 1)
+    return ordered[low] + (ordered[high] - ordered[low]) * (pos - low)
+
+
+def summarize(values):
+    """Statistik latensi: median dan p95 sebagai angka utama, mean/sd pendamping.
+
+    Distribusi latensi menjulur ke kanan - beberapa iterasi lambat menarik
+    rata-rata naik tanpa mewakili perilaku biasa. Median lebih mewakili kondisi
+    tunak, sedangkan p95 yang menggambarkan beban puncak, dan justru p95 inilah
+    yang relevan untuk sistem real-time.
+    """
+    return {
+        "p50": statistics.median(values),
+        "p95": percentile(values, 0.95),
+        "mean": statistics.mean(values),
+        "sd": statistics.stdev(values) if len(values) > 1 else 0.0,
+    }
 
 
 def main():
@@ -87,6 +126,7 @@ def main():
     parser.add_argument("--images-dir", default=DEFAULT_IMAGES_DIR, help="Folder gambar validasi")
     parser.add_argument("--images", type=int, default=5, help="Jumlah gambar terpadat yang dipakai")
     parser.add_argument("--iters", type=int, default=20, help="Pengulangan per gambar")
+    parser.add_argument("--warmup", type=int, default=10, help="Putaran pemanasan atas seluruh gambar uji")
     parser.add_argument("--out", default=DEFAULT_OUTPUT_CSV, help="File CSV hasil")
     args = parser.parse_args()
 
@@ -99,7 +139,10 @@ def main():
     print("\nGambar uji terpilih (paling padat, urutan deterministik):")
     for path, count in selected:
         print(f"  {path.name}  -  {count} orang beranotasi")
-    print(f"\n{len(weights_list)} model x {args.images} gambar x {args.iters} iterasi\n")
+    print(
+        f"\n{len(weights_list)} model x {args.images} gambar x {args.iters} iterasi"
+        f"  (pemanasan {args.warmup} putaran = {args.warmup * args.images} inferensi)\n"
+    )
 
     rows = []
     for weights in weights_list:
@@ -107,11 +150,12 @@ def main():
         print(f"--- {weights}")
 
         model = YOLO(weights)
+        warmup(model, image_paths, args.warmup)
         inference_ms, postprocess_ms, detections = benchmark(model, image_paths, args.iters)
 
-        inf_mean, inf_sd = mean_sd(inference_ms)
-        post_mean, post_sd = mean_sd(postprocess_ms)
-        total = inf_mean + post_mean
+        inf = summarize(inference_ms)
+        post = summarize(postprocess_ms)
+        total = inf["p50"] + post["p50"]
 
         rows.append(
             {
@@ -119,24 +163,31 @@ def main():
                 "arsitektur": meta["alias"],
                 "source_id": meta["source_id"] or "-",
                 "nms_free": {True: "ya", False: "tidak", None: "?"}[meta["nms_free"]],
-                "inference_ms": round(inf_mean, 3),
-                "inference_sd": round(inf_sd, 3),
-                "postprocess_ms": round(post_mean, 3),
-                "postprocess_sd": round(post_sd, 3),
-                "postprocess_pct": round(100.0 * post_mean / total, 2) if total else 0.0,
+                "inference_p50": round(inf["p50"], 3),
+                "inference_p95": round(inf["p95"], 3),
+                "inference_mean": round(inf["mean"], 3),
+                "inference_sd": round(inf["sd"], 3),
+                "postprocess_p50": round(post["p50"], 3),
+                "postprocess_p95": round(post["p95"], 3),
+                "postprocess_mean": round(post["mean"], 3),
+                "postprocess_sd": round(post["sd"], 3),
+                "postprocess_pct": round(100.0 * post["p50"] / total, 2) if total else 0.0,
                 "deteksi_rata2": round(statistics.mean(detections), 1),
             }
         )
 
-    header = f"{'Arsitektur':<12} | {'NMS-free':<8} | {'Inference (ms)':<18} | {'Post-process (ms)':<20} | {'Post %':<7} | {'Deteksi'}"
+    header = (
+        f"{'Arsitektur':<12} | {'NMS-free':<8} | {'Inference p50/p95':<19} | "
+        f"{'Post-process p50/p95':<21} | {'Post %':<7} | {'Deteksi'}"
+    )
     print("\n" + "-" * len(header))
     print(header)
     print("-" * len(header))
     for r in rows:
-        inf = f"{r['inference_ms']:.2f} +/- {r['inference_sd']:.2f}"
-        post = f"{r['postprocess_ms']:.2f} +/- {r['postprocess_sd']:.2f}"
+        inf_cell = f"{r['inference_p50']:.2f} / {r['inference_p95']:.2f}"
+        post_cell = f"{r['postprocess_p50']:.2f} / {r['postprocess_p95']:.2f}"
         print(
-            f"{r['arsitektur']:<12} | {r['nms_free']:<8} | {inf:<18} | {post:<20} | "
+            f"{r['arsitektur']:<12} | {r['nms_free']:<8} | {inf_cell:<19} | {post_cell:<21} | "
             f"{r['postprocess_pct']:<7.1f} | {r['deteksi_rata2']}"
         )
     print("-" * len(header))
@@ -148,13 +199,16 @@ def main():
         writer.writeheader()
         writer.writerows(rows)
 
-    print(f"\nTersimpan ke {out_path}")
+    print(f"\nTersimpan ke {out_path}  (mean dan simpangan baku ikut tercatat di CSV)")
     print(
         "\nCatatan pembacaan: kolom 'Post-process' adalah biaya yang dihapus arsitektur\n"
         "NMS-free. Bandingkan model dalam tier yang sama saja (nano lawan nano),\n"
         "karena antar-tier selisihnya didominasi ukuran model, bukan arsitektur.\n"
-        "Simpangan baku disertakan supaya selisih yang lebih kecil dari noise\n"
-        "pengukuran tidak dilaporkan sebagai temuan."
+        "p50 mewakili perilaku biasa, p95 mewakili beban puncak. Kalau jarak p50 ke\n"
+        "p95 pada satu model lebih lebar daripada selisih antar model, maka selisih\n"
+        "itu tenggelam dalam variasi pengukuran dan tidak boleh dilaporkan sebagai\n"
+        "temuan. Angka ini juga khusus perangkat tempat script dijalankan; latensi\n"
+        "NMS di CPU edge berperilaku sangat berbeda dan harus diukur terpisah."
     )
 
 
