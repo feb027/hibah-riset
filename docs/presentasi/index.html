@@ -97,11 +97,11 @@ li::before{content:"—";position:absolute;left:0;color:var(--mark)}
   <div class="sesudah-judul"></div>
   <div class="bukti">
     <div class="jelas" style="font-size:var(--fs-body);color:var(--tinta);max-width:1500px">
-      NMS adalah tahap penyaringan setelah deteksi, yang membuang kotak bertumpuk.
-      Di kerumunan, tahap itu bisa ikut membuang orang yang memang berdiri berdempetan.
+      NMS adalah tahap pembersih setelah deteksi, yang membuang kotak yang bertumpuk.
+      Di kerumunan, tahap ini bisa ikut membuang orang yang memang berdiri berdempetan.
     </div>
   </div>
-  <footer><span>Latar</span><span>2 / 12</span></footer>
+  <footer><span>Latar</span><span>2 / 14</span></footer>
 </section>
 
 <section class="slide">
@@ -112,16 +112,16 @@ li::before{content:"—";position:absolute;left:0;color:var(--mark)}
       <tr><th>Pengaturan</th><th>Nilai</th></tr>
       <tr><td>Data latih</td><td class="nama">CrowdHuman, 15.000 gambar</td></tr>
       <tr><td>Data uji</td><td class="nama">4.370 gambar, 99.481 orang</td></tr>
-      <tr><td>Lama latih</td><td class="nama">100 epoch</td></tr>
+      <tr><td>Lama pelatihan</td><td class="nama">100 epoch</td></tr>
       <tr><td>Resolusi</td><td class="nama">640 × 640</td></tr>
       <tr><td>Seed acak</td><td class="nama">0 — sama untuk keempatnya</td></tr>
     </table>
   </div>
-  <footer><span>Cara uji</span><span>3 / 12</span></footer>
+  <footer><span>Cara uji</span><span>3 / 14</span></footer>
 </section>
 
 <section class="slide">
-  <h1>Ketiga model kelas nano setara — selisihnya di bawah batas yang bisa dibedakan</h1>
+  <h1>Ketiga model kelas nano setara, selisihnya di bawah batas yang bisa dibedakan</h1>
   <div class="sesudah-judul"></div>
   <div class="bukti">
     <table>
@@ -131,9 +131,9 @@ li::before{content:"—";position:absolute;left:0;color:var(--mark)}
       <tr><td class="nama">yolo26n</td><td class="num">0,689</td><td class="num">0,450</td></tr>
       <tr><td class="nama">yolov11n</td><td class="num">0,697</td><td class="num">0,446</td></tr>
     </table>
-    <div class="jelas data">Rentang ketiga model nano hanya <span class="tekan">0,006</span> — tidak bisa dibedakan dari kebetulan.</div>
+    <div class="jelas data">Rentang ketiga model nano hanya <span class="tekan">0,006</span>, tak bisa dibedakan dari kebetulan.</div>
   </div>
-  <footer><span>Temuan 1</span><span>4 / 12</span></footer>
+  <footer><span>Temuan 1</span><span>4 / 14</span></footer>
 </section>
 
 <section class="slide">
@@ -144,15 +144,15 @@ li::before{content:"—";position:absolute;left:0;color:var(--mark)}
     <div class="jelas">Naik dari kelas nano ke small menambah 0,048 mAP.
       Seluruh selisih antar arsitektur di kelas yang sama hanya 0,006.</div>
   </div>
-  <footer><span>Temuan 2</span><span>5 / 12</span></footer>
+  <footer><span>Temuan 2</span><span>5 / 14</span></footer>
 </section>
 
 <section class="slide">
-  <h1>Arsitektur tanpa NMS memangkas waktu penyaringan 2,9 kali</h1>
+  <h1>Detektor tanpa NMS memangkas tahap pembersih 2,9 kali</h1>
   <div class="sesudah-judul"></div>
   <div class="bukti">
     <table>
-      <tr><th>Model</th><th>Pakai NMS</th><th class="num">Penyaringan (ms)</th><th class="num">Porsi waktu</th></tr>
+      <tr><th>Model</th><th>Pakai NMS</th><th class="num">Tahap pembersih (ms)</th><th class="num">Bagian dari waktu</th></tr>
       <tr><td class="nama">yolov11n</td><td>ya</td><td class="num">0,49</td><td class="num kunci">18,7%</td></tr>
       <tr><td class="nama">yolov10n</td><td>tidak</td><td class="num">0,17</td><td class="num">7,3%</td></tr>
       <tr><td class="nama">yolo26n</td><td>tidak</td><td class="num">0,16</td><td class="num">6,0%</td></tr>
@@ -160,7 +160,7 @@ li::before{content:"—";position:absolute;left:0;color:var(--mark)}
     </table>
     <div class="jelas data">Biayanya juga tetap datar walau kerumunan makin padat.</div>
   </div>
-  <footer><span>Temuan 3</span><span>6 / 12</span></footer>
+  <footer><span>Temuan 3</span><span>6 / 14</span></footer>
 </section>
 
 <section class="slide">
@@ -176,37 +176,37 @@ li::before{content:"—";position:absolute;left:0;color:var(--mark)}
     </table>
     <div class="jelas data">Batas kelayakan video adalah 30 FPS. Keempatnya lolos setelah diekspor ke ONNX.</div>
   </div>
-  <footer><span>Temuan 4</span><span>7 / 12</span></footer>
+  <footer><span>Temuan 4</span><span>7 / 14</span></footer>
 </section>
 
 <section class="slide">
-  <h1>Orang di tepi bingkai dua kali lebih sulit dideteksi daripada yang tertutup orang lain</h1>
+  <h1>Orang di tepi bingkai dua kali lebih sulit dideteksi daripada yang tertutup sesama</h1>
   <div class="sesudah-judul"></div>
   <div class="bukti">
     <svg viewBox="0 0 1712 500" width="1712" height="500" role="img"
-         aria-label="Penurunan akurasi: terpotong tepi bingkai 28,4 poin; tertutup orang lain 14,5 poin">
+         aria-label="Penurunan akurasi: terpotong tepi bingkai 28,4 poin; tertutup sesama 14,5 poin">
       <text class="lbl" x="0" y="46">Terpotong tepi bingkai</text>
       <rect class="bar-kunci" x="0" y="72" width="1200" height="132"/>
       <text x="1232" y="156">−28,4 poin</text>
 
-      <text class="lbl" x="0" y="330">Tertutup orang lain</text>
+      <text class="lbl" x="0" y="330">Tertutup sesama</text>
       <rect class="bar" x="0" y="356" width="613" height="132"/>
       <text x="645" y="440">−14,5 poin</text>
     </svg>
     <div class="jelas data">15 dari 100 orang di data uji berada di tepi bingkai.</div>
   </div>
-  <footer><span>Temuan utama</span><span>8 / 12</span></footer>
+  <footer><span>Temuan utama</span><span>8 / 14</span></footer>
 </section>
 
 <section class="slide">
-  <h1>Sekitar satu dari sepuluh orang tidak pernah terdeteksi, seberapa pun ambang diturunkan</h1>
+  <h1>Sekitar satu dari sepuluh orang tak pernah terdeteksi, apa pun ambangnya</h1>
   <div class="sesudah-judul"></div>
   <div class="bukti">
     <div class="hero">7–10%</div>
-    <div class="jelas">Ini batas bawah yang sudah terkunci di detektor.
-      Tracker dan logika hitung di belakangnya tidak bisa memperbaikinya.</div>
+    <div class="jelas">Artinya dari setiap 100 orang sungguhan, 7 sampai 10 orang lewat dari deteksi.
+      Batas ini sudah terkunci di detektor, tracker dan logika hitung di belakangnya tak bisa memperbaikinya.</div>
   </div>
-  <footer><span>Temuan 5</span><span>9 / 12</span></footer>
+  <footer><span>Temuan 5</span><span>9 / 14</span></footer>
 </section>
 
 <section class="slide">
@@ -225,9 +225,37 @@ li::before{content:"—";position:absolute;left:0;color:var(--mark)}
       <text class="lbl redup" x="1265" y="290" text-anchor="middle">zona</text>
       <text class="lbl redup" x="1265" y="340" text-anchor="middle">sulit</text>
     </svg>
-    <div class="jelas data">Perbaikan ini gratis — tidak perlu model yang lebih besar.</div>
+    <div class="jelas data">Perbaikan ini gratis, tak perlu model yang lebih besar.</div>
   </div>
-  <footer><span>Konsekuensi</span><span>10 / 12</span></footer>
+  <footer><span>Konsekuensi</span><span>10 / 14</span></footer>
+</section>
+
+<section class="slide">
+  <h1>Kesimpulan: arsitektur bukan penentu, ukuran dan CPU adalah kunci</h1>
+  <div class="sesudah-judul"></div>
+  <div class="bukti">
+    <div class="jelas" style="color:var(--tinta);max-width:1500px">
+      Tiga arsitektur nano setara. Detektor tanpa NMS menang di tahap pembersih, bukan di akurasi.
+      Untuk CPU kampus, YOLO26n paling masuk akal: 97 FPS, ruang leluasa untuk tracker dan penghitungan.
+      Untuk GPU, YOLO26s memberi akurasi tertinggi.
+    </div>
+  </div>
+  <footer><span>Kesimpulan</span><span>11 / 14</span></footer>
+</section>
+
+<section class="slide">
+  <h1>YOLO26 terbukti untuk CPU kampus, bukan klaim kosong</h1>
+  <div class="sesudah-judul"></div>
+  <div class="bukti">
+    <table>
+      <tr><th>Klaim YOLO26</th><th>Status</th><th>Hasil kami</th></tr>
+      <tr><td class="nama">Tanpa NMS</td><td class="nama">Terbukti</td><td class="nama">Pembersih 2,9× lebih cepat</td></tr>
+      <tr><td class="nama">43% lebih cepat di CPU</td><td class="nama">Diuji</td><td class="nama">Arah benar, kami ukur 24%</td></tr>
+      <tr><td class="nama">Objek kecil lebih baik</td><td class="nama">Belum</td><td class="nama">Selisih terlalu kecil, di dalam derau</td></tr>
+    </table>
+    <div class="jelas data">Pilihan YOLO26 sebagai prototipe tertopang bukti untuk edge, bukan untuk GPU.</div>
+  </div>
+  <footer><span>Posisi YOLO26</span><span>12 / 14</span></footer>
 </section>
 
 <section class="slide">
@@ -240,31 +268,45 @@ li::before{content:"—";position:absolute;left:0;color:var(--mark)}
       <li>CrowdHuman berupa foto diam, jadi belum menyentuh akurasi hitungan.</li>
     </ul>
   </div>
-  <footer><span>Batasan</span><span>11 / 12</span></footer>
+  <footer><span>Batasan</span><span>13 / 14</span></footer>
 </section>
 
 <section class="slide">
-  <h1>Lapisan detektor sudah selesai; yang menentukan berikutnya adalah tracker</h1>
+  <h1>Lapisan detektor sudah selesai, yang menentukan berikutnya adalah tracker</h1>
   <div class="sesudah-judul"></div>
   <div class="bukti">
     <div class="jelas" style="color:var(--tinta);max-width:1500px">
-      Detektor bukan penentu utama akurasi hitungan — ketiga arsitektur setara.
+      Detektor bukan penentu utama akurasi hitungan, ketiga arsitektur setara.
       Yang belum diuji sama sekali adalah lapisan pelacakan identitas,
       dan di situlah sumber hitung ganda berada.
     </div>
   </div>
-  <footer><span>Langkah berikutnya</span><span>12 / 12</span></footer>
+  <footer><span>Langkah berikutnya</span><span>14 / 14</span></footer>
 </section>
 
 <section class="slide">
-  <h1>Cadangan — hasil deteksi pada data uji</h1>
+  <h1>Cadangan: hasil deteksi pada data uji</h1>
   <div class="sesudah-judul"></div>
   <div class="bukti"><img src="gambar/deteksi-kerumunan.jpg" alt="Hasil deteksi yolo26s pada gambar kerumunan"></div>
   <footer><span>Cadangan</span><span>C1</span></footer>
 </section>
 
 <section class="slide">
-  <h1>Cadangan — menurunkan resolusi merugikan di GPU</h1>
+  <h1>Cadangan: contoh deteksi kualitatif</h1>
+  <div class="sesudah-judul"></div>
+  <div class="bukti"><img src="gambar/deteksi-kualitatif.jpg" alt="Contoh prediksi yolo26s pada gambar validasi"></div>
+  <footer><span>Cadangan</span><span>C2</span></footer>
+</section>
+
+<section class="slide">
+  <h1>Cadangan: kurva latihan menyatakan 60 epoch sudah cukup</h1>
+  <div class="sesudah-judul"></div>
+  <div class="bukti"><img src="gambar/training-convergence.png" alt="Kurva mAP selama pelatihan yolo26s"></div>
+  <footer><span>Cadangan</span><span>C3</span></footer>
+</section>
+
+<section class="slide">
+  <h1>Cadangan: menurunkan resolusi merugikan di GPU</h1>
   <div class="sesudah-judul"></div>
   <div class="bukti">
     <table>
@@ -277,14 +319,21 @@ li::before{content:"—";position:absolute;left:0;color:var(--mark)}
     </table>
     <div class="jelas data">Kecepatan naik 27%, tetapi 78% deteksi hilang.</div>
   </div>
-  <footer><span>Cadangan</span><span>C2</span></footer>
+  <footer><span>Cadangan</span><span>C4</span></footer>
 </section>
 
 <section class="slide">
-  <h1>Cadangan — kurva precision-recall model terbaik</h1>
+  <h1>Cadangan: kurva precision-recall model terbaik</h1>
   <div class="sesudah-judul"></div>
   <div class="bukti"><img src="gambar/kurva-pr.png" alt="Kurva precision-recall yolo26s"></div>
-  <footer><span>Cadangan</span><span>C3</span></footer>
+  <footer><span>Cadangan</span><span>C5</span></footer>
+</section>
+
+<section class="slide">
+  <h1>Cadangan: matriks sesat menunjukkan siapa yang terlewat</h1>
+  <div class="sesudah-judul"></div>
+  <div class="bukti"><img src="gambar/confusion-matrix.png" alt="Confusion matrix yolo26s"></div>
+  <footer><span>Cadangan</span><span>C6</span></footer>
 </section>
 
 </div>

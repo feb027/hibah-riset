@@ -47,13 +47,13 @@ Karena data dari CrowdHuman masih berformat zip dan labelnya `.odgt`, kita harus
 
 ```bash
 # 1. Jalankan script ekstrak (Pastikan zip dan odgt ada di data/raw/crowdhuman)
-python scripts/download_crowdhuman.py --raw-dir data/raw/crowdhuman
+python scripts/data_prep/download_crowdhuman.py --raw-dir data/raw/crowdhuman
 
 # 2. Konversi Anotasi Train ke YOLO format
-python scripts/convert_crowdhuman_to_yolo.py --odgt data/raw/crowdhuman/extracted/annotation_train.odgt --images-dir data/raw/crowdhuman/extracted/CrowdHuman_train --output-dir data/processed/crowdhuman/labels/train
+python scripts/data_prep/convert_crowdhuman_to_yolo.py --odgt data/raw/crowdhuman/extracted/annotation_train.odgt --images-dir data/raw/crowdhuman/extracted/CrowdHuman_train --output-dir data/processed/crowdhuman/labels/train
 
 # 3. Konversi Anotasi Val ke YOLO format
-python scripts/convert_crowdhuman_to_yolo.py --odgt data/raw/crowdhuman/extracted/annotation_val.odgt --images-dir data/raw/crowdhuman/extracted/CrowdHuman_val --output-dir data/processed/crowdhuman/labels/val
+python scripts/data_prep/convert_crowdhuman_to_yolo.py --odgt data/raw/crowdhuman/extracted/annotation_val.odgt --images-dir data/raw/crowdhuman/extracted/CrowdHuman_val --output-dir data/processed/crowdhuman/labels/val
 ```
 
 > **PENTING:** Pastikan Anda menyalin atau memindahkan file gambar (`.jpg`) dari folder `extracted` agar tersusun sejajar dengan folder `labels`. YOLO membaca struktur yang setara. Misalnya, buat folder `data/processed/crowdhuman/images/train` dan pindahkan semua gambar train ke sana.

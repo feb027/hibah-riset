@@ -1,0 +1,5 @@
+weights,arsitektur,source_id,nms_free,inference_ms,inference_sd,postprocess_ms,postprocess_sd,postprocess_pct,deteksi_rata2
+runs/detect/yolo10_crowdhuman/weights/best.pt,yolov10n,S003,ya,2.347,1.735,0.181,0.03,7.17,153.2
+runs/detect/yolo11_crowdhuman/weights/best.pt,yolov11n,-,tidak,2.253,0.826,0.498,0.043,18.09,197.2
+runs/detect/yolo_crowdhuman/weights/best.pt,yolo26n,S001/S002,ya,2.857,1.981,0.179,0.027,5.91,167
+runs/detect/yolo_crowdhuman_small/weights/best.pt,yolo26s,S001/S002,ya,2.909,1.925,0.179,0.026,5.8,199

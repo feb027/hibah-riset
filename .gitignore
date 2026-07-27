@@ -48,6 +48,7 @@ htmlcov/
 *.avi
 *.mkv
 *.pt
+*.onnx
 models/
 data/
 experiments/*.mp4

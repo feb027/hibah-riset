@@ -1,0 +1,5 @@
+weights,arsitektur,source_id,mr2,ap50,recall_maks,ap50_protokol_lama,recall_maks_protokol_lama,selisih_ap50,n_gt,n_citra
+runs/detect/yolo_crowdhuman_small/weights/best.onnx,yolo26s,S001/S002,0.7574,0.8283,0.9262,0.8167,0.9179,0.0116,99481,4370
+runs/detect/yolo10_crowdhuman/weights/best.onnx,yolov10n,S003,0.7765,0.7898,0.9146,0.7765,0.9049,0.0133,99481,4370
+runs/detect/yolo11_crowdhuman/weights/best.onnx,yolov11n,-,0.7777,0.7882,0.9,0.7743,0.8884,0.014,99481,4370
+runs/detect/yolo_crowdhuman/weights/best.onnx,yolo26n,S001/S002,0.7792,0.7881,0.9124,0.775,0.9023,0.0132,99481,4370
