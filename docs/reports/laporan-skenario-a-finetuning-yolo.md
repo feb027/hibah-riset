@@ -242,6 +242,8 @@ Sebaran target:
 | | sedang (50-150 px) | 36.528 | 36,7% |
 | | kecil (<50 px) | 10.256 | 10,3% |
 
+![Sebaran Karakteristik Target](../../experiments/sebaran_target.png)
+
 Seluruh angka pada bagian ini berasal dari konfigurasi bawaan (ambang pencocokan 0,5, ambang NMS 0,7) pada set validasi penuh, sehingga keempat arsitektur sepenuhnya sebanding. Sumber: `experiments/breakdown_full_default.csv`.
 
 #### 6.5.1 Pemotongan Bingkai adalah Sumbu Kesulitan Dominan
