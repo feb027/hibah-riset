@@ -90,18 +90,7 @@ Kesetaraan konfigurasi diverifikasi dari berkas `args.yaml` masing-masing run, b
 
 *Dibangkitkan otomatis oleh `scripts/experiments/summarize_training_runs.py` untuk menghindari kesalahan salin manual. Sumber: `runs/detect/*/results.csv`.*
 
-### 4.2 Cara Membaca Metrik Ini
-
-Arti operasional tiap kolom dalam konteks *people counting*:
-
-- **Precision (0,82–0,85)** — dari setiap 100 kotak yang dilaporkan sebagai "orang", sekitar 82–85 memang benar. Sisanya *false positive*, yang bila bertahan beberapa frame dapat memicu **hitungan berlebih**.
-- **Recall (0,69–0,75)** — dari setiap 100 orang yang benar-benar ada, model menemukan 69–75. Sisanya terlewat, menyebabkan **hitungan kurang**. Ini metrik paling kritis bagi penelitian ini.
-- **mAP@0.5** — ambang tumpang tindih longgar (50%); mengukur "apakah orangnya ketemu".
-- **mAP@0.5:0.95** — ambang ketat (50–95%); mengukur "apakah kotaknya rapat". Menjadi tolok ukur utama karena kotak yang meleset menyulitkan *tracker* mempertahankan identitas antar-frame.
-
-**Recall konsisten lebih rendah daripada precision di semua model.** Ini pola khas deteksi kerumunan padat: model cenderung melewatkan orang yang tertutup ketimbang mengarang deteksi. Untuk *people counting*, artinya sistem punya **kecenderungan sistemik ke arah *under-count***.
-
-### 4.3 Dinamika Konvergensi
+### 4.2 Dinamika Konvergensi
 
 Perkembangan mAP@0.5:0.95 sepanjang pelatihan:
 

@@ -1,178 +1,147 @@
-# Catatan Pembicara — Skenario A
+# Naskah Presentasi Lengkap: Laporan Skenario A (Evaluasi YOLO)
 
-Dek: `docs/presentasi/index.html`. Buka di peramban, tekan **F11** untuk layar penuh, navigasi dengan **panah kiri/kanan**.
-
-Slide sengaja tidak memuat kalimat yang akan Anda ucapkan. Yang tertulis di bawah ini adalah bahan bicara, bukan untuk dibaca dari layar.
-
-Target durasi: **10–12 menit**, sekitar 1 menit per slide.
+*Catatan: Naskah ini diurutkan **persis** mengikuti struktur daftar isi laporan `laporan-skenario-a-finetuning-yolo.md`. Teks yang dicetak miring (**Baca:**) adalah poin dari slide/laporan yang Anda bacakan langsung. Teks reguler (**Jelaskan:**) adalah penjelasan lisan dengan gaya bahasa santai untuk audiens/dosen, lengkap dengan cara membaca tabel/grafik.*
 
 ---
 
-## 1 — Judul
+## Bab 1 & 2: Ringkasan Eksekutif dan Pendahuluan
 
-> "Saya laporkan hasil Skenario A, yaitu evaluasi detektor. Ini lapisan pertama dari pipeline, dan yang sudah selesai dikerjakan."
+**Baca:** *"Laporan ini mendokumentasikan pelaksanaan Skenario A (Evaluasi Detector) pada dataset CrowdHuman. Tujuan utamanya bukan semata mencari model terbaik secara umum, melainkan menguji kelayakan model NMS-Free untuk menghitung orang di kerumunan padat."*
 
-Jangan berlama-lama. Langsung lanjut.
-
----
-
-## 2 — Pertanyaan yang dijawab
-
-> "Proposal kita memilih detektor tanpa NMS. Pertanyaannya: apakah pilihan itu memang menguntungkan untuk menghitung orang di kerumunan."
-
-Kalau dosen belum familier dengan NMS, jelaskan sekali di sini:
-
-> "NMS itu tahap pembersih setelah model mendeteksi. Model biasanya mengeluarkan banyak kotak bertumpuk untuk satu orang, lalu NMS memilih satu dan membuang sisanya. Masalahnya, di kerumunan, dua orang yang berdempetan juga menghasilkan kotak bertumpuk, dan NMS tidak bisa membedakan mana kotak ganda untuk satu orang, mana dua orang berbeda."
-
-**Cukup jelaskan sekali.** Setelah ini pakai istilahnya langsung.
+**Jelaskan:**
+"Bapak/Ibu, hari ini saya akan mempresentasikan hasil pengujian lapis pertama dari sistem *people counting* kita, yaitu bagian deteksi orang (YOLO). Di bab awal ini, kami tegaskan bahwa kita belum membahas soal pelacakan (*tracking*) atau garis hitung (*counting line*). Yang kita uji murni ketajaman mata si AI ini saat melihat foto kerumunan padat. Mari kita lihat metodologi dan hasil ujinya."
 
 ---
 
-## 3 — Cara uji
+## Bab 3: Metodologi
 
-> "Empat model dilatih dengan pengaturan yang persis sama: data sama, lama pelatihan sama, resolusi sama, seed acak sama. Jadi kalau ada selisih, itu memang karena arsitekturnya, bukan karena setelan yang berbeda."
+### 3.1 Dataset dan Protokol Anotasi
+**Baca:** *"Kami menggunakan dataset CrowdHuman dengan 103.115 anotasi target. Protokol yang digunakan adalah 'fbox' (full-body box) yang bersifat amodal. Kami juga mencatat 1,97% kotak memiliki titik tengah di luar bingkai, dan wilayah 'ignore' ditangani secara spesifik."*
 
-Kalau ditanya kenapa CrowdHuman: dataset standar untuk deteksi orang di kerumunan, rata-rata 22 orang per gambar.
+**Jelaskan:**
+"Terkait tabel audit dataset di poin ini, ada tiga keputusan penting yang kami ambil:
+1.  **Kenapa kami pakai Full-Body Box?** Kami memaksa AI menggambar kotak orang dari kepala sampai kaki, meskipun kakinya ketutupan meja atau orang lain. Tujuannya demi sistem *tracking* nanti. Kalau AI hanya disuruh deteksi bagian tubuh yang kelihatan saja, titik pusat badannya akan melompat-lompat saat dia jalan di belakang rintangan, dan itu merusak akurasi penghitungan.
+2.  **Kenapa ada 1,97% titik tengah di luar bingkai?** Ini adalah orang yang berdirinya sangat mepet di ujung kamera, sampai titik pusat badannya ada di luar foto. Ini bisa bikin sistem sedikit distorsi (kebingungan), tapi karena jumlahnya cuma 1,97% (sangat kecil), ini tidak merusak hasil eksperimen.
+3.  **Apa itu wilayah Ignore?** Di foto kerumunan, kadang ada kerumunan super padat di kejauhan yang saking buramnya tidak bisa dikotaki satu-satu. Area ini kami biarkan AI tebak saat latihan, tapi saat ujian kami anulir, agar nilai ujian AI benar-benar adil."
 
----
+### 3.2 Konfigurasi Pelatihan
+**Baca:** *"Konfigurasi: Epoch 100, resolusi 640x640, Optimizer 'auto', Seed 0, AMP aktif, dan fokus pada 1 Kelas (Person)."*
 
-## 4 — Temuan 1: ketiganya setara
+**Jelaskan:**
+"Terkait tabel konfigurasi ini, kami mengunci pengacakan pelatihan dengan **Seed 0**. Tujuannya agar eksperimen ini 100% *reproducible* (bisa diulang kapanpun dengan hasil sama persis). Kami juga menggunakan **AMP** (*Automatic Mixed Precision*) agar AI belajar lebih ngebut di GPU tanpa jadi bodoh. Dan yang paling penting, memori AI ini kami pangkas agar dia fokus 100% mendeteksi 1 kelas saja, yaitu manusia."
 
-> "Ini hasil akurasinya. Tiga model kelas nano praktis sama, selisihnya cuma 0,006. Dengan satu kali latih per model, angka sekecil itu tidak bisa dibedakan dari kebetulan."
+### 3.3 Perangkat dan Runtime
+**Baca:** *"Pengujian dilakukan pada Server GPU (RTX 4090) dengan PyTorch, dan CPU Komputer biasa menggunakan ONNX."*
 
-**Antisipasi pertanyaan:** *"Kenapa tidak dilatih beberapa kali?"*
-
-> "Betul, itu batasan yang kami sadari. Untuk mengklaim selisih sekecil ini secara statistik memang perlu tiga kali latih per model, sekitar 14 jam GPU. Untuk sekarang kami memilih tidak mengklaim selisihnya sama sekali."
-
-Jawaban ini lebih kuat daripada berkelit.
-
----
-
-## 5 — Temuan 2: ukuran model yang menentukan
-
-> "Yang benar-benar berpengaruh bukan pilihan arsitektur, tapi ukuran model. Naik satu kelas memberi delapan kali lipat dampaknya dibanding beda arsitektur."
-
-Implikasi praktis kalau ditanya:
-
-> "Artinya keputusan yang penting nanti bukan 'YOLO mana', tapi 'kelas nano atau small', dan itu ditentukan perangkat yang dipakai."
+**Jelaskan:**
+"Tabel perangkat ini krusial karena menjawab janji proposal kami. Kami melatih AI di server GPU mahal, tapi untuk sistem yang menyala di lapangan nanti, kami mengujinya di **CPU biasa** menggunakan format **ONNX**. Format ONNX ini ibarat mengubah file dokumen yang berat menjadi PDF ringan, sehingga AI bisa jalan ngebut di komputer murah."
 
 ---
 
-## 6 — Temuan 3: tanpa NMS memangkas tahap pembersih
+## Bab 4: Hasil Pelatihan
 
-> "Di sini arsitektur tanpa NMS memang menang. Waktu tahap pembersihnya hampir tiga kali lebih hemat. Dan yang lebih penting untuk kita: biayanya tetap datar walau kerumunan makin padat, jadi sistem tidak melambat justru saat ramai."
+### 4.1 & 4.2 Tabel Utama & Cara Membaca
+**Baca:** *"Hasil di Tabel 4.1 menunjukkan Precision berada di kisaran 0,82–0,85, dan Recall di kisaran 0,69–0,75. mAP@0.5 rata-rata 0,78, sedangkan mAP@0.5:0.95 menjadi tolok ukur utama."*
 
-**Jangan berlebihan.** Kalau ditanya seberapa besar dampaknya:
+**Jelaskan:**
+"Mari kita bedah tabel rapor AI di Bab 4.1 ini angka demi angka:
+*   **Precision (85%):** Artinya dari 100 kotak tebakan AI, 85 benar-benar manusia, 15 salah tebak benda mati. Kalau presisi jelek, sistem CCTV kita akan menghitung lebih banyak orang dari aslinya (*over-count*).
+*   **Recall (75%):** Artinya dari 100 orang asli di kamera, AI kita hanya berhasil nemu 75 orang. Sisanya terlewat. Karena Recall (75) lebih kecil dari Precision (85), artinya watak dasar AI kita lebih sering kehilangan orang (*under-count*) ketimbang berhalusinasi.
+*   **mAP@0.5:** Ini mengukur 'apakah AI ketemu letak orangnya?'. Asal AI berhasil nebak 50% area badan orang, dianggap benar.
+*   **mAP@0.5:0.95 (Rapor Utama):** Nah, kalau ini syaratnya jauh lebih sadis. AI tidak cuma harus ketemu orangnya, tapi kotaknya harus **sangat rapat** membungkus tubuh orang tersebut (akurasi 50% sampai 95%). Kenapa harus rapat? Karena kalau kotaknya melenceng/kegedean, sistem *Tracker* di tahap selanjutnya bakal kebingungan ngikutin orang itu bergerak."
 
-> "Secara absolut kecil, sekitar 0,33 milidetik. Di GPU tidak terasa. Yang bernilai adalah sifatnya yang stabil, bukan besarnya."
+### 4.3 Dinamika Konvergensi
+**Baca:** *"Tabel konvergensi menunjukkan keempat model mencapai 99% performa akhirnya pada epoch 44–55."*
 
----
-
-## 7 — Temuan 4: CPU cukup
-
-> "Setelah model diekspor ke format ONNX, keempatnya jalan di atas 30 FPS di CPU biasa. Artinya sistem ini tidak wajib pakai GPU mahal."
-
-Ini menyambung ke peta jalan tahun keempat proposal, yaitu deployment edge. Sebut itu.
-
----
-
-## 8 — Temuan utama: tepi bingkai
-
-**Slide paling penting. Beri jeda di sini.**
-
-> "Ini temuan yang tidak kami duga. Orang yang badannya terpotong tepi bingkai jauh lebih sulit dideteksi daripada orang yang tertutup sesama, dua kali lebih sulit. Padahal selama ini yang selalu dibahas di literatur adalah oklusi."
-
-Kalau ditanya kenapa:
-
-> "Karena anotasi CrowdHuman menggambar kotak badan penuh, termasuk bagian yang di luar layar. Model dituntut menebak posisi bagian tubuh yang sama sekali tidak terlihat. Penjelasan pastinya belum kami uji, itu langkah berikutnya."
-
-**Jangan mengklaim ini temuan baru.** Kalau ditanya:
-
-> "Metodenya sendiri sudah standar sejak 2012, KITTI dan PASCAL VOC sudah memakainya. Yang belum ada pembandingnya adalah angkanya pada CrowdHuman dengan anotasi badan penuh."
+**Jelaskan:**
+"Di tabel konvergensi ini, awalnya kami melatih AI selama 100 putaran (100 *epoch*). Tapi kalau kita perhatikan datanya, di putaran ke 50 saja kepintarannya sudah mentok (stagnan). Kesimpulan efisiensinya: 50 putaran terakhir itu hanya buang-buang listrik dan waktu GPU. Untuk riset ke depannya, kami cukup melatih 60 putaran saja."
 
 ---
 
-## 9 — Temuan 5: lantai under-count
+## Bab 5: Analisis Kurva Diagnostik
 
-> "Sekitar 7 sampai 10 persen orang tidak pernah terdeteksi, berapa pun ambang kami turunkan. Artinya dari setiap 100 orang sungguhan, 7 sampai 10 orang lewat dari deteksi. Ini penting karena jadi batas bawah seluruh sistem, tracker dan logika hitung di belakangnya tidak bisa memperbaiki orang yang memang tidak pernah terlihat."
+### 5.1 Kurva F1-Confidence
+**Baca:** *"Kurva F1 menunjukkan ambang confidence optimal untuk YOLO26s adalah 0,348, berbeda dengan model NMS-Free di kisaran 0,28."*
 
-Gunanya: menetapkan target akurasi hitungan yang realistis sejak awal.
+**Jelaskan:**
+"Grafik F1 ini sangat berguna. Puncak kurvanya memberi tahu kita angka batas keyakinan (threshold) yang harus dipakai di lapangan nanti. Kalau batasnya kekecilan, AI salah nebak terus. Kalau kebesaran, banyak orang terlewat. Hasilnya terbukti: **kita tidak boleh memakai *settingan* pabrik (0,25)**. AI model YOLO26s butuh disetel di angka 0,348 agar akurat, sedangkan model lainnya di 0,28."
 
----
+### 5.2 Kurva Precision-Recall
+**Baca:** *"Kurva PR menabrak dinding vertikal pada recall 0,90–0,93."*
 
-## 10 — Konsekuensi: geser garis hitung
+**Jelaskan:**
+"Tolong perhatikan ujung kanan dari grafik Kurva PR ini. Kurvanya tiba-tiba jatuh menukik lurus ke bawah di angka 90-93%. Ini disebut 'batas dinding mentok'. Artinya apa? Artinya sehebat apapun kita ngotak-ngatik programnya, pasti selalu ada **sekitar 7-10% orang yang mustahil untuk dideteksi oleh AI**. Kualitas foto mereka memang terlalu buram atau kepotong untuk bisa dilihat mesin."
 
-> "Dari temuan tepi bingkai tadi, ada perbaikan yang bisa langsung dipakai. Di kamera pintu masuk, garis hitung biasanya ditaruh dekat tepi layar, justru di tempat detektor paling buruk. Cukup digeser ke tengah, dan itu tidak butuh model yang lebih besar."
+### 5.3 Confusion Matrix
+**Baca:** *"Matriks menunjukkan 97.662 deteksi benar, 5.453 terlewat, dan 641.871 false positive pada ambang sangat rendah."*
 
-Ini bagian yang paling konkret. Dosen biasanya suka rekomendasi yang bisa langsung dieksekusi.
-
----
-
-## 11 — Kesimpulan
-
-> "Tiga arsitektur nano setara. Detektor tanpa NMS menang di tahap pembersih, bukan di akurasi. Untuk CPU kampus, YOLO26n paling masuk akal: 97 FPS, ruang leluasa untuk tracker dan penghitungan. Untuk GPU, YOLO26s memberi akurasi tertinggi."
-
-Ini slide jembatan sebelum masuk ke posisi YOLO26. Pakai untuk merangkum sebelum dosen sempat memotong.
-
----
-
-## 12 — Posisi YOLO26
-
-> "YOLO26 kami uji langsung, bukan sekadar percaya klaim dokumentasi. Tanpa NMS terbukti. Klaim '43 persen lebih cepat di CPU' arahnya benar, tapi kami ukur sendiri 24 persen. Klaim objek kecil lebih baik belum terbukti, selisihnya terlalu kecil, masih di dalam derau."
-
-Tutup dengan:
-
-> "Jadi pilihan YOLO26 sebagai prototipe tertopang bukti untuk perangkat edge, bukan untuk GPU. Itu sesuai target deployment kita."
+**Jelaskan:**
+"Bapak/Ibu mungkin kaget melihat angka *False Positive* (Background ditebak Orang) mencapai 641 ribu. Tolong diabaikan saja Pak/Bu, karena itu adalah angka artifisial dari software penguji yang memaksa AI menebak serampangan dengan keyakinan nyaris 0 demi menggambar grafik.
+Fokus sesungguhnya ada di angka **5.453 (5,3%)** ini. Meskipun AI sudah disuruh nebak ngawur, tetap ada 5,3% orang asli yang dianggap jalanan (Background) oleh AI alias 'buta'. Ini membenarkan teori 'dinding mentok' 10% di Kurva PR tadi."
 
 ---
 
-## 13 — Batasan
+## Bab 6: Evaluasi Protokol CrowdHuman
 
-> "Tiga hal yang belum bisa kami simpulkan."
+### 6.1 & 6.2 Dampak Koreksi Protokol
+**Baca:** *"Dengan menjadikan wilayah target 'ignore' sebagai netral, seluruh nilai AP mengalami kenaikan rata-rata +0,01."*
 
-Sebutkan apa adanya, jangan dilunakkan. Menyebut batasan lebih dulu jauh lebih baik daripada ditemukan penguji.
+**Jelaskan:**
+"Di tabel 6.1, nilai akurasi (AP) kita tiba-tiba naik sedikit. Ini karena kita menganulir soal-soal ujian yang jelek (area kerumunan buram). Penilaian jadi lebih adil, dan AI tidak dihukum dua kali karena melewatkan kerumunan buram. Angka akurasi yang naik inilah akurasi yang sesungguhnya."
+
+### 6.3 Mengungkap Ilusi Angka Recall Maksimum
+**Baca:** *"Batas atas recall arsitektur NMS-free terlihat unggul (0,91) dari model biasa (0,90), namun ini bukan keunggulan akurasi riil."*
+
+**Jelaskan:**
+"Kalau Bapak/Ibu lihat tabel, 'Recall Maksimal' AI generasi baru (NMS-Free) angkanya sedikit lebih tinggi dari AI lama (0,91 vs 0,90). Tapi nyatanya itu hanya **ilusi teknis**. AI generasi baru itu kalau dites dengan angka batas longgar, dia memuntahkan ratusan jawaban bertumpuk (sehingga seolah-olah berhasil mendeteksi banyak orang). Kalau dites dengan batas normal di dunia nyata, akurasi keduanya itu SERI. Kita pilih NMS-Free nanti murni karena dia lebih cepat, bukan lebih akurat."
+
+### 6.4 Membaca Nilai MR⁻²
+**Baca:** *"Nilai MR⁻² model kita berada pada 0,757–0,779."*
+
+**Jelaskan:**
+"Di tabel ini ada metrik MR⁻². Ini metrik kegagalan. Kenapa angkanya sampai 0,75 (gagal 75%)? Karena tesnya menggunakan simulasi ekstrem: **'Cari 22 orang bertumpuk per gambar, tapi kamu hanya boleh membuat 1 kali alarm palsu (False Positive)'**. 
+Ditambah lagi, AI yang kita pakai adalah AI ukuran sangat kecil (Nano) agar bisa jalan di komputer murah, sehingga wajar dia kewalahan dites sekeras ini. Ini adalah harga kompromi antara alat murah vs akurasi absolut."
+
+### 6.5 Analisis Terpisah (Breakdown 3 Kategori)
+**Baca:** *"Tabel dan Grafik 6.5 membedah kesulitan deteksi ke dalam 3 sumbu: Pemotongan bingkai, Tingkat Oklusi, dan Ukuran Objek."*
+
+**Jelaskan:**
+"Tiga grafik Pie Chart dan tabel breakdown ini merinci kelemahan spesifik AI kita:
+1. **Tabel 6.5.1 (Pemotongan):** Orang yang setengah badannya terpotong oleh pinggiran bingkai kamera adalah titik buta terparah AI! Akurasi (AP) anjlok **30 poin** dan Recall anjlok **20 poin**. Ini 2x lipat lebih parah dibanding ketutupan orang lain.
+2. **Tabel 6.5.2 (Oklusi):** Orang yang tertutup rapat oleh tubuh orang lain membuat akurasi AI turun sekitar **12-15 poin**. 
+3. **Tabel 6.5.3 (Ukuran):** Untuk orang yang posisinya sangat jauh (ukurannya sangat kecil), akurasi AI anjlok **35%**.
+4. **Tabel 6.5.4 (Ambang NMS):** Kami juga menguji ulang *settingan* batas NMS ke angka 0,9 untuk memastikan tes kita adil ke model AI lama, dan hasilnya model lama malah makin turun akurasinya. Ini membuktikan *settingan* tes kita sudah 100% adil.
+
+**Kesimpulan Aplikasi Bab 6:** Nanti saat dipasang di lapangan, **kamera harus ditundukkan** agar orang tidak terlihat terlalu kecil, dan **kami haramkan menaruh garis hitung (counting line) di pinggiran kamera** karena disitulah AI paling buta."
 
 ---
 
-## 14 — Langkah berikutnya
+## Bab 7: Hasil Pengukuran Latensi (Kecepatan)
 
-> "Kesimpulannya, detektor bukan penentu utama akurasi hitungan, ketiganya setara. Yang belum diuji sama sekali adalah lapisan pelacakan identitas, dan justru di situ sumber hitung ganda berada. Itu yang kami kerjakan berikutnya."
+### 7.1 & 7.2 Overhead GPU vs CPU + ONNX
+**Baca:** *"Model NMS-free memangkas biaya post-processing di GPU sebesar 2,9× lipat. Pada konversi ONNX dan dijalankan di CPU, peringkat latensi berbalik drastis dengan YOLO26n tampil tercepat pada 10,28 ms (97 FPS)."*
 
-Kalau ada waktu, tambahkan:
+**Jelaskan:**
+"Bab 7 ini menjawab rasa penasaran soal kecepatan. 
+Di tabel 7.1 (GPU), teknologi NMS-Free terbukti membuat proses *post-processing* AI kita **2,9 kali lebih cepat**. Hebatnya lagi, mau kerumunannya sepi atau sepadat apapun, waktu prosesnya (latensinya) tetap datar dan stabil!
 
-> "Dan lapisan tracking itu juga yang akan menambah komponen deep learning kedua di sistem, lewat DiffMOT."
+Di tabel 7.2 (CPU), perhatikan rankingnya berbalik 180 derajat. Kalau di Server GPU mahal, YOLO model lama (v10n) paling ngebut. TAPI, saat formatnya diubah ke ONNX dan dijalankan di komputer murah (Edge CPU), **YOLO26n mendadak jadi juaranya!** Dia tembus kecepatan **97 FPS** di CPU. Di sisi lain, literatur sains (Tabel 7.4) juga membenarkan bahwa fenomena 'peringkat berubah saat pindah perangkat' (Latency Monotonicity) itu hal yang sangat wajar."
 
----
+### 7.3 Penskalaan Resolusi
+**Baca:** *"Menurunkan resolusi dari 640 ke 256 piksel hanya menaikkan FPS sebesar 27%, namun mengorbankan hingga 78% deteksi."*
 
-## Slide cadangan
-
-Jangan dibuka kecuali ditanya.
-
-| Slide | Dibuka kalau ditanya |
-|---|---|
-| C1 — hasil deteksi | "Hasilnya kelihatan seperti apa?" |
-| C2 — contoh deteksi kualitatif | "Bisa lihat contoh prediksi per gambar?" |
-| C3 — kurva latihan | "Berapa lama dilatih, kapan konvergen?" |
-| C4 — resolusi | "Kenapa tidak turunkan resolusi saja biar cepat?" |
-| C5 — kurva PR | "Precision-recall-nya bagaimana?" |
-| C6 — matriks sesat | "Siapa yang terlewat, false positive-nya?" |
+**Jelaskan:**
+"Kalau ada usulan 'Gimana kalau ukuran gambarnya kita kecilkan biar sistem makin ngebut?' Grafik ini menjawabnya: **TIDAK**. Menurunkan resolusi memang bikin FPS naik 27%, tapi bayarannya mahal banget: **75% orang di layar langsung hilang dari deteksi AI**. Jadi kami putuskan sistem akan mengunci resolusi di angka 640."
 
 ---
 
-## Pertanyaan sulit yang mungkin muncul
+## Bab 8, 9, 10: Pembahasan, Batasan, dan Langkah Selanjutnya
 
-**"Deep learning-nya di mana?"**
+**Baca:** *"Akurasi di antara model kelas nano praktis setara, ukuran model jauh lebih menentukan. Pilihan jatuh pada YOLO26n untuk target Edge CPU, sedangkan YOLO26s untuk target GPU."*
 
-> "Di lapisan detektor, empat model kami latih ulang pada CrowdHuman, bukan sekadar memakai bobot bawaan. Lapisan tracking akan menambah DiffMOT yang berbasis diffusion model. Logika hitungnya sendiri sengaja dibuat deterministik, supaya kalau ada kesalahan hitung kami bisa menelusuri apakah sumbernya detektor, tracker, atau aturan hitungnya. Kalau lapisan itu ikut jadi jaringan saraf, kesalahan tidak bisa dibongkar lagi."
+**Jelaskan:**
+"Sebagai kesimpulan presentasi ini: Model mana yang akan kita pakai?
+1. Kalau klien butuh akurasi tertinggi dan punya Server GPU, pilih **YOLO26s** (versi Small, recall-nya luar biasa tinggi).
+2. TAPI, untuk target riset ini (Sistem Edge CPU yang murah), **Pemenangnya mutlak YOLO26n**. Akurasinya imbang dengan pesaingnya, tapi di CPU dia menang telak soal kecepatan (97 FPS) dan tahan banting melawan kerumunan padat berkat *NMS-Free*.
 
-**"Ini kan cuma pakai model yang sudah ada?"**
-
-> "Betul untuk tahun pertama, dan itu memang sesuai peta jalan di proposal, arsitektur baru dijadwalkan di tahun ketiga. Yang tahun ini kami hasilkan adalah pipeline-nya dan pengetahuan empiris tentang batas kemampuan detektor pada kasus kerumunan."
-
-**"Kenapa YOLO26 kalau ternyata setara?"**
-
-> "Di GPU memang setara, bahkan sedikit lebih lambat. Tapi di CPU dengan ONNX, YOLO26 justru yang tercepat. Dan target deployment kita adalah edge, bukan server GPU. Jadi pilihannya tetap masuk akal, hanya alasannya bukan akurasi, melainkan kecepatan di perangkat sasaran."
-
-**"Angka mAP-nya kok rendah dibanding paper lain?"**
-
-> "Karena dua hal. Pertama, kami pakai anotasi badan penuh, bukan badan terlihat, dua protokol yang angkanya tidak sebanding. Kedua, model kami kelas nano, 2,4 juta parameter, sedangkan baseline di paper CrowdHuman memakai ResNet-50 puluhan juta parameter. Selisih itu harga yang kami bayar untuk bisa jalan di perangkat edge."
+Selanjutnya (Bab 10), karena kita sudah punya detektor super cepat ini, riset minggu depan akan berfokus membuat otak lapis kedua (Skenario B: Sistem Pelacak / Tracker) agar pergerakan orang-orang ini bisa dihitung lintas *frame*. Demikian Bapak/Ibu, terima kasih."
