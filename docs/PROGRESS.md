@@ -15,7 +15,10 @@
 - [x] 8 notebook Colab/Jupyter-ready untuk PC kampus (RTX 4090, Jupyter via Tailscale):
       `notebooks/10..80_s2_*.ipynb` (setup env → download data → deteksi → embeddings →
       run DiffMOT → run OC-SORT → eval TrackEval → analisis).
-- [ ] Sumber data terverifikasi di mesin kampus: MOT20 (Kaggle/HF + `verify_mot_dataset.py`)
+- [x] Orchestrator CPU-only `scripts/s2/run_skenario_b_ocsort.py` (arrange/detect/track/eval
+      satu perintah, idempotent) + `docs/panduan-skenario-b-oc-sort.md` untuk PC rumah
+      (i5-12400F/WSL2, tanpa GPU — VPS terlalu lemah).
+- [ ] Sumber data terverifikasi di PC rumah: MOT20 (HF/Kaggle + `verify_mot_dataset.py`)
       dan DanceTrack (HF `noahcao/dancetrack`).
 - [ ] Bobot fine-tune Skenario A di-download ke `data/s2/weights/`.
 - [ ] Run 10–70 di PC kampus; reviewer pass menulis `docs/reviews/review-s2-tracker.md`.

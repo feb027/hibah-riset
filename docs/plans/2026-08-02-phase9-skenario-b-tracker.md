@@ -94,6 +94,8 @@ experiments/s2_tracker/      (committed — hasil, csv, plot)
 scripts/s2/
   run_ocsort_mot.py          runner OC-SORT (det.txt MOT → hasil TrackEval)
   patch_diffmot_eval.py      patch diffmot.py agar mengirim img ke tracker (embedding cache)
+  run_skenario_b_ocsort.py   orchestrator satu-perintah: arrange,detect,track,eval (CPU-only)
+docs/panduan-skenario-b-oc-sort.md   panduan langkah-demi-langkah untuk PC rumah (WSL2)
 notebooks/
   10_s2_setup_env.ipynb      2 conda env: s2-main (ultralytics+TrackEval+OC-SORT), s2-diffmot (py3.9+torch2.0.1 cu118)
   20_s2_download_data.ipynb  MOT20 (Kaggle→HF→resmi + verify) + DanceTrack (HF, tanpa test)
