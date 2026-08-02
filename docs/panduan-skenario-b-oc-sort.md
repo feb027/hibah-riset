@@ -57,10 +57,10 @@ MOT20 butuh `~/.kaggle/kaggle.json`? Tidak — opsi A ini bebas kredensial.
 
 ### Opsi B — Kaggle (hanya jika punya kaggle.json)
 
-```bash
+```powershell
 pip install kaggle
 kaggle datasets download -d ismailelbouknify/mot-20 -p data/s2/mot20_raw
-unzip -q data/s2/mot20_raw/mot-20.zip -d data/s2/mot20_raw/extracted
+Expand-Archive -Path data/s2/mot20_raw/mot-20.zip -DestinationPath data/s2/mot20_raw/extracted
 ```
 
 ⚠️ Mirror Kaggle **sering kehilangan track ID** (jadi dataset deteksi). Apapun sumbernya,
@@ -84,7 +84,7 @@ Apa yang terjadi per langkah:
 | `eval` | TrackEval → `experiments/s2_tracker/eval_results.csv` | 2–5 mnt |
 
 Perintah berguna lain:
-```bash
+```powershell
 # unduh data juga (satu perintah penuh; butuh bandwidth besar)
 python scripts/s2/run_skenario_b_ocsort.py --steps data,arrange,detect,track,eval
 
