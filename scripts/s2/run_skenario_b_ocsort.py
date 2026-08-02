@@ -101,7 +101,12 @@ def link_seq(src: Path, dst_dir: Path) -> Path | None:
     target = dst_dir / src.name
     if target.exists():
         return target
-    os.symlink(src, target, target_is_directory=True)
+    if os.name == "nt":
+        # Windows: junction (tidak butuh admin/Developer Mode), setara symlink dir
+        subprocess.run(["cmd", "/c", "mklink", "/J", str(target), str(src)],
+                       check=True, capture_output=True)
+    else:
+        os.symlink(src, target, target_is_directory=True)
     return target
 
 

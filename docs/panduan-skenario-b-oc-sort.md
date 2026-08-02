@@ -1,7 +1,8 @@
 # Panduan Skenario B — Jalur OC-SORT (PC Rumah, CPU-only)
 
-*Tanggal: 2026-08-02. Berlaku untuk PC rumah i5-12400F / 16 GB / RX6600 (GPU AMD tidak
-dipakai — semua langkah CPU). Jangan jalankan beban berat ini di VPS (4 vCPU QEMU, 7,3 GB RAM).*
+*Tanggal: 2026-08-02. Berlaku untuk PC rumah **Windows 11** i5-12400F / 16 GB / RX6600
+(GPU AMD tidak dipakai — semua langkah CPU). Jangan jalankan beban berat ini di VPS
+(4 vCPU QEMU, 7,3 GB RAM).*
 
 ## 0. Tujuan
 
@@ -10,20 +11,22 @@ Dapat angka evaluasi tracker OC-SORT pada MOT20-train + DanceTrack-val:
 Ini progres nyata Skenario B (jalur baseline). DiffMOT (jalur DL utama) tetap butuh GPU
 (Colab / 4090 kampus) — panduan terpisah (notebook `40–50_s2_*`).
 
-## 1. Prasyarat (PC rumah, WSL2 Ubuntu)
+## 1. Prasyarat (PC rumah, Windows 11)
 
-- WSL2 Ubuntu (memory: workflow kamu sudah WSL2).
-- Python 3.10–3.12: `python3 --version`.
+- Python 3.10–3.12 dari python.org — centang **"Add python.exe to PATH"** saat install.
+- Git for Windows (`winget install Git.Git` atau git-scm.com).
 - Disk kosong ±25 GB.
 - Bobot Skenario A: `best.pt` (yolo26n/yolov10n/yolov11n) — **download dari Colab/GPU server
   dulu**, taruh di `data/s2/weights/`.
 - Repo: `git clone https://github.com/feb027/hibah-riset && cd hibah-riset` (atau `git pull`).
+- Semua perintah di bawah dijalankan di **PowerShell** (bukan cmd).
 
 ## 2. Setup environment (sekali)
 
-```bash
+```powershell
 cd hibah-riset
-python3 -m venv .venv-s2 && source .venv-s2/bin/activate
+python -m venv .venv-s2
+.\.venv-s2\Scripts\Activate.ps1
 
 # torch CPU dulu (hindari wheel CUDA ~2 GB)
 pip install torch --index-url https://download.pytorch.org/whl/cpu
@@ -31,7 +34,7 @@ pip install -r requirements.txt trackeval huggingface_hub
 ```
 
 Verifikasi:
-```bash
+```powershell
 python -c "import torch, ultralytics, trackeval; print(torch.__version__, ultralytics.__version__)"
 ```
 
@@ -39,8 +42,8 @@ python -c "import torch, ultralytics, trackeval; print(torch.__version__, ultral
 
 ### Opsi A — Hugging Face (disarankan, tanpa kredensial)
 
-```bash
-source .venv-s2/bin/activate
+```powershell
+.\.venv-s2\Scripts\Activate.ps1
 
 # MOT20 (mirror lengkap, ada gt.txt ber-track-ID)
 python -c "from huggingface_hub import snapshot_download; snapshot_download(repo_id='Lekim89/MOT20', repo_type='dataset', local_dir='data/s2/mot20_hf')"
@@ -66,8 +69,8 @@ motchallenge.net) lalu ulangi.
 
 ## 4. Jalankan
 
-```bash
-source .venv-s2/bin/activate
+```powershell
+.\.venv-s2\Scripts\Activate.ps1
 python scripts/s2/run_skenario_b_ocsort.py --steps arrange,detect,track,eval
 ```
 
@@ -115,7 +118,8 @@ persis sama dengan leaderboard MOTChallenge, tapi konsisten → valid untuk perb
 | MemoryError saat deteksi | Turunkan `--imgsz 480` atau `--conf 0.1` |
 | `torch` wheel besar | Sudah dicegah: install dari index CPU (langkah 2) |
 | `cython-bbox` gagal build | Tidak dipakai jalur OC-SORT (hanya DiffMOT) — abaikan |
-| WSL: OpenCV `libGL` error | `sudo apt install libgl1 libglib2.0-0` |
+| `pip` tidak dikenali | Pakai `py -m pip ...` atau pastikan python.exe di PATH |
+| Activate.ps1 diblokir eksekusi | PowerShell: `Set-ExecutionPolicy -Scope Process Bypass` lalu ulangi |
 | Ingin lebih cepat | Export bobot ke ONNX (`yolo export model=... format=onnx`) + `--conf` naik; deteksi CPU bisa ~2× lebih cepat |
 
 ## 7. Setelah ini
