@@ -1,5 +1,29 @@
 # Progress Log — Hibah Riset PUU 2026
 
+## 2026-08-02 WIB — Phase 9 Skenario B scaffold (tracker: DiffMOT vs OC-SORT)
+
+- [x] Riset implementasi Skenario B: DiffMOT (CVPR2024) sebagai jalur DL utama vs OC-SORT
+      (CVPR2023) baseline, pada MOT20-train + DanceTrack-val, metrik HOTA/IDF1/MOTA/IDSW/Frag.
+- [x] Verifikasi fakta kunci: format deteksi DiffMOT (6 kolom, kolom 1 dibuang), alur cache
+      embedding ReID (`{seq}_embedding.pkl`) + kebutuhan patch `diffmot.py` (img dikirim ke
+      tracker), config `*_test.yaml` stale (wajib tulis sendiri), checkpoint motion
+      `{exp}/{dataset}_epoch800.pt`, torch 2.0.1 wajib index cu118, `run_ocsort_public.py`
+      tidak support MOT (perlu runner sendiri), TrackEval Python API.
+- [x] Plan: `docs/plans/2026-08-02-phase9-skenario-b-tracker.md`.
+- [x] Script: `scripts/s2/run_ocsort_mot.py` (runner OC-SORT atas det.txt MOT) +
+      `scripts/s2/patch_diffmot_eval.py` (patch idempotent diffmot.py).
+- [x] 8 notebook Colab/Jupyter-ready untuk PC kampus (RTX 4090, Jupyter via Tailscale):
+      `notebooks/10..80_s2_*.ipynb` (setup env → download data → deteksi → embeddings →
+      run DiffMOT → run OC-SORT → eval TrackEval → analisis).
+- [ ] Sumber data terverifikasi di mesin kampus: MOT20 (Kaggle/HF + `verify_mot_dataset.py`)
+      dan DanceTrack (HF `noahcao/dancetrack`).
+- [ ] Bobot fine-tune Skenario A di-download ke `data/s2/weights/`.
+- [ ] Run 10–70 di PC kampus; reviewer pass menulis `docs/reviews/review-s2-tracker.md`.
+- [ ] Laporan `docs/reports/laporan-skenario-b-tracker.md` setelah angka valid.
+
+**Batasan jujur**: scaffold = kode + rencana, bukan hasil. Tidak ada klaim HOTA/IDF1 sampai
+run aktual selesai di GPU.
+
 ## 2026-06-22 WIB — Phase 7 Tier 1 experiment scaffold
 
 - [x] Created scaffolding for eksperimen terbatas: `src/`, `configs/`, `data/`,

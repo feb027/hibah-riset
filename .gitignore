@@ -49,8 +49,10 @@ htmlcov/
 *.mkv
 *.pt
 *.onnx
+*.pkl
 models/
 data/
+external/
 experiments/*.mp4
 experiments/*.avi
 !experiments/sanity_check/
