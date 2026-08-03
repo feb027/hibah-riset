@@ -78,11 +78,13 @@ def step_data(a: argparse.Namespace) -> None:
 
     print("\n== data: MOT20 (HF Lekim89/MOT20) ==")
     snapshot_download(repo_id="Lekim89/MOT20", repo_type="dataset",
-                      local_dir=str(a.data_dir / "mot20_hf"))
-    print("\n== data: DanceTrack (HF noahcao/dancetrack, tanpa test) ==")
+                      local_dir=str(a.data_dir / "mot20_hf"),
+                      ignore_patterns=["test/*"])   # hanya butuh train
+    print("\n== data: DanceTrack (HF noahcao/dancetrack, tanpa test/train) ==")
     snapshot_download(repo_id="noahcao/dancetrack", repo_type="dataset",
                       local_dir=str(a.data_dir / "dancetrack_hf"),
-                      ignore_patterns=["test/*"])
+                      # mirror menyimpan zip: val.zip, train1/2.zip, test1/2.zip, *.xlsx
+                      ignore_patterns=["test/*", "test*", "train*", "*.xlsx"])
 
 
 # ---------------------------------------------------------------- arrange
