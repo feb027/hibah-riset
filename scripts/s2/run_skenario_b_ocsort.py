@@ -197,10 +197,10 @@ def step_arrange(a: argparse.Namespace) -> None:
 def step_detect(a: argparse.Namespace) -> None:
     print("\n== detect: YOLO fine-tune (CPU) ==")
     if a.weights is None or not a.weights.exists():
-        wts = sorted((a.data_dir / "weights").glob("*.pt"))
+        wts = sorted((a.data_dir / "weights").glob("*.pt")) or sorted((a.data_dir / "weights").glob("*.onnx"))
         if not wts:
-            sys.exit(f"Tidak ada bobot di {a.data_dir / 'weights'}/ — taruh best.pt Skenario A di sana "
-                     "(--weights untuk path lain)")
+            sys.exit(f"Tidak ada bobot di {a.data_dir / 'weights'}/ — taruh best.pt (atau best.onnx) "
+                     "Skenario A di sana (--weights untuk path lain; onnx ~2x lebih cepat di CPU)")
         a.weights = wts[0]
     print("   weights:", a.weights)
 
