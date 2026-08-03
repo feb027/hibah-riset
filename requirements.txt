@@ -14,6 +14,7 @@ Pillow>=10.0.0
 
 # Tracking evaluation (for future Tier 2; safe to include now)
 motmetrics>=1.4.0
+filterpy>=1.4.5                 # OC-SORT (Skenario B): kalmanfilter.py butuh filterpy.stats.logpdf
 
 # ONNX export + CPU runtime (Skenario A benchmark edge; see test_cpu_onnx.py)
 onnx>=1.15.0

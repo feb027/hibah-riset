@@ -94,8 +94,8 @@ python scripts/s2/run_skenario_b_ocsort.py --steps detect --force --weights data
 # evaluasi ulang saja (deteksi & tracking sudah ada)
 python scripts/s2/run_skenario_b_ocsort.py --steps eval
 
-# selaraskan param OC-SORT
-python scripts/s2/run_skenario_b_ocsort.py --steps track --track-thresh 0.4 --iou-thresh 0.3
+# selaraskan param OC-SORT (min-conf = buang deteksi ber-score rendah)
+python scripts/s2/run_skenario_b_ocsort.py --steps track --track-thresh 0.4 --min-conf 0.4 --iou-thresh 0.3
 ```
 
 Semua langkah idempotent: output yang sudah ada dilewati; `--force` untuk mengulang.

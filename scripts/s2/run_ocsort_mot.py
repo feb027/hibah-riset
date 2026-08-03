@@ -29,6 +29,7 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--det-dir", required=True, help="folder berisi {seq}.txt deteksi MOT")
     p.add_argument("--out-dir", required=True, help="folder hasil tracker")
     p.add_argument("--track-thresh", type=float, default=0.3)
+    p.add_argument("--min-conf", type=float, default=0.3, help="buang deteksi dengan score < ini sebelum tracking")
     p.add_argument("--iou-thresh", type=float, default=0.3)
     p.add_argument("--delta-t", type=int, default=3)
     p.add_argument("--min-hits", type=int, default=3)
@@ -65,6 +66,8 @@ def main() -> None:
         with open(os.path.join(args.out_dir, f"{seq_name}"), "w") as out_file:
             for frame_ind in range(min_frame, max_frame + 1):
                 rows = seq_trks[seq_trks[:, 0] == frame_ind]
+                if args.min_conf > 0 and rows.shape[0]:
+                    rows = rows[rows[:, 6] >= args.min_conf]
                 dets = rows[:, 2:6].copy()          # tlwh
                 dets[:, 2:] += dets[:, :2]          # -> xyxy (seperti branch headtrack)
                 cates = np.zeros(dets.shape[0])

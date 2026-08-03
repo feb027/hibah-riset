@@ -55,6 +55,7 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--iou", type=float, default=0.7)
     # OC-SORT
     p.add_argument("--track-thresh", type=float, default=0.3)
+    p.add_argument("--min-conf", type=float, default=0.3, help="threshold score deteksi sebelum OC-SORT")
     p.add_argument("--iou-thresh", type=float, default=0.3)
     p.add_argument("--delta-t", type=int, default=3)
     p.add_argument("--min-hits", type=int, default=3)
@@ -132,11 +133,12 @@ def step_arrange(a: argparse.Namespace) -> None:
     src = a.data_dir / "mot20_hf"
     if src.exists():
         cands = find_seqs(src, need_gt=True)
-        n = 0
+        linked = set()
         for s in cands:
-            if s.name in TRAIN_MOT20:
+            if s.name in TRAIN_MOT20 and s.name not in linked:
                 link_seq(s, a.data_dir / "mot20" / "train")
-                n += 1
+                linked.add(s.name)
+        n = len(linked)
         if n == 0:
             print("!! TIDAK ada sekuens MOT20 train (01/02/03/05) ber-GT ditemukan di", src)
             print("   Nama yang ditemukan:", [s.name for s in cands][:20])
@@ -146,15 +148,26 @@ def step_arrange(a: argparse.Namespace) -> None:
     else:
         print(f"   (skip: {src} belum ada — jalankan --steps data dulu)")
 
-    # DanceTrack -> data/s2/dancetrack/val
+    # DanceTrack -> data/s2/dancetrack/val (link SEMUA sekuens ber-img1; GT dilaporkan terpisah)
     src = a.data_dir / "dancetrack_hf"
     if src.exists():
-        cands = find_seqs(src, need_gt=True)
-        n = 0
+        cands = find_seqs(src, need_gt=False)
+        linked, with_gt = set(), 0
         for s in cands:
+            if s.name in linked:
+                continue
             link_seq(s, a.data_dir / "dancetrack" / "val")
-            n += 1
-        print(f"   DanceTrack val: {n} sekuens")
+            linked.add(s.name)
+            if (s / "gt" / "gt.txt").exists():
+                with_gt += 1
+        print(f"   DanceTrack val: {len(linked)} sekuens ditautkan ({with_gt} ber-GT)")
+        if not linked:
+            print("   !! tidak ada folder ber-img1 ditemukan di", src)
+            print("   Isi:", [p.name for p in src.iterdir()][:20])
+            print("   Cek apakah unduhan selesai: foldernya harus berisi val/ (atau sekuens dancetrack00XX/)")
+        elif with_gt == 0:
+            print("   !! TIDAK ada gt.txt di sekuens val — eval DanceTrack tidak bisa berjalan")
+            print("   Sumber GT: pastikan mirror menyertakan gt/gt.txt per sekuens val (resmi: noahcao/dancetrack)")
     else:
         print(f"   (skip: {src} belum ada — jalankan --steps data dulu)")
 
@@ -253,6 +266,11 @@ def step_detect(a: argparse.Namespace) -> None:
 # ---------------------------------------------------------------- track
 def step_track(a: argparse.Namespace) -> None:
     print("\n== track: OC-SORT ==")
+    try:
+        import filterpy  # noqa: F401
+    except ImportError:
+        print("   filterpy belum ada — install otomatis ...")
+        subprocess.run([py(), "-m", "pip", "install", "-q", "filterpy"], check=True)
     ocsort_root = a.ext_dir / "OC_SORT"
     if not (ocsort_root / "trackers").exists():
         print("   clone OC_SORT ...")
@@ -274,6 +292,7 @@ def step_track(a: argparse.Namespace) -> None:
                         "--det-dir", str(det_dir),
                         "--out-dir", str(out_dir),
                         "--track-thresh", str(a.track_thresh),
+                        "--min-conf", str(a.min_conf),
                         "--iou-thresh", str(a.iou_thresh),
                         "--delta-t", str(a.delta_t),
                         "--min-hits", str(a.min_hits),
