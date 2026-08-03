@@ -28,6 +28,7 @@ share/python-wheels/
 env/
 venv/
 ENV/
+.venv-s2
 
 # Jupyter Notebook
 .ipynb_checkpoints
