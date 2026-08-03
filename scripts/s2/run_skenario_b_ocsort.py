@@ -340,34 +340,60 @@ def step_eval(a: argparse.Namespace) -> None:
             n += 1
         print(f"   {ds}: {n} hasil disalin")
 
-    def run_eval(gt_folder, trackers_folder, tracker, seqmap, split, skip):
+    def preflight_eval(gt_folder: Path, trackers_folder: Path, tracker: str,
+                       seqmap: Path) -> None:
+        """Validasi layout langsung yang benar-benar akan dibaca TrackEval."""
+        seqs = [line.strip() for line in seqmap.read_text().splitlines()[1:] if line.strip()]
+        missing = []
+        for seq in seqs:
+            for path in [gt_folder / seq / "seqinfo.ini",
+                         gt_folder / seq / "gt" / "gt.txt",
+                         trackers_folder / tracker / "data" / f"{seq}.txt"]:
+                if not path.is_file():
+                    missing.append(path)
+        if missing:
+            preview = "\n".join(f"     - {p}" for p in missing[:10])
+            raise FileNotFoundError(
+                f"Preflight TrackEval gagal: {len(missing)} file tidak ada:\n{preview}"
+            )
+        print(f"   preflight: {len(seqs)} sekuens, semua GT/seqinfo/tracker ada")
+
+    def run_eval(gt_folder, trackers_folder, tracker, seqmap, split):
+        preflight_eval(gt_folder, trackers_folder, tracker, seqmap)
         eval_cfg = trackeval.Evaluator.get_default_eval_config()
         eval_cfg.update(USE_PARALLEL=False, NUM_PARALLEL_CORES=8,
-                        PLOT_CURVES=False, DISPLAY_LESS_PROGRESS=True)
+                        PLOT_CURVES=False, DISPLAY_LESS_PROGRESS=True,
+                        PRINT_ONLY_COMBINED=True)
         ds_cfg = trackeval.datasets.MotChallenge2DBox.get_default_dataset_config()
         ds_cfg.update(BENCHMARK="MOT20", GT_FOLDER=str(gt_folder),
                       TRACKERS_FOLDER=str(trackers_folder), TRACKERS_TO_EVAL=[tracker],
                       SEQMAP_FILE=str(seqmap), SPLIT_TO_EVAL=split,
-                      SKIP_SPLIT_FOL=skip, DO_PREPROC=False)
+                      # Kedua dataset sudah disusun langsung sebagai GT_FOLDER/{seq}/.
+                      # False akan menambahkan folder MOT20-{split} yang tidak ada.
+                      SKIP_SPLIT_FOL=True, DO_PREPROC=False)
         metrics = [trackeval.metrics.HOTA(), trackeval.metrics.CLEAR(), trackeval.metrics.Identity()]
         return trackeval.Evaluator(eval_cfg).evaluate(
             [trackeval.datasets.MotChallenge2DBox(ds_cfg)], metrics)
 
     def extract(out):
+        import numpy as np
+
+        # TrackEval >= 1.0 mengembalikan (output_res, output_msg).
+        results = out[0] if isinstance(out, tuple) else out
         rows = []
-        for ds_name, trackers in out.items():
-            for trk, classes in trackers.items():
-                for cls, res in classes.items():
-                    comb = res.get("COMBINED_SEQ", {})
-                    def g(m, k):
-                        try:
-                            return comb[m][k]
-                        except Exception:
-                            return None
-                    rows.append(dict(dataset=ds_name, tracker=trk, cls=cls,
-                                     HOTA=g("HOTA", "HOTA"), MOTA=g("CLEAR", "MOTA"),
-                                     IDF1=g("Identity", "IDF1"), IDSW=g("Identity", "IDSW"),
-                                     Frag=g("Identity", "Frag")))
+        for ds_name, trackers in results.items():
+            for trk, seq_results in trackers.items():
+                combined = seq_results["COMBINED_SEQ"]
+                for cls, metrics in combined.items():
+                    hota = float(np.mean(metrics["HOTA"]["HOTA"])) * 100.0
+                    mota = float(metrics["CLEAR"]["MOTA"]) * 100.0
+                    idf1 = float(metrics["Identity"]["IDF1"]) * 100.0
+                    rows.append(dict(
+                        dataset=ds_name, tracker=trk, cls=cls,
+                        HOTA=round(hota, 4), MOTA=round(mota, 4), IDF1=round(idf1, 4),
+                        IDSW=int(metrics["CLEAR"]["IDSW"]),
+                        Frag=int(metrics["CLEAR"]["Frag"]),
+                    ))
         return rows
 
     seqs_mot = [p.name for p in (a.data_dir / "mot20" / "train").iterdir()
@@ -386,16 +412,18 @@ def step_eval(a: argparse.Namespace) -> None:
         write_seqmap(sorted(seqs_dance), seqmap_dance)
 
     all_rows = []
-    for ds_key, gt, trk_root, seqmap, split, skip in [
-        ("mot20", a.data_dir / "mot20", trackers_root / "mot20", seqmap_mot, "train", False),
-        # dance: GT_FOLDER = folder val itu sendiri (SKIP_SPLIT_FOL=True -> seq di bawah GT_FOLDER)
-        ("dance", a.data_dir / "dancetrack" / "val", trackers_root / "dance", seqmap_dance, "val", True),
+    for ds_key, gt, trk_root, seqmap, split in [
+        # Layout datar: SKIP_SPLIT_FOL=True (hardcoded di run_eval) + GT_FOLDER = folder sekuens.
+        # TrackEval 1.3.0 membangun gt_fol = GT_FOLDER + "{BENCHMARK}-{SPLIT}" kalau skip=False
+        # (mis. "MOT20-train"), jadi layout datar menghindari folder tambahan yang tidak ada.
+        ("mot20", a.data_dir / "mot20" / "train", trackers_root / "mot20", seqmap_mot, "train"),
+        ("dance", a.data_dir / "dancetrack" / "val", trackers_root / "dance", seqmap_dance, "val"),
     ]:
         if ds_key == "dance" and not seqs_dance:
             print("   (skip eval dance: GT val belum tersedia)")
             continue
         print(f"   eval {ds_key} ...")
-        out = run_eval(gt, trk_root, "ocsort", seqmap, split, skip)
+        out = run_eval(gt, trk_root, "ocsort", seqmap, split)
         all_rows += extract(out)
     df = pd.DataFrame(all_rows)
     df.to_csv(a.exp_dir / "eval_results.csv", index=False)
