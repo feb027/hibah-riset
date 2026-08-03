@@ -424,7 +424,10 @@ def step_eval(a: argparse.Namespace) -> None:
             continue
         print(f"   eval {ds_key} ...")
         out = run_eval(gt, trk_root, "ocsort", seqmap, split)
-        all_rows += extract(out)
+        rows = extract(out)
+        for row in rows:
+            row["benchmark"] = "MOT20" if ds_key == "mot20" else "DanceTrack"
+        all_rows += rows
     df = pd.DataFrame(all_rows)
     df.to_csv(a.exp_dir / "eval_results.csv", index=False)
     print("\n   eval_results.csv:", a.exp_dir / "eval_results.csv")
