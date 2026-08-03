@@ -111,9 +111,11 @@ def link_seq(src: Path, dst_dir: Path) -> Path | None:
     return target
 
 
-def synth_seqinfo(seq_dir: Path) -> bool:
+def synth_seqinfo(seq_dir: Path, force: bool = False) -> bool:
+    """Tulis seqinfo.ini valid (dari frame nyata). force=True menimpa yang lama — TrackEval
+    membaca file ini persis di path ini dan mirror kadang menyediakan yang rusak/tak terbaca."""
     ini = seq_dir / "seqinfo.ini"
-    if ini.exists():
+    if ini.exists() and not force:
         return False
     import cv2
     imgs = sorted((seq_dir / "img1").glob("*.*"))
@@ -187,14 +189,14 @@ def step_arrange(a: argparse.Namespace) -> None:
     else:
         print(f"   (skip: {src} belum ada — jalankan --steps data dulu)")
 
-    # seqinfo synthesis
+    # seqinfo synthesis — SELALU ditulis ulang (TrackEval baca persis di path ini)
     n = 0
     for split_root in [a.data_dir / "mot20" / "train", a.data_dir / "dancetrack" / "val"]:
         if split_root.exists():
             for seq in sorted(p for p in split_root.iterdir() if p.is_dir()):
-                n += synth_seqinfo(seq)
+                n += synth_seqinfo(seq, force=True)
     if n:
-        print(f"   seqinfo synthesize: {n}")
+        print(f"   seqinfo: {n} ditulis/diperbarui")
 
     # verify
     if not a.skip_verify:
@@ -386,7 +388,8 @@ def step_eval(a: argparse.Namespace) -> None:
     all_rows = []
     for ds_key, gt, trk_root, seqmap, split, skip in [
         ("mot20", a.data_dir / "mot20", trackers_root / "mot20", seqmap_mot, "train", False),
-        ("dance", a.data_dir / "dancetrack", trackers_root / "dance", seqmap_dance, "val", True),
+        # dance: GT_FOLDER = folder val itu sendiri (SKIP_SPLIT_FOL=True -> seq di bawah GT_FOLDER)
+        ("dance", a.data_dir / "dancetrack" / "val", trackers_root / "dance", seqmap_dance, "val", True),
     ]:
         if ds_key == "dance" and not seqs_dance:
             print("   (skip eval dance: GT val belum tersedia)")
