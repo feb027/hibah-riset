@@ -1,41 +1,42 @@
-# Panduan Skenario B — DiffMOT di PC Kampus (tanpa conda)
+# Panduan Skenario B — DiffMOT di PC Kampus (JupyterHub, tanpa conda)
 
 Target: PC kampus (RTX 4090), Jupyter terisolasi per-user (password), **tanpa conda/venv**.
+Semua langkah lewat notebook — env = kernel Jupyter yang sudah ada.
 
-Semua install memakai python dari env Jupyter yang sudah aktif.
+## Alur
 
-## 1. Setup sekali
-
-```bash
-git clone https://github.com/feb027/hibah-riset
-cd hibah-riset
-python scripts/s2/setup_diffmot_pip.py
+```
+10_s2_setup_env.ipynb        env pip-only + clone DiffMOT/OC_SORT/TrackEval + bobot (sekali)
+20_s2_download_data.ipynb    data MOT20-train + DanceTrack val (HF; val.zip di-extract di notebook)
+30_s2_gen_detections.ipynb   deteksi YOLO26 fine-tune -> dua format (DiffMOT per-frame + MOT utk OC-SORT)
+40_s2_diffmot_embeddings.ipynb  patch diffmot.py + smoke ReID
+50_s2_run_diffmot.ipynb      run DiffMOT mot20 (~7-10 mnt) + dance (~15-20 mnt) di 4090
+70_s2_eval_trackeval.ipynb   eval HOTA/IDF1/MOTA/IDSW/Frag
 ```
 
-Script ini menggantikan notebook 10 (setup env + clone + bobot) untuk env pip-only:
-- memakai torch yang sudah ada bila CUDA aktif (requirement DiffMOT tidak mengunci torch);
-  kalau belum ada CUDA dan python ≤ 3.10 → install torch 2.0.1 dari index cu118
-- clone DiffMOT / OC_SORT / TrackEval ke `external/`
-- install YOLOX, deep-person-reid, fast_reid (editable) — **wajib walau YOLOX tidak
-  dipakai deteksi**: kode DiffMOT mengimpornya saat load
-- download 4 bobot rilis v1.0 (mot_epoch800.pt, dancetrack_epoch800.pt,
-  mot20_sbs_S50.pth, dance_sbs_S50.pth)
+## 1. Setup (notebook 10)
 
-Pitfall: `cython-bbox` rawan gagal build → coba `pip install cython-bbox --no-build-isolation`.
+- Semua `pip install` masuk ke env kernel saat ini — **tidak bikin env terpisah**.
+- `torch` yang sudah ada TIDAK ditimpa bila CUDA aktif (requirement DiffMOT tidak mengunci torch).
+- Clone DiffMOT / OC_SORT / TrackEval + `git submodule update --init --recursive`.
+- Install YOLOX, deep-person-reid, fast_reid (editable) — **wajib walau YOLOX tidak
+  dipakai deteksi**: kode DiffMOT mengimpornya saat load.
+- Download 4 bobot rilis v1.0 (mot_epoch800.pt, dancetrack_epoch800.pt,
+  mot20_sbs_S50.pth, dance_sbs_S50.pth).
 
-## 2. Data
+Pitfall: `cython-bbox` rawan gagal build → `pip install cython-bbox --no-build-isolation`.
+Fallback torch: kalau DiffMOT error saat run, pin `torch==2.0.1` dari index cu118
+(python ≤ 3.10; wheel PyPI 2.0.1 rusak).
 
-```bash
-export HF_TOKEN=hf_xxx            # token Read gratis — download jauh lebih cepat
-python scripts/s2/run_skenario_b_ocsort.py --steps data,arrange
-```
+## 2. Data (notebook 20)
 
 - **Dataset TETAP harus ada di kampus** (folder `data/` tidak ikut git) — download di sini
-  atau salin dari PC rumah (jalur Tailscale/network).
-- Download sudah hemat: MOT20 hanya train (test di-skip), DanceTrack hanya `val.zip`
-  (test1/2.zip, train1/2.zip, *.xlsx di-skip).
-- `arrange` mengekstrak val.zip, menyusun layout `data/s2/mot20/train` &
-  `data/s2/dancetrack/val`, menulis `seqinfo.ini`, dan memverifikasi.
+  atau salin folder `data/s2` dari PC rumah (jalur Tailscale/network).
+- Download sudah hemat: MOT20 hanya train (`test/*` di-skip), DanceTrack hanya `val.zip`
+  (`test1/2.zip`, `train1/2.zip`, `*.xlsx` di-skip).
+- `val.zip` di-extract otomatis di dalam notebook (sel align), lalu ditautkan ke
+  `data/s2/dancetrack/val`; seqinfo.ini disynthesize bila hilang; verify WAJIB lulus.
+- Untuk download cepat set env `HF_TOKEN` (token Read gratis).
 
 ## 3. Deteksi — YOLO26 fine-tune (BUKAN YOLOX)
 
@@ -43,25 +44,16 @@ Taruh bobot Skenario A **`.pt`** (bukan `.onnx`) di `data/s2/weights/best.pt`:
 
 - Deteksi pakai **YOLO26 fine-tune** hasil Skenario A — DiffMOT hanya membaca file
   deteksi (`det_dir`), detektor bawaan YOLOX **tidak dipakai**.
-- **`.pt` untuk GPU** (kampus): ultralytics native CUDA, lebih cepat dan sederhana.
-  `.onnx` hanya berguna untuk mempercepat CPU (PC rumah).
+- **`.pt` untuk GPU** (kampus): ultralytics native CUDA. `.onnx` hanya untuk CPU (PC rumah).
+- Notebook 30 menghasilkan **dua format sekaligus**: per-frame untuk DiffMOT
+  (`detections/{split}/{seq}/{frame:08d}.txt`) dan MOT-format untuk OC-SORT
+  (`det_mot/{split}/{seq}.txt`). Estimasi GPU: 2–5 menit untuk 4 + 25 sekuens.
 
-Lalu jalankan notebook `30_s2_gen_detections.ipynb` (kernel apa pun dari env ini):
-menghasilkan **dua format sekaligus** — per-frame untuk DiffMOT
-(`detections/{split}/{seq}/{frame:08d}.txt`) dan MOT-format untuk OC-SORT
-(`det_mot/{split}/{seq}.txt`). Estimasi GPU: 2–5 menit untuk 4 + 25 sekuens.
+## 4. Hasil & baseline
 
-## 4. Run DiffMOT
+| benchmark  | tracker | HOTA   | MOTA   | IDF1   | IDSW | Frag  |
+|------------|---------|--------|--------|--------|------|-------|
+| MOT20      | OC-SORT | 37.46  | 56.13  | 44.67  | 7933 | 15033 |
+| DanceTrack | OC-SORT | 28.39  | 71.38  | 26.63  | 6701 | 6936  |
 
-- `40_s2_diffmot_embeddings.ipynb` — patch `diffmot.py` (idempotent) + smoke ReID
-- `50_s2_run_diffmot.ipynb` — run MOT20 (~7–10 mnt) & DanceTrack (~15–20 mnt) di 4090
-- `70_s2_eval_trackeval.ipynb` — eval HOTA/IDF1/MOTA/IDSW/Frag → bandingkan baseline
-  OC-SORT (MOT20: HOTA 37.5 / MOTA 56.1 / IDF1 44.7; DanceTrack: HOTA 28.4 /
-  MOTA 71.4 / IDF1 26.6)
-
-## Catatan versi
-
-- torch 2.0.1 wajib dari `--index-url https://download.pytorch.org/whl/cu118`
-  (wheel PyPI 2.0.1 rusak: hilang dependensi nvidia).
-- DiffMOT dikembangkan dengan torch 2.0.1; torch lebih baru umumnya jalan untuk eval,
-  tapi kalau import/forward error, pakai env python 3.9/3.10 + torch 2.0.1.
+Hasil DiffMOT masuk `experiments/s2_tracker/diffmot_results/` → bandingkan dengan baris OC-SORT.
