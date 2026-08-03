@@ -151,6 +151,22 @@ def step_arrange(a: argparse.Namespace) -> None:
     # DanceTrack -> data/s2/dancetrack/val (link SEMUA sekuens ber-img1; GT dilaporkan terpisah)
     src = a.data_dir / "dancetrack_hf"
     if src.exists():
+        # Mirror noahcao/dancetrack menyimpan arsip zip (val.zip, train*.zip, test*.zip)
+        zips = sorted(src.glob("*.zip"))
+        if zips:
+            import zipfile
+            extract_dir = src / "extracted"
+            extract_dir.mkdir(parents=True, exist_ok=True)
+            for z in zips:
+                if z.stem.startswith(("test", "train")):
+                    continue  # hanya butuh val
+                target = extract_dir / z.stem
+                if target.exists() and any(target.iterdir()):
+                    print(f"   (skip extract {z.name}: sudah ada)")
+                    continue
+                print(f"   extract {z.name} ...")
+                with zipfile.ZipFile(z) as zf:
+                    zf.extractall(extract_dir)
         cands = find_seqs(src, need_gt=False)
         linked, with_gt = set(), 0
         for s in cands:
@@ -354,18 +370,27 @@ def step_eval(a: argparse.Namespace) -> None:
 
     seqs_mot = [p.name for p in (a.data_dir / "mot20" / "train").iterdir()
                 if p.is_dir() and (p / "gt" / "gt.txt").exists()]
-    seqs_dance = [p.name for p in (a.data_dir / "dancetrack" / "val").iterdir()
-                  if p.is_dir() and (p / "gt" / "gt.txt").exists()]
+    val_dir = a.data_dir / "dancetrack" / "val"
+    if val_dir.exists() and any(val_dir.iterdir()):
+        seqs_dance = [p.name for p in val_dir.iterdir()
+                      if p.is_dir() and (p / "gt" / "gt.txt").exists()]
+    else:
+        seqs_dance = []
+        print("   (skip dance: data/s2/dancetrack/val belum ada — jalankan --steps arrange dulu)")
     seqmap_mot = a.data_dir / "seqmaps" / "MOT20-train.txt"
     seqmap_dance = a.data_dir / "seqmaps" / "dancetrack-val.txt"
     write_seqmap(sorted(seqs_mot), seqmap_mot)
-    write_seqmap(sorted(seqs_dance), seqmap_dance)
+    if seqs_dance:
+        write_seqmap(sorted(seqs_dance), seqmap_dance)
 
     all_rows = []
     for ds_key, gt, trk_root, seqmap, split, skip in [
         ("mot20", a.data_dir / "mot20", trackers_root / "mot20", seqmap_mot, "train", False),
         ("dance", a.data_dir / "dancetrack", trackers_root / "dance", seqmap_dance, "val", True),
     ]:
+        if ds_key == "dance" and not seqs_dance:
+            print("   (skip eval dance: GT val belum tersedia)")
+            continue
         print(f"   eval {ds_key} ...")
         out = run_eval(gt, trk_root, "ocsort", seqmap, split, skip)
         all_rows += extract(out)
