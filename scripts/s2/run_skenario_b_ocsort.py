@@ -88,7 +88,7 @@ def step_data(a: argparse.Namespace) -> None:
 
 
 # ---------------------------------------------------------------- arrange
-def find_seqs(root: Path, need_gt: bool) -> list[Path]:
+def find_seqs(root: Path, need_gt: bool):
     """Cari folder sekuens (punya img1/, opsional gt/gt.txt) di bawah root."""
     found = []
     for img1 in root.rglob("img1"):
@@ -99,7 +99,7 @@ def find_seqs(root: Path, need_gt: bool) -> list[Path]:
     return sorted(found, key=lambda p: p.name)
 
 
-def link_seq(src: Path, dst_dir: Path) -> Path | None:
+def link_seq(src: Path, dst_dir: Path):
     dst_dir.mkdir(parents=True, exist_ok=True)
     target = dst_dir / src.name
     if target.exists():
@@ -320,7 +320,7 @@ def step_track(a: argparse.Namespace) -> None:
 
 
 # ---------------------------------------------------------------- eval
-def write_seqmap(seqs: list[str], path: Path) -> None:
+def write_seqmap(seqs, path: Path) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text("name\n" + "\n".join(seqs) + "\n")
 
