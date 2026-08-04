@@ -19,7 +19,8 @@
       Dugaan: dataset MOT20 di PC rumah saat run tidak lengkap → `synth_seqinfo()` memakai
       jumlah jpg sebagai `seqLength` → deteksi/tracking/eval jalan atas sekuens terpotong.
       **Angka MOT20 = sekuens terpotong; re-run full-sequence wajib**
-      (cek 429/2782/2650/3327 jpg per sekuens, lalu `--steps arrange,detect,track,eval --force`).
+      (cek 429/2782/2405/3315 jpg per sekuens — Tabel 1 paper MOT20 arXiv:2003.09003,
+      total training 8.931 frame; download HF sudah lengkap, divalidasi 2026-08-04), lalu
       DanceTrack aman (frame lengkap). Render video diperbaiki: fps baca seqinfo (25, bukan 30)
       + klip referensi GT (`--source gt`).
 - [ ] **DiffMOT belum dieksekusi** — kendala data di GPU kampus. Pipeline notebook 10→70 siap;

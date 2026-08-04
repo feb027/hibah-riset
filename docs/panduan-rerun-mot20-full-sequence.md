@@ -30,7 +30,7 @@ Penyebab truncation = dataset tidak lengkap saat run sebelumnya (`synth_seqinfo(
 jumlah jpg sebagai `seqLength`, jadi semua tahap ikut terpotong). Cek dulu:
 
 ```powershell
-$official = @{ "MOT20-01" = 429; "MOT20-02" = 2782; "MOT20-03" = 2650; "MOT20-05" = 3327 }
+$official = @{ "MOT20-01" = 429; "MOT20-02" = 2782; "MOT20-03" = 2405; "MOT20-05" = 3315 }
 foreach ($s in $official.Keys) {
   $n = (Get-ChildItem "data\s2\mot20_hf\train\$s\img1\*.jpg").Count
   $ok = if ($n -eq $official[$s]) { "OK" } else { "!! KURANG" }
@@ -38,7 +38,8 @@ foreach ($s in $official.Keys) {
 }
 ```
 
-**Target: semua sekuens bertanda OK (429 / 2782 / 2650 / 3327).**
+**Target: semua sekuens bertanda OK (429 / 2782 / 2405 / 3315).** Sumber angka: Tabel 1 paper
+MOT20 (arXiv:2003.09003) dan README mirror `Lekim89/MOT20` — total training = 8.931 frame.
 
 - Kalau semua OK → lanjut ke LANGKAH 1.
 - Kalau ada yang KURANG → **jangan lanjut**; perbaiki data dulu (bagian 2), lalu ulangi cek.
@@ -83,7 +84,7 @@ Apa yang terjadi (i5-12400F, CPU):
 | Langkah | Isi | Estimasi |
 |---|---|---|
 | `arrange` | susun ulang sekuens + seqinfo.ini dari frame nyata + verify | 2–5 mnt |
-| `detect` | YOLO fine-tune atas ±9.188 frame MOT20 (bukan 4.464) | 20–40 mnt |
+| `detect` | YOLO fine-tune atas ±8.931 frame MOT20 (bukan 4.464) | 20–40 mnt |
 | `track` | OC-SORT atas deteksi baru | 3–8 mnt |
 | `eval` | TrackEval → `eval_results.csv` baru | 2–5 mnt |
 
@@ -99,7 +100,7 @@ Catatan:
 ## 4. LANGKAH 2 — Verifikasi hasil (jangan langsung percaya)
 
 1. **Frame count naik** — cek `experiments/s2_tracker/detection_stats.csv`: jumlah frame
-   MOT20 total harus ±9.188 (429+2782+2650+3327), bukan 4.464 lagi.
+   MOT20 total harus ±8.931 (429+2782+2405+3315), bukan 4.464 lagi.
 2. **Cakupan track penuh** — baris terakhir `experiments/s2_tracker/ocsort_results/mot20/MOT20-02.txt`
    harus frame ≥ 2782. Di PowerShell:
 
