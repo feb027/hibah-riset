@@ -160,7 +160,7 @@ def step_arrange(a: argparse.Namespace) -> None:
         by_name = {}
         for s in cands:
             n_imgs = len(list((s / "img1").glob("*.*")))
-            if s.name not in by_name or n_imgs > by_name[s][1]:
+            if s.name not in by_name or n_imgs > by_name[s.name][1]:
                 by_name[s.name] = (s, n_imgs)
         linked = set()
         for name, (s, n_imgs) in sorted(by_name.items()):
