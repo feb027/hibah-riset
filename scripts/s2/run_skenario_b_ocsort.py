@@ -99,11 +99,29 @@ def find_seqs(root: Path, need_gt: bool):
     return sorted(found, key=lambda p: p.name)
 
 
-def link_seq(src: Path, dst_dir: Path):
+def unlink_layout(target: Path) -> None:
+    """Hapus entry layout lama (junction/symlink/copy) TANPA menyentuh sumber.
+    Windows junction: `cmd /c rmdir` menghapus junction saja, tidak mengikuti target."""
+    if not target.exists() and not os.path.islink(str(target)):
+        return
+    if os.name == "nt":
+        subprocess.run(["cmd", "/c", "rmdir", str(target)], check=True, capture_output=True)
+    elif target.is_symlink():
+        target.unlink()
+    elif target.is_dir():
+        import shutil
+        shutil.rmtree(target)
+    else:
+        target.unlink()
+
+
+def link_seq(src: Path, dst_dir: Path, force: bool = False) -> Path:
     dst_dir.mkdir(parents=True, exist_ok=True)
     target = dst_dir / src.name
-    if target.exists():
+    if target.exists() and not force:
         return target
+    if target.exists() or os.path.islink(str(target)):
+        unlink_layout(target)  # relink dari sumber TERBARU (download yang sudah lengkap)
     if os.name == "nt":
         # Windows: junction (tidak butuh admin/Developer Mode), setara symlink dir
         subprocess.run(["cmd", "/c", "mklink", "/J", str(target), str(src)],
@@ -140,7 +158,7 @@ def step_arrange(a: argparse.Namespace) -> None:
         linked = set()
         for s in cands:
             if s.name in TRAIN_MOT20 and s.name not in linked:
-                link_seq(s, a.data_dir / "mot20" / "train")
+                link_seq(s, a.data_dir / "mot20" / "train", force=a.force)
                 linked.add(s.name)
         n = len(linked)
         if n == 0:
@@ -176,7 +194,7 @@ def step_arrange(a: argparse.Namespace) -> None:
         for s in cands:
             if s.name in linked:
                 continue
-            link_seq(s, a.data_dir / "dancetrack" / "val")
+            link_seq(s, a.data_dir / "dancetrack" / "val", force=a.force)
             linked.add(s.name)
             if (s / "gt" / "gt.txt").exists():
                 with_gt += 1
