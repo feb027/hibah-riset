@@ -1,5 +1,27 @@
 # Progress Log — Hibah Riset PUU 2026
 
+## 2026-08-03 WIB — Phase 9b: Skenario B baseline OC-SORT selesai
+
+- [x] Baseline **OC-SORT** selesai di PC rumah (CPU, deteksi `best.onnx` YOLO26 fine-tune):
+      MOT20-train (4 sekuens, 4.464 frame, 901.773 deteksi) + DanceTrack-val
+      (25 sekuens, 25.508 frame, 369.101 deteksi).
+- [x] Hasil TrackEval 1.3.0 committed: `experiments/s2_tracker/eval_results.csv`
+      (MOT20: HOTA 37,46 / MOTA 56,13 / IDF1 44,67; DanceTrack: 28,39 / 71,38 / 26,63)
+      + `detection_stats.csv`.
+- [x] Laporan `docs/reports/laporan-skenario-b-tracker.md` + brutal review
+      `docs/reviews/REVIEW_laporan-skenario-b.md` (patch Wajib 1–4 & saran 5,7 diterapkan).
+- [x] Figur analisis (4 PNG, Pillow — VPS tanpa AVX tidak bisa matplotlib):
+      `experiments/s2_tracker/figs/` via `scripts/s2/make_s2_figures_pil.py`.
+- [x] Video demo pipeline deteksi→tracking→counting: `scripts/s2/render_demo_video.py`
+      (Pillow+ffmpeg, tanpa numpy/cv2), output `experiments/s2_tracker/demo/*.mp4`.
+- [ ] **DiffMOT belum dieksekusi** — kendala data di GPU kampus. Pipeline notebook 10→70 siap;
+      workaround rate-limit HF (`HF_HUB_DISABLE_XET=1`) terpasang. Tahap: pull → 10 → 20 → 30 → 50 → 70.
+- [ ] Komparasi penuh DiffMOT vs OC-SORT (tabel + analisis) menyusul setelah run kampus.
+
+**Batasan jujur**: angka OC-SORT memakai deteksi sendiri (YOLO26 fine-tune) + `DO_PREPROC=False`,
+tidak sebanding 1:1 dengan leaderboard; hanya sah untuk perbandingan tracker-vs-tracker pada
+deteksi yang sama. DiffMOT masih rencana — tidak ada klaim hasil DiffMOT.
+
 ## 2026-08-02 WIB — Phase 9 Skenario B scaffold (tracker: DiffMOT vs OC-SORT)
 
 - [x] Riset implementasi Skenario B: DiffMOT (CVPR2024) sebagai jalur DL utama vs OC-SORT
