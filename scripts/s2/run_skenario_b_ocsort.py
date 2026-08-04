@@ -155,11 +155,19 @@ def step_arrange(a: argparse.Namespace) -> None:
     src = a.data_dir / "mot20_hf"
     if src.exists():
         cands = find_seqs(src, need_gt=True)
-        linked = set()
+        # Repo HF punya train/ (lengkap) DAN ablation/ (subset terpotong). rglob urut
+        # alfabet -> ablation bisa kepilih duluan. Pilih versi PALING BANYAK gambar per nama.
+        by_name = {}
         for s in cands:
-            if s.name in TRAIN_MOT20 and s.name not in linked:
+            n_imgs = len(list((s / "img1").glob("*.*")))
+            if s.name not in by_name or n_imgs > by_name[s][1]:
+                by_name[s.name] = (s, n_imgs)
+        linked = set()
+        for name, (s, n_imgs) in sorted(by_name.items()):
+            if name in TRAIN_MOT20 and name not in linked:
                 link_seq(s, a.data_dir / "mot20" / "train", force=a.force)
-                linked.add(s.name)
+                linked.add(name)
+                print(f"   {name}: {n_imgs} gambar dari {s.relative_to(a.data_dir)}")
         n = len(linked)
         if n == 0:
             print("!! TIDAK ada sekuens MOT20 train (01/02/03/05) ber-GT ditemukan di", src)

@@ -134,7 +134,7 @@ perbarui laporan, figur (density MOT20), dan menghapus warning koreksi dari
 |---|---|
 | `Activate.ps1` diblokir | `Set-ExecutionPolicy -Scope Process Bypass` lalu ulangi |
 | `detect` error MemoryError | turunkan `--imgsz 480` (deteksi ulang) |
-| Frame count masih pendek setelah download | venv lama? pastikan HF_HUB_DISABLE_XET=1 saat download, lalu cek LANGKAH 0 lagi |
+| Frame count masih pendek setelah download | Repo HF punya `train/` (lengkap) + `ablation/` (subset ~setengah). Cek arah junction: `cmd /c dir data\s2\mot20\train` — harus menunjuk ke `...\mot20_hf\train\MOT20-0X`, BUKAN `...\ablation\...`. `git pull` (orchestrator ≥ commit yang pilih kandidat terbanyak) lalu `--steps arrange --force` akan me-link ulang otomatis |
 | Ingin lebih cepat | export ONNX (`yolo export model=data/s2/weights/best.pt format=onnx`) + `--imgsz 640` |
 
 ---
