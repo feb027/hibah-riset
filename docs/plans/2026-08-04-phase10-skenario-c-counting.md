@@ -96,6 +96,8 @@ di `presentasi_progres_counting.md` belum terverifikasi di data real.
 - **C0** — konfigurasi garis + ekstraksi count GT + validasi visual (render GT + garis,
   cek count masuk akal sebelum lanjut).
 - **C1** — eval Model A vs B (default) pada semua sekuens OC-SORT → metrik awal.
+  **Sekaligus instrumentasi timing**: ukur latency per-frame step counting (O(aktif track))
+  → memverifikasi klaim "zero latency overhead" pada track nyata, untuk Skenario D.
 - **C2** — grid cooldown (10/60/120) + dekomposisi error (GT-track vs OC-SORT-track).
 - **C3** — video demo counting + laporan + review + commit.
 - *(C4 — ulang dengan DiffMOT track, setelah Skenario B selesai semua.)*
