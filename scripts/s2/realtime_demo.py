@@ -46,7 +46,10 @@ def parse_args():
     p.add_argument("--conf", type=float, default=0.3)
     p.add_argument("--cls", type=int, default=0, help="class yang dilacak (0 = person)")
     p.add_argument("--line", type=float, default=0.33,
-                   help="posisi garis virtual sbg fraksi lebar frame (0..1); -1 = tanpa counting")
+                   help="posisi garis VERTIKAL sbg fraksi lebar frame (0..1); -1 = tanpa counting")
+    p.add_argument("--line-y", type=float, default=-1,
+                   help="posisi garis HORIZONTAL sbg fraksi tinggi frame (0..1); dipakai bila >= 0 "
+                        "(menggantikan --line). Cocok untuk video dengan gerak atas->bawah")
     p.add_argument("--cooldown", type=int, default=30, help="frame cooldown anti double-count")
     # parameter tracker — identik dengan run Skenario B
     p.add_argument("--track-thresh", type=float, default=0.3)
@@ -100,12 +103,20 @@ def main():
     )
 
     counter = None
-    line_x = None
-    if args.line >= 0:
+    line_pos = None
+    line_ori = "v"
+    if args.line_y >= 0:
+        vy = int(frame_h * args.line_y)
+        counter = PeopleCounter(Line(Point(0, vy), Point(frame_w, vy)),
+                                cooldown_threshold=args.cooldown)
+        line_pos = args.line_y
+        line_ori = "h"
+    elif args.line >= 0:
         vx = int(frame_w * args.line)
         counter = PeopleCounter(Line(Point(vx, 0), Point(vx, frame_h)),
                                 cooldown_threshold=args.cooldown)
-        line_x = args.line
+        line_pos = args.line
+        line_ori = "v"
 
     writer = None
     if args.save:
@@ -116,8 +127,8 @@ def main():
     paused = False
     frame = first_frame
     print("Jalan! ESC = keluar, SPACE = pause, C = reset hitungan.")
-    print("(counting %s, line=%.2f)" % ("AKTIF" if counter else "nonaktif",
-                                        line_x if line_x is not None else -1))
+    print("(counting %s, garis %s=%.2f)" % ("AKTIF" if counter else "nonaktif",
+                                            line_ori, line_pos if line_pos is not None else -1))
 
     while True:
         if not paused:
@@ -154,10 +165,16 @@ def main():
                 active[tid] = ((x1 + x2) / 2.0, (y1 + y2) / 2.0)
 
             if counter is not None:
-                vx = int(w * line_x)
-                cv2.line(display, (vx, 0), (vx, h), (255, 255, 0), 2)
-                cv2.putText(display, "IN (kiri->kanan)", (vx + 8, 24),
-                            cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 0), 1, cv2.LINE_AA)
+                if line_ori == "h":
+                    vy = int(h * line_pos)
+                    cv2.line(display, (0, vy), (w, vy), (255, 255, 0), 2)
+                    cv2.putText(display, "IN (atas->bawah)", (8, max(vy - 8, 14)),
+                                cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 0), 1, cv2.LINE_AA)
+                else:
+                    vx = int(w * line_pos)
+                    cv2.line(display, (vx, 0), (vx, h), (255, 255, 0), 2)
+                    cv2.putText(display, "IN (kiri->kanan)", (vx + 8, 24),
+                                cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 0), 1, cv2.LINE_AA)
                 for tid, (cx, cy) in active.items():
                     counter.update(tid, Point(cx, cy))
                 total = counter.count_in + counter.count_out
