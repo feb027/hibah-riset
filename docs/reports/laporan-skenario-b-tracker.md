@@ -99,6 +99,8 @@ Detail teknis yang memengaruhi pembacaan angka (sudah ditangani, terdokumentasi 
 
 *Dibangkitkan dari `experiments/s2_tracker/eval_results.csv` (ekstraksi otomatis TrackEval, skala 0–1 × 100; IDSW/Frag adalah hitungan CLEAR).*
 
+> **⚠️ KOREKSI (2026-08-04):** output tracking MOT20 hanya mencakup **sebagian frame** dari sekuens resmi — MOT20-01: frame 1–214 dari 429; MOT20-02: 1–1391 dari 2782 (divalidasi terhadap GT dan `seqinfo.ini` resmi, `seqLength=2782`). Penyebab dugaan: dataset MOT20 di PC rumah saat run hanya berisi sebagian gambar (jumlah jpg menentukan `seqLength` pada step arrange — lihat `synth_seqinfo()` di `scripts/s2/run_skenario_b_ocsort.py`), sehingga deteksi→tracking→evaluasi berjalan atas sekuens terpotong. **Angka MOT20 di atas karenanya adalah nilai atas sekuens terpotong, bukan full-sequence, dan belum dapat dibandingkan dengan literatur.** Re-run full-sequence (cek jumlah gambar = 429/2782/2650/3327 per sekuens, lalu `--steps arrange,detect,track,eval --force`) dijadwalkan; tabel akan diperbarui. Angka DanceTrack tidak terpengaruh (frame lengkap di `detection_stats.csv`).
+
 ![Figur 1: HOTA/MOTA/IDF1 per benchmark](../../experiments/s2_tracker/figs/fig1_hota_mota_idf1.png)
 
 ![Figur 2: IDSW dan Frag per benchmark](../../experiments/s2_tracker/figs/fig2_idsw_frag.png)
@@ -179,16 +181,20 @@ Catatan:
 
 ## 7. Video Demo (Kombinasi Skenario A + B)
 
-Video demo merender hasil pipeline lengkap — **deteksi YOLO26 (Skenario A) → tracking OC-SORT (Skenario B) → overlay jumlah orang per bingkai** — untuk bahan presentasi:
+Video demo merender hasil pipeline lengkap — **deteksi YOLO26 (Skenario A) → tracking OC-SORT (Skenario B) → overlay jumlah orang per bingkai** — untuk bahan presentasi. FPS mengikuti `seqinfo.ini` dataset (MOT20 = 25 fps, bukan 30 — koreksi 2026-08-04):
 
-- `experiments/s2_tracker/demo/MOT20-02_f1-450_tracked.mp4` — kerumunan padat, 450 bingkai (±15 dtk @30 FPS)
-- `experiments/s2_tracker/demo/MOT20-01_f1-214_tracked.mp4` — kerumunan jarang, 214 bingkai (±7 dtk)
+- `experiments/s2_tracker/demo/MOT20-02_f1-450_tracked.mp4` — kerumunan padat, 450 bingkai (±18 dtk @25 fps)
+- `experiments/s2_tracker/demo/MOT20-01_f1-214_tracked.mp4` — kerumunan jarang, 214 bingkai (±8,6 dtk @25 fps)
+- `experiments/s2_tracker/demo/MOT20-02_f1-450_gt.mp4` — **referensi Ground Truth** (kotak hijau = pedestrian ber-GT, abu-abu = distraktor) untuk membandingkan "ideal" vs baseline
 
-Setiap kotak diberi ID stabil (warna per ID) dan header menampilkan jumlah orang aktif per bingkai. Dibangkitkan dengan `scripts/s2/render_demo_video.py` (Pillow + ffmpeg, tanpa GPU; frame diunduh dari HF sekali, resume otomatis):
+Setiap kotak diberi ID stabil (warna per ID) dan header menampilkan jumlah orang aktif per bingkai. Klip GT bukan hasil pipeline — hanya referensi visual agar kelemahan baseline (ID switch saat oklusi) terbaca jelas sebagai *gap*, bukan sebagai kesalahan render.
+
+Dibangkitkan dengan `scripts/s2/render_demo_video.py` (Pillow + ffmpeg, tanpa GPU; frame diunduh dari HF sekali, resume otomatis; `--source gt` untuk klip referensi):
 
 ```bash
-python scripts/s2/render_demo_video.py --seq MOT20-02 --start 1 --end 450 --fps 30
+python scripts/s2/render_demo_video.py --seq MOT20-02 --start 1 --end 450
 python scripts/s2/render_demo_video.py --seq MOT20-01
+python scripts/s2/render_demo_video.py --seq MOT20-02 --start 1 --end 450 --source gt
 ```
 
 ---

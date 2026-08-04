@@ -14,6 +14,14 @@
       `experiments/s2_tracker/figs/` via `scripts/s2/make_s2_figures_pil.py`.
 - [x] Video demo pipeline deteksi→tracking→counting: `scripts/s2/render_demo_video.py`
       (Pillow+ffmpeg, tanpa numpy/cv2), output `experiments/s2_tracker/demo/*.mp4`.
+- [ ] **KOREKSI 2026-08-04:** output tracking MOT20 ternyata hanya menutupi sebagian frame
+      (MOT20-01: 1–214 dari 429; MOT20-02: 1–1391 dari 2782 — divalidasi vs GT+seqinfo).
+      Dugaan: dataset MOT20 di PC rumah saat run tidak lengkap → `synth_seqinfo()` memakai
+      jumlah jpg sebagai `seqLength` → deteksi/tracking/eval jalan atas sekuens terpotong.
+      **Angka MOT20 = sekuens terpotong; re-run full-sequence wajib**
+      (cek 429/2782/2650/3327 jpg per sekuens, lalu `--steps arrange,detect,track,eval --force`).
+      DanceTrack aman (frame lengkap). Render video diperbaiki: fps baca seqinfo (25, bukan 30)
+      + klip referensi GT (`--source gt`).
 - [ ] **DiffMOT belum dieksekusi** — kendala data di GPU kampus. Pipeline notebook 10→70 siap;
       workaround rate-limit HF (`HF_HUB_DISABLE_XET=1`) terpasang. Tahap: pull → 10 → 20 → 30 → 50 → 70.
 - [ ] Komparasi penuh DiffMOT vs OC-SORT (tabel + analisis) menyusul setelah run kampus.
