@@ -184,8 +184,10 @@ Catatan:
 Video demo merender hasil pipeline lengkap — **deteksi YOLO26 (Skenario A) → tracking OC-SORT (Skenario B) → overlay jumlah orang per bingkai** — untuk bahan presentasi. FPS mengikuti `seqinfo.ini` dataset (MOT20 = 25 fps, bukan 30 — koreksi 2026-08-04):
 
 - `experiments/s2_tracker/demo/MOT20-02_f1-450_tracked.mp4` — kerumunan padat, 450 bingkai (±18 dtk @25 fps)
-- `experiments/s2_tracker/demo/MOT20-01_f1-214_tracked.mp4` — kerumunan jarang, 214 bingkai (±8,6 dtk @25 fps)
+- `experiments/s2_tracker/demo/MOT20-01_f1-429_tracked.mp4` — kerumunan jarang, 429 bingkai penuh (±17 dtk @25 fps)
 - `experiments/s2_tracker/demo/MOT20-02_f1-450_gt.mp4` — **referensi Ground Truth** (kotak hijau = pedestrian ber-GT, abu-abu = distraktor) untuk membandingkan "ideal" vs baseline
+
+*Klip demo dirender ulang (2026-08-04) dari hasil tracking full-sequence* — sebelumnya `MOT20-01_f1-214` adalah artefak data terpotong dan telah dihapus.
 
 Setiap kotak diberi ID stabil (warna per ID) dan header menampilkan jumlah orang aktif per bingkai. Klip GT bukan hasil pipeline — hanya referensi visual agar kelemahan baseline (ID switch saat oklusi) terbaca jelas sebagai *gap*, bukan sebagai kesalahan render.
 
