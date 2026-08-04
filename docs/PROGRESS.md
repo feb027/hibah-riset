@@ -3,10 +3,10 @@
 ## 2026-08-03 WIB — Phase 9b: Skenario B baseline OC-SORT selesai
 
 - [x] Baseline **OC-SORT** selesai di PC rumah (CPU, deteksi `best.onnx` YOLO26 fine-tune):
-      MOT20-train (4 sekuens, 4.464 frame, 901.773 deteksi) + DanceTrack-val
+      MOT20-train (4 sekuens, 8.931 frame, 1.595.730 deteksi) + DanceTrack-val
       (25 sekuens, 25.508 frame, 369.101 deteksi).
 - [x] Hasil TrackEval 1.3.0 committed: `experiments/s2_tracker/eval_results.csv`
-      (MOT20: HOTA 37,46 / MOTA 56,13 / IDF1 44,67; DanceTrack: 28,39 / 71,38 / 26,63)
+      (MOT20: HOTA 36,51 / MOTA 55,98 / IDF1 42,88; DanceTrack: 28,39 / 71,38 / 26,63)
       + `detection_stats.csv`.
 - [x] Laporan `docs/reports/laporan-skenario-b-tracker.md` + brutal review
       `docs/reviews/REVIEW_laporan-skenario-b.md` (patch Wajib 1–4 & saran 5,7 diterapkan).
@@ -14,15 +14,15 @@
       `experiments/s2_tracker/figs/` via `scripts/s2/make_s2_figures_pil.py`.
 - [x] Video demo pipeline deteksi→tracking→counting: `scripts/s2/render_demo_video.py`
       (Pillow+ffmpeg, tanpa numpy/cv2), output `experiments/s2_tracker/demo/*.mp4`.
-- [ ] **KOREKSI 2026-08-04:** output tracking MOT20 ternyata hanya menutupi sebagian frame
-      (MOT20-01: 1–214 dari 429; MOT20-02: 1–1391 dari 2782 — divalidasi vs GT+seqinfo).
-      Dugaan: dataset MOT20 di PC rumah saat run tidak lengkap → `synth_seqinfo()` memakai
-      jumlah jpg sebagai `seqLength` → deteksi/tracking/eval jalan atas sekuens terpotong.
-      **Angka MOT20 = sekuens terpotong; re-run full-sequence wajib**
-      (cek 429/2782/2405/3315 jpg per sekuens — Tabel 1 paper MOT20 arXiv:2003.09003,
-      total training 8.931 frame; download HF sudah lengkap, divalidasi 2026-08-04), lalu
-      DanceTrack aman (frame lengkap). Render video diperbaiki: fps baca seqinfo (25, bukan 30)
-      + klip referensi GT (`--source gt`).
+- [x] **KOREKSI 2026-08-04 (SELESAI):** output tracking MOT20 lama hanya menutupi sebagian frame
+      (MOT20-01: 1–214 dari 429; MOT20-02: 1–1391 dari 2782). Akar masalah: (a) dataset MOT20 di
+      PC rumah tidak lengkap, dan (b) junction layout menunjuk ke subset `ablation/` repo HF
+      (bukan `train/`). Perbaikan: download ulang penuh + fix orchestrator (arrange `--force`
+      re-link; pilih kandidat terlengkap per nama sekuens). **Re-run full-sequence selesai**:
+      frame 429/2782/2405/3315 (total 8.931, cocok Tabel 1 paper MOT20 arXiv:2003.09003).
+      Angka baru: HOTA 36,51 / MOTA 55,98 / IDF1 42,88 / IDSW 14.293 — temuan asosiasi rapuh
+      makin kuat (IDSW hampir 2×). DanceTrack aman (frame lengkap). Render video: fps baca
+      seqinfo (25, bukan 30) + klip referensi GT (`--source gt`).
 - [ ] **DiffMOT belum dieksekusi** — kendala data di GPU kampus. Pipeline notebook 10→70 siap;
       workaround rate-limit HF (`HF_HUB_DISABLE_XET=1`) terpasang. Tahap: pull → 10 → 20 → 30 → 50 → 70.
 - [ ] Komparasi penuh DiffMOT vs OC-SORT (tabel + analisis) menyusul setelah run kampus.

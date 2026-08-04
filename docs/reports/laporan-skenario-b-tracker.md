@@ -10,7 +10,7 @@ Skenario B mengevaluasi lapisan **tracker** dari pipeline *people counting* lima
 
 Temuan utama:
 
-1. **Pada kerumunan padat (MOT20-train), OC-SORT mencapai HOTA 37,46, MOTA 56,13, IDF1 44,67** — akurasi deteksi tinggi (MOTA), tetapi asosiasi identitas lemah: **7.933 ID switch** dan **15.033 fragmentasi** pada 4.464 bingkai. Kerumunan dengan kepadatan rata-rata **202 deteksi/bingkai** membuat asosiasi berbasis IoU+Kalman mudah putus saat orang saling menutupi.
+1. **Pada kerumunan padat (MOT20-train full, 8.931 bingkai), OC-SORT mencapai HOTA 36,51, MOTA 55,98, IDF1 42,88** — akurasi deteksi tinggi (MOTA), tetapi asosiasi identitas lemah: **14.293 ID switch** dan **27.646 fragmentasi**. Kepadatan rata-rata **179 deteksi/bingkai** (puncak 272 di MOT20-05) membuat asosiasi berbasis IoU+Kalman mudah putus saat orang saling menutupi.
 2. **Pada gerak non-linear (DanceTrack-val), OC-SORT jatuh ke HOTA 28,39 dan IDF1 26,63** — MOTA 71,38 tetap tinggi karena deteksi bagus, tetapi identitas nyaris berantakan (IDF1 < 30%). Ini persis skenario yang menjadi motivasi DiffMOT (Lv et al., 2024 – S021): prediksi gerak Kalman (asumsi kecepatan konstan) gagal pada penari yang berakselerasi/berbelok tidak menentu.
 3. **Yang menjadi pembatas adalah asosiasi, bukan deteksi.** Pola HOTA-MOTA-IDF1 di kedua benchmark konsisten dengan diagnosis literatur: MOTA mengukur cakupan deteksi, IDF1/HOTA mengukur seberapa utuh identitas dipertahankan. Untuk *people counting*, **IDF1 adalah metrik yang paling relevan** — identitas yang putus saat oklusi membuat objek dapat dihitung ganda ketika muncul kembali (dekomposisi DetA/AssA belum dicatat pada run ini; akan ditambahkan pada run berikutnya).
 4. **DiffMOT belum dieksekusi** (Bagian 6). Kendala utamanya infrastruktur data di GPU kampus; seluruh persiapan (env pip-only, data download dengan workaround rate-limit HF, skrip deteksi dua format) sudah siap. Angka publikasi DiffMOT pada DanceTrack (HOTA 62,3) menjadi target pembanding yang diharapkan memperbaiki sisi asosiasi.
@@ -39,10 +39,10 @@ Kedua tracker dievaluasi pada **deteksi yang identik** (YOLO26 fine-tune hasil S
 
 | Benchmark | Split | Jumlah sekuens | Frame | Ground truth | Alasan |
 |---|---|---|---|---|---|
-| **MOT20** | train | 4 (MOT20-01/02/03/05) | 4.464 | Publik (GT ber-ID) | Test MOT20 tanpa GT publik (submission ke server) |
+| **MOT20** | train | 4 (MOT20-01/02/03/05) | 8.931 | Publik (GT ber-ID) | Test MOT20 tanpa GT publik (submission ke server) |
 | **DanceTrack** | val | 25 | 25.508 | Publik (GT ber-ID) | Train untuk melatih tracker (tidak dipakai); test tanpa GT publik |
 
-- **MOT20** (Dendorfer et al., 2020 – S036): kerumunan pejalan kaki sangat padat di ruang publik — menguji oklusi masif. Kepadatan deteksi rata-rata 202/bingkai.
+- **MOT20** (Dendorfer et al., 2020 – S036): kerumunan pejalan kaki sangat padat di ruang publik — menguji oklusi masif. Kepadatan deteksi rata-rata 179/bingkai (GT: 127/bingkai).
 - **DanceTrack** (Sun et al., 2022 – S037): penari dengan penampilan seragam (baju sama) dan gerak non-linear — menguji asosiasi saat penampilan tidak informatif dan gerak tidak linear.
 - Kedua split dipilih karena **GT-nya publik** — evaluasi HOTA/IDF1/MOTA lokal dimungkinkan. Sebelum dipakai, GT diverifikasi dengan `scripts/data_prep/verify_mot_dataset.py` (memeriksa ID yang bertahan lintas bingkai, bukan sekadar format deteksi).
 
@@ -50,10 +50,10 @@ Kedua tracker dievaluasi pada **deteksi yang identik** (YOLO26 fine-tune hasil S
 
 Deteksi memakai bobot **YOLO26s fine-tune CrowdHuman** dari Skenario A (mAP@0.5:0.95 = 0,4974; laporan Skenario A Bagian 4). Eksekusi di PC rumah (CPU):
 
-- **MOT20**: `best.onnx` (ONNX Runtime, ±2× lebih cepat di CPU) — 4 sekuens, 4.464 bingkai, **901.773 deteksi**, ±4,5 menit.
+- **MOT20**: `best.onnx` (ONNX Runtime, ±2× lebih cepat di CPU) — 4 sekuens, 8.931 bingkai, **1.595.730 deteksi**, ±4 menit.
 - **DanceTrack**: `best.onnx` — 25 sekuens, 25.508 bingkai, **369.101 deteksi**, ±18 menit.
 
-Hasil deteksi per sekuens tercatat di `experiments/s2_tracker/detection_stats.csv` dan `docs/panduan-skenario-b-oc-sort.md`. Ambang *confidence* 0,3 digunakan untuk membatasi noise (temuan Skenario A: pada 0,05 deteksi noise membanjiri, mis. MOT20-05 sampai 271 deteksi/bingkai).
+Hasil deteksi per sekuens tercatat di `experiments/s2_tracker/detection_stats.csv` dan `docs/panduan-skenario-b-oc-sort.md`. Ambang *confidence* 0,3 digunakan untuk membatasi noise (temuan Skenario A: pada 0,05 deteksi noise membanjiri, mis. MOT20-05 sampai 272 deteksi/bingkai).
 
 *Catatan konsistensi:* pada jalur GPU (kampus) deteksi memakai `best.pt` (native CUDA). Aturan yang dipakai: jangan mencampur deteksi `.pt` dan `.onnx` dalam satu tabel hasil.
 
@@ -94,12 +94,12 @@ Detail teknis yang memengaruhi pembacaan angka (sudah ditangani, terdokumentasi 
 
 | Benchmark | Tracker | HOTA | MOTA | IDF1 | IDSW | Frag |
 |---|---|---|---|---|---|---|
-| MOT20 (train) | **OC-SORT** | **37,46** | **56,13** | **44,67** | **7.933** | **15.033** |
+| MOT20 (train) | **OC-SORT** | **36,51** | **55,98** | **42,88** | **14.293** | **27.646** |
 | DanceTrack (val) | **OC-SORT** | **28,39** | **71,38** | **26,63** | **6.701** | **6.936** |
 
 *Dibangkitkan dari `experiments/s2_tracker/eval_results.csv` (ekstraksi otomatis TrackEval, skala 0–1 × 100; IDSW/Frag adalah hitungan CLEAR).*
 
-> **⚠️ KOREKSI (2026-08-04):** output tracking MOT20 hanya mencakup **sebagian frame** dari sekuens resmi — MOT20-01: frame 1–214 dari 429; MOT20-02: 1–1391 dari 2782 (divalidasi terhadap GT dan `seqinfo.ini` resmi, `seqLength=2782`). Penyebab dugaan: dataset MOT20 di PC rumah saat run hanya berisi sebagian gambar (jumlah jpg menentukan `seqLength` pada step arrange — lihat `synth_seqinfo()` di `scripts/s2/run_skenario_b_ocsort.py`), sehingga deteksi→tracking→evaluasi berjalan atas sekuens terpotong. **Angka MOT20 di atas karenanya adalah nilai atas sekuens terpotong, bukan full-sequence, dan belum dapat dibandingkan dengan literatur.** Re-run full-sequence (jumlah gambar resmi = 429/2782/2405/3315 per sekuens, total 8.931 — Tabel 1 paper MOT20 [arXiv:2003.09003]; download HF `Lekim89/MOT20` sudah divalidasi lengkap, lalu `--steps arrange,detect,track,eval --force`) dijadwalkan; tabel akan diperbarui. Angka DanceTrack tidak terpengaruh (frame lengkap di `detection_stats.csv`).
+> **✅ PEMBARUAN (2026-08-04):** angka di atas adalah hasil **re-run full-sequence** — sebelumnya output tracking hanya menutupi sebagian frame (MOT20-01: 1–214 dari 429; MOT20-02: 1–1391 dari 2782) karena dataset di PC rumah tidak lengkap dan junction layout menunjuk ke subset `ablation/` (repo HF menyediakan dua versi). Setelah download ulang lengkap (divalidasi: 429/2782/2405/3315 gambar per sekuens, total 8.931 — cocok dengan Tabel 1 paper MOT20, arXiv:2003.09003), seluruh pipeline diulang (`--steps arrange,detect,track,eval --force`; fix relink di `scripts/s2/run_skenario_b_ocsort.py`). Tabel kini mewakili **MOT20-train penuh**. Perbandingan lama vs baru: HOTA 37,46→36,51; IDF1 44,67→42,88; IDSW 7.933→14.293 — frame tambahan didominasi sekuens malam terpadat (MOT20-03, MOT20-05), sehingga bobot asosiasi justru menurun; temuan "asosiasi rapuh" makin kuat, bukan melemah.
 
 ![Figur 1: HOTA/MOTA/IDF1 per benchmark](../../experiments/s2_tracker/figs/fig1_hota_mota_idf1.png)
 
@@ -119,9 +119,9 @@ MOT20 rata-rata **202 deteksi/bingkai** (sampai 271 di MOT20-05) — kerumunan e
 
 | Tahap | Lingkup | Waktu |
 |---|---|---|
-| Deteksi MOT20 (4 sekuens) | CPU+ONNX | ±4,5 menit |
+| Deteksi MOT20 (4 sekuens) | CPU+ONNX | ±4 menit |
 | Deteksi DanceTrack (25 sekuens) | CPU+ONNX | ±18 menit |
-| Tracking OC-SORT (MOT20-train) | CPU | ±54 FPS (≈1,4 menit untuk 4.464 bingkai) |
+| Tracking OC-SORT (MOT20-train) | CPU | ±54 FPS (≈2,8 menit untuk 8.931 bingkai) |
 | Evaluasi TrackEval | CPU | menit |
 
 ---
@@ -130,9 +130,9 @@ MOT20 rata-rata **202 deteksi/bingkai** (sampai 271 di MOT20-05) — kerumunan e
 
 ### 5.1 Kerumunan padat (MOT20): deteksi kuat, asosiasi rapuh
 
-MOTA 56,13 dengan kepadatan 202 deteksi/bingkai menunjukkan detektor YOLO26 mampu menutupi mayoritas orang bahkan dalam oklusi berat. Namun **7.933 ID switch** — rata-rata 1,8 per bingkai — menandakan asosiasi berbasis gerak mudah salah sambung saat dua orang saling menutupi dan kotak IoU saling tumpang tindih. IDF1 44,67 berarti sekitar **55% bobot asosiasi identitas tidak cocok dengan GT** — implikasi praktis untuk counting: orang yang tertutup 2–3 bingkai lalu terdeteksi ulang dapat dihitung sebagai orang baru.
+MOTA 55,98 dengan kepadatan 179 deteksi/bingkai (puncak 272 di MOT20-05) menunjukkan detektor YOLO26 mampu menutupi mayoritas orang bahkan dalam oklusi berat. Namun **14.293 ID switch** — rata-rata 1,6 per bingkai — menandakan asosiasi berbasis gerak mudah salah sambung saat dua orang saling menutupi dan kotak IoU saling tumpang tindih. IDF1 42,88 berarti sekitar **57% bobot asosiasi identitas tidak cocok dengan GT** — implikasi praktis untuk counting: orang yang tertutup 2–3 bingkai lalu terdeteksi ulang dapat dihitung sebagai orang baru.
 
-HOTA 37,46 yang berada jauh di bawah MOTA 56,13 secara kualitatif mengindikasikan komponen asosiasi lebih lemah daripada komponen deteksi — konsisten dengan tracker motion-only tanpa ReID. Dekomposisi eksplisit DetA/AssA belum dicatat pada run ini dan akan ditambahkan pada run berikutnya (TrackEval menyediakannya).
+HOTA 36,51 yang berada jauh di bawah MOTA 55,98 secara kualitatif mengindikasikan komponen asosiasi lebih lemah daripada komponen deteksi — konsisten dengan tracker motion-only tanpa ReID. Dekomposisi eksplisit DetA/AssA belum dicatat pada run ini dan akan ditambahkan pada run berikutnya (TrackEval menyediakannya).
 
 ### 5.2 Gerak non-linear (DanceTrack): kegagalan asumsi kecepatan konstan
 
@@ -146,7 +146,7 @@ Ini **persis domain yang menjadi motivasi DiffMOT** (Lv et al., 2024 – S021): 
 
 | Benchmark | Tracker | Deteksi | HOTA | IDF1 | MOTA |
 |---|---|---|---|---|---|
-| MOT20 | OC-SORT (eksperimen ini) | YOLO26 fine-tune kami | 37,46 | 44,67 | 56,13 |
+| MOT20 | OC-SORT (eksperimen ini) | YOLO26 fine-tune kami | 36,51 | 42,88 | 55,98 |
 | MOT20 | OC-SORT (publikasi) | deteksi resmi | 62,4 | — | — |
 | DanceTrack | OC-SORT (eksperimen ini) | YOLO26 fine-tune kami | 28,39 | 26,63 | 71,38 |
 | DanceTrack | OC-SORT (publikasi) | deteksi resmi | — | — | — |
@@ -201,7 +201,7 @@ python scripts/s2/render_demo_video.py --seq MOT20-02 --start 1 --end 450 --sour
 
 ## 8. Kesimpulan dan Arah Lanjut
 
-Baseline OC-SORT menunjukkan dua hal: (1) deteksi YOLO26 fine-tune kita sudah siap dipakai di lapisan bawah (MOTA tinggi di kedua benchmark); (2) asosiasi motion-only tidak memadai untuk counting yang akurat — terutama pada gerak non-linear (IDF1 DanceTrack 26,63) dan oklusi padat (IDSW MOT20 7.933). Keduanya menegaskan arah proposal: **tracker dengan ReID + prediksi gerak non-linear (DiffMOT) diperlukan**, dan keunggulannya paling mungkin muncul pada metrik asosiasi.
+Baseline OC-SORT menunjukkan dua hal: (1) deteksi YOLO26 fine-tune kita sudah siap dipakai di lapisan bawah (MOTA tinggi di kedua benchmark); (2) asosiasi motion-only tidak memadai untuk counting yang akurat — terutama pada gerak non-linear (IDF1 DanceTrack 26,63) dan oklusi padat (IDSW MOT20 14.293 pada 8.931 bingkai penuh). Keduanya menegaskan arah proposal: **tracker dengan ReID + prediksi gerak non-linear (DiffMOT) diperlukan**, dan keunggulannya paling mungkin muncul pada metrik asosiasi.
 
 Langkah berikut: selesaikan DiffMOT di GPU kampus (Bagian 6), lengkapi tabel komparasi dua tracker pada deteksi yang sama, lalu lanjut ke Skenario C (counting logic) dengan tracker terpilih.
 
