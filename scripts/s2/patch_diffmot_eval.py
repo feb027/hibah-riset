@@ -24,6 +24,8 @@ OLD_UPDATE = (
 NEW_UPDATE = (
     "                online_targets = tracker.update(dets, self.model, frame_id, seq_width, seq_height, tag, img)\n"
 )
+OLD_IMPORT = "import numpy as np\n"
+NEW_IMPORT = "import numpy as np\nimport cv2\n"
 
 
 def main() -> int:
@@ -41,6 +43,9 @@ def main() -> int:
         src = src.replace(OLD_IMG, NEW_IMG); changed += 1
     if OLD_UPDATE in src:
         src = src.replace(OLD_UPDATE, NEW_UPDATE); changed += 1
+    if "import cv2" not in src and OLD_IMPORT in src:
+        # img = cv2.imread(...) butuh import cv2; source asli tidak punya
+        src = src.replace(OLD_IMPORT, NEW_IMPORT, 1); changed += 1
 
     if changed:
         target.write_text(src)
@@ -48,7 +53,8 @@ def main() -> int:
     else:
         ok_img = "img = cv2.imread(im_path)" in src
         ok_upd = "tag, img)" in src
-        print(f"SUDAH TERPATCH (img_read={ok_img}, pass_img={ok_upd}) — tidak ada perubahan")
+        ok_cv2 = "import cv2" in src
+        print(f"SUDAH TERPATCH (img_read={ok_img}, pass_img={ok_upd}, import_cv2={ok_cv2}) — tidak ada perubahan")
     return 0
 
 
