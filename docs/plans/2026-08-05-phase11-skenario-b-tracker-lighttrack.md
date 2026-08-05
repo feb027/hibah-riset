@@ -1,6 +1,6 @@
 # Rencana Implementasi — Tracker Versi Kita: LightTrack-ReID-inspired (Skenario B, Phase 11)
 
-> **Status:** FASE 1 SELESAI (2026-08-05) — skeleton tracker lolos smoke test; Phase 2+ menunggu. Workflow: konsep → approval → implement.
+> **Status:** FASE 1-2 SELESAI (2026-08-05) — skeleton + LAE encoder terverifikasi (cosine same 0.772 vs diff 0.746, margin kecil → Phase 3 training wajib); Phase 3 menunggu approval. Workflow: konsep → approval → implement.
 > **Referensi utama:** PLOS ONE 2026 — *LightTrack-ReID* (fulltext di `docs/research/papers/S014-*.pdf`, catatan detail implementasi di `docs/research/fulltext-notes/S014-lighttrack-reid.md` — WAJIB dibaca sebelum implement; isinya resep rumus, tabel ablasi, dan daftar celah yang harus kita putuskan sendiri).
 > **Posisi di tesis:** pelengkap Skenario B. OC-SORT = baseline ringan (selesai), DiffMOT = pembanding berat GPU (hasil mentah ada, eval menyusul), tracker ini = **proposed method** (ringan, bisa dilatih ulang ke data sendiri).
 
@@ -106,12 +106,14 @@ docs/
 - ⚠️ Angka di atas BUKAN pembanding sah vs OC-SORT/DiffMOT (beda deteksi + 2 sekuens) — hanya validasi pipeline. Eval resmi: kampus, `run_skenario_b_ocsort.py --steps eval --tracker lighttrack` (YOLO26, 4 fold).
 - **Catatan VPS:** pip numpy>=2.3 wheel crash di CPU ini (X86_V2) → venv wajib pin `numpy==1.26.4`. Hermes guard crash saat argumen script path berisi `/` (embedded null byte) → jalanin via `source .venv-s2/bin/activate && python script.py`.
 
-### Phase 2 — LAE encoder + jalur inference ✅ KODE SELESAI 2026-08-05 (verifikasi kampus menyusul)
+### Phase 2 — LAE encoder + jalur inference ✅ SELESAI 2026-08-05 (verifikasi kampus: PASS, margin kecil)
 - ✅ `encoder.py`: LAE = MobileNetV3-Small pretrained (`classifier` dibuang) → AvgPool internal → `Linear(576→32, bias=False)` → L2-norm. Kompatibel torchvision 0.13+ (`weights=`) dengan fallback `pretrained=`. TORCH-ONLY: tracker.py Phase 1 tidak mengimpornya (mode CPU/`USE_REID=false` tetap tanpa torch).
 - ✅ `EmbeddingComputer`: jalur inference crop → 224 → normalize ImageNet → LAE → (N,32) numpy L2-normalised; crop clip ke batas frame + cv2 INTER_AREA.
 - ✅ Self-check `_demo()` di encoder.py (sintetis: crop solid sama > beda, output (32,), ||e||=1) — jalan di mesin bertorch.
 - ✅ `scripts/s2/verify_lighttrack_encoder.py`: verifikasi GT asli MOT20 — cosine same-person (track ID sama, frame beda) vs diff-person (ID beda, frame sama), 10 frame paling ramai, assert same > diff.
-- ⏳ Verifikasi kampus: `python scripts/s2/verify_lighttrack_encoder.py --seq-dir data/s2/mot20/train/MOT20-01` (jalur kampus data: `data/s2/mot20_hf/train/MOT20-01`). Download MobileNetV3-Small ~10 MB sekali.
+- ✅ **HASIL KAMPUS (MOT20-01, GPU 4090):** cosine same-person **0.772** (n=40) vs diff-person **0.746** (n=10), selisih **+0.027**, `VERIFIKASI OK`.
+- ⚠️ **Interpretasi jujur:** selisih kecil karena backbone ImageNet-pretrained ≠ ReID (dilatih klasifikasi objek, bukan identitas orang). Justru ini argumen utama Phase 3: training triplet+BCE di MOT20/MOT17 yang akan memisahkan embedding. Yang terverifikasi di sini = mekanisme (crop→embed→cosine) benar, bukan kualitas ReID.
+- 🐛 Pitfall tercatat: `(rgb - (0.485,...))` numpy menaikkan ke float64 → `torch.cuda.DoubleTensor` vs weight FloatTensor. Fix: mean/std di-`np.float32` + `.to(dtype=torch.float32)` di `_normalize`.
 
 ### Phase 3 — TBSS scorer + training
 - `scorer.py`: Linear(73→d_model) + `nn.TransformerEncoderLayer(d_model, nhead=4)` + Linear → sigmoid. **d_model default 64** (paper tidak menyebut; input cuma 73-d, tunable).
