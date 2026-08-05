@@ -22,6 +22,7 @@ Dipakai:
     --max-frames>0 = mini-run (uji pipa dulu, 1-3 epoch, 1 sekuens), lalu full.
 """
 import argparse
+import sys
 import json
 import os
 import subprocess
@@ -203,6 +204,8 @@ def train(args):
         nb = 0
         rng = np.random.RandomState(args.seed + ep)
         np.random.RandomState(args.seed + ep).shuffle(train_pairs)
+        seq_names = [os.path.basename(d) for d in args.seq_dirs.split(":")]
+        t_last = time.time()
         for i, (ci, t) in enumerate(train_pairs):
             triplets = sampler.sample(caches[ci], t)
             if not triplets:
@@ -239,9 +242,21 @@ def train(args):
             loss = L_triplet + L_bce
             opt.zero_grad(); loss.backward(); opt.step()
             tot_l += loss.item(); tot_lt += L_triplet.item(); tot_lb += L_bce.item(); nb += 1
-            # progress per ~10% frame (jangan tiap frame: spam)
-            if nb % max(1, (len(train_pairs) // 10)) == 0:
-                print(f"  ep={ep} [{nb}/{len(train_pairs)}] L_running={tot_l/nb:.4f}")
+            # realtime progress 1 baris (overwrite \r) — update tiap >=0.5s, flush
+            now = time.time()
+            if now - t_last >= 0.5:
+                t_last = now
+                pct = 100.0 * (i + 1) / len(train_pairs)
+                el = now - t_ep
+                eta = el / (i + 1) * (len(train_pairs) - i - 1)
+                bar = "#" * int(30 * (i + 1) / len(train_pairs))
+                sys.stdout.write(
+                    f"\r\033[K  ep={ep} [{i+1}/{len(train_pairs)}] {pct:5.1f}% |{bar:<30}| "
+                    f"seq={seq_names[ci]} fr={t} L={tot_l/max(1,nb):.4f} "
+                    f"el={el:6.0f}s ETA={eta/60:5.1f}m")
+                sys.stdout.flush()
+
+        sys.stdout.write("\r\033[K")  # bersihkan baris realtime sebelum summary
 
         # ---- validation (tanpa augment; tanpa grad)
         lae.eval(); tbss.eval()
@@ -249,7 +264,9 @@ def train(args):
         cos_same = cos_diff = 0.0
         n_s = n_d = 0
         with torch.inference_mode():
+            tv_last = time.time(); vi = 0
             for ci, t in val_pairs:
+                vi += 1
                 for u in sampler.sample(caches[ci], t):
                     H, W = caches[ci].frame_size()
                     a = _normalize(_crop_to_tensor(u["a"][0], device))
@@ -267,6 +284,15 @@ def train(args):
                     s_ap = float(tbss(_tbss_x(b_ap, _to_xyxy(bp, W, H), iou_ap, ea, ep_))[0, 0])
                     s_an = float(tbss(_tbss_x(b_an, _to_xyxy(bn, W, H), iou_an, ea, en_))[0, 0])
                     acc_t += int(s_ap > 0.5); acc_d += int(s_an < 0.5)
+                # val realtime (1 baris, sama pola dgn train)
+                now = time.time()
+                if now - tv_last >= 0.5:
+                    tv_last = now
+                    sys.stdout.write(
+                        f"\r\033[K  ep={ep} [val {vi}/{len(val_pairs)}] "
+                        f"seq={seq_names[ci]} fr={t} n_s={n_s} n_d={n_d}")
+                    sys.stdout.flush()
+            sys.stdout.write("\r\033[K")
         acc = (acc_t + acc_d) / max(1, n_s + n_d)
         cos_s = cos_same / max(1, n_s)
         cos_d = cos_diff / max(1, n_d)
