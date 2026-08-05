@@ -69,3 +69,24 @@ Mengubah LAE dari pretrained-ImageNet (margin +0.027, belum ReID) menjadi ReID t
      --out out/phase3_fold1 --epochs 20 > out/phase3_fold1.log 2>&1 &
    ```
    *(fold-1 = MOT20-01 sebagai test; MOT17 full + MOT20-02..05 sebagai train. Cek jalur data sebenarnya di kampus: `ls data/s2/`)*
+
+## Operasional pelatihan (add-on commit e55e706) — resume, timing, resource, progress
+
+Semua built-in di `train.py`, tanpa dep baru (stdlib `/proc` + `torch.cuda` + `nvidia-smi`).
+
+- **Resume dari tengah jalan**: tiap epoch simpan `out/<nama>/lighttrack_eN.pt` (state LAE + TBSC + optimizer + epoch). Kalau training terputus (logout/SSH putus/GPU timeout), lanjut tanpa mulai ulang:
+  ```bash
+  python src/lighttrack/train.py <args-komplit-sama> --resume out/phase3_fold1/lighttrack_e7.pt
+  ```
+  Log dibuka mode *append* (tidak menimpa) → riwayat lengkap. Pastikan `--seq-dirs`, `--seed`, `--max-frames` dsb **identik** dgn run awal agar split train/val konsisten (split deterministik dari `--seed`).
+- **Durasi & ETA per epoch**: baris epoch diakhiri `[NNs | rata MMs/ep | ETA Xm]`.
+- **Statistik resource per epoch** (CPU %, RAM avail/total GB, dan jika CUDA: GPU util % + VRAM alloc/total GB). Sumber: `cpu_percent()` dari delta `/proc/stat`, RAM dari `/proc/meminfo`, GPU dari `torch.cuda.memory_allocated` + `nvidia-smi`.
+- **Progress intra-epoch**: print `ep=N [k/total] L_running=...` tiap ~10% frame, jadi terlihat jalan nggak (bukan kecewa di akhir).
+- **Data terstruktur**: tiap epoch append 1 baris JSON ke `out/<nama>/train_stats.jsonl` (loss, bce_acc, cos, dt_s, eta_s, cpu/ram/gpu). Cocok utk plot kurva / isi dokumen. Header metadata (args + timestamp) ditulis sekali di awal `train.log` & `train_stats.jsonl`.
+
+**Monit-nya (SSH terpisah / terminal lain):**
+```bash
+tail -f out/phase3_fold1.log                       # baris epoch + progress
+tail -f out/phase3_fold1/train_stats.jsonl          # 1 JSON/epoch utk plotting
+nvidia-smi                                          # util GPU & VRAM real-time
+```
