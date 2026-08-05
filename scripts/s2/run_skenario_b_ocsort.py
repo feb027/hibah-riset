@@ -49,6 +49,8 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--steps", default="arrange,detect,track,eval",
                    help="koma: data,arrange,detect,track,eval (default arrange,detect,track,eval)")
     p.add_argument("--force", action="store_true", help="ulangi langkah walau output sudah ada")
+    p.add_argument("--tracker", default="ocsort",
+                   help="nama tracker di experiments/{tracker}_results/{ds}/*.txt (mis. ocsort, diffmot)")
     # deteksi
     p.add_argument("--imgsz", type=int, default=640)
     p.add_argument("--conf", type=float, default=0.05)
@@ -358,9 +360,12 @@ def step_eval(a: argparse.Namespace) -> None:
     import trackeval
 
     trackers_root = a.exp_dir / "trackeval_trackers"
-    for ds, src in [("mot20", a.exp_dir / "ocsort_results" / "mot20"),
-                    ("dance", a.exp_dir / "ocsort_results" / "dancetrack")]:
-        dst = trackers_root / ds / "ocsort" / "data"
+    for ds, ds_dir in [("mot20", "mot20"), ("dance", "dancetrack")]:
+        src = a.exp_dir / f"{a.tracker}_results" / ds_dir
+        if not src.exists():
+            print(f"   (skip {ds}: {src} belum ada)")
+            continue
+        dst = trackers_root / ds / a.tracker / "data"
         dst.mkdir(parents=True, exist_ok=True)
         n = 0
         for f in src.glob("*.txt"):
@@ -451,13 +456,18 @@ def step_eval(a: argparse.Namespace) -> None:
             print("   (skip eval dance: GT val belum tersedia)")
             continue
         print(f"   eval {ds_key} ...")
-        out = run_eval(gt, trk_root, "ocsort", seqmap, split)
+        out = run_eval(gt, trk_root, a.tracker, seqmap, split)
         rows = extract(out)
         for row in rows:
             row["benchmark"] = "MOT20" if ds_key == "mot20" else "DanceTrack"
         all_rows += rows
     df = pd.DataFrame(all_rows)
-    df.to_csv(a.exp_dir / "eval_results.csv", index=False)
+    csv_path = a.exp_dir / "eval_results.csv"
+    if csv_path.exists():
+        old = pd.read_csv(csv_path)
+        df = pd.concat([old, df], ignore_index=True).drop_duplicates(
+            subset=["dataset", "tracker", "cls"], keep="last")
+    df.to_csv(csv_path, index=False)
     print("\n   eval_results.csv:", a.exp_dir / "eval_results.csv")
     print(df.to_string(index=False))
 
