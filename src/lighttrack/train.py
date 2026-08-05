@@ -35,11 +35,18 @@ from dataset import FLTCCache, APSSampler, CROP
 
 # ---------------------------------------------------------------- augment/norm
 def _to_xyxy(boxes, W, H):
-    """(B,4) tlwh -> (B,4) xyxy ter-clamp."""
+    """(B,4) tlwh -> (B,4) xyxy ternormalisasi [0,1] (clamp ke frame asli W,H).
+
+    Normalisasi penting: TBSS mencampur bbox + IoU(0..1) + embedding L2-norm;
+    koordinat piksel mentah (0..1920) akan mendominasi Linear(73->64).
+    Wajib direplikasi identik di inference (Phase 4 tracker).
+    """
     x, y, w, h = boxes.T
-    x1 = torch.clamp(x, 0, W - 1)
-    y1 = torch.clamp(y, 0, H - 1)
-    return torch.stack([x1, y1, torch.clamp(x + w, 1, W), torch.clamp(y + h, 1, H)], dim=1)
+    x1 = torch.clamp(x, 0, W)
+    y1 = torch.clamp(y, 0, H)
+    x2 = torch.clamp(x + w, 0, W)
+    y2 = torch.clamp(y + h, 0, H)
+    return torch.stack([x1 / W, y1 / H, x2 / W, y2 / H], dim=1)
 
 
 def _iou(a, b):
@@ -130,6 +137,7 @@ def train(args):
             triplets = sampler.sample(caches[ci], t)
             if not triplets:
                 continue
+            H, W = caches[ci].frame_size()   # frame asli utk clamp/normalisasi box
             use = triplets[: args.batch]
             # ---- crops (B,3,224,224) float [0,1], augment, normalize
             a = torch.cat([_crop_to_tensor(u["a"][0], device) for u in use])
@@ -140,8 +148,8 @@ def train(args):
             ba = torch.tensor([u["a"][1] for u in use], device=device).float()
             bp = torch.tensor([u["p"][1] for u in use], device=device).float()
             bn = torch.tensor([u["n"][1] for u in use], device=device).float()
-            iou_ap = _iou(_to_xyxy(ba, CROP, CROP), _to_xyxy(bp, CROP, CROP)).reshape(-1, 1)
-            iou_an = _iou(_to_xyxy(ba, CROP, CROP), _to_xyxy(bn, CROP, CROP)).reshape(-1, 1)
+            iou_ap = _iou(_to_xyxy(ba, W, H), _to_xyxy(bp, W, H)).reshape(-1, 1)
+            iou_an = _iou(_to_xyxy(ba, W, H), _to_xyxy(bn, W, H)).reshape(-1, 1)
 
             ea, ep_, en_ = lae(a), lae(p), lae(n)
             # triplet (m=1.0)
@@ -168,6 +176,7 @@ def train(args):
         with torch.inference_mode():
             for ci, t in val_pairs:
                 for u in sampler.sample(caches[ci], t):
+                    H, W = caches[ci].frame_size()
                     a = _normalize(_crop_to_tensor(u["a"][0], device))
                     p = _normalize(_crop_to_tensor(u["p"][0], device))
                     nn_ = _normalize(_crop_to_tensor(u["n"][0], device))
@@ -177,12 +186,12 @@ def train(args):
                     ba = torch.tensor([u["a"][1]], device=device).float()
                     bp = torch.tensor([u["p"][1]], device=device).float()
                     bn = torch.tensor([u["n"][1]], device=device).float()
-                    iou_ap = _iou(_to_xyxy(ba, CROP, CROP), _to_xyxy(bp, CROP, CROP)).reshape(1, 1)
-                    iou_an = _iou(_to_xyxy(ba, CROP, CROP), _to_xyxy(bn, CROP, CROP)).reshape(1, 1)
+                    iou_ap = _iou(_to_xyxy(ba, W, H), _to_xyxy(bp, W, H)).reshape(1, 1)
+                    iou_an = _iou(_to_xyxy(ba, W, H), _to_xyxy(bn, W, H)).reshape(1, 1)
                     s_ap = float(tbss(_tbss_x(ba, bp, iou_ap, ea, ep_))[0, 0])
                     s_an = float(tbss(_tbss_x(ba, bn, iou_an, ea, en_))[0, 0])
                     acc_t += int(s_ap > 0.5); acc_d += int(s_an < 0.5)
-        acc = (acc_t + acc_d) / max(1, 2 * (n_s + n_d))
+        acc = (acc_t + acc_d) / max(1, n_s + n_d)
         cos_s = cos_same / max(1, n_s)
         cos_d = cos_diff / max(1, n_d)
         line = (f"ep={ep:2d} L={tot_l/max(1,nb):.4f} Lt={tot_lt/max(1,nb):.4f} "

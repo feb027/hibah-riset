@@ -36,6 +36,7 @@ class FLTCCache:
         self._gt = self._load_gt()
         self._frames = OrderedDict()  # LRU: frame -> list dict
         self._by_frame = defaultdict(list)
+        self._size = None
         for row in self._gt:
             fr = int(row[0])
             self._by_frame[fr].append(row)
@@ -59,6 +60,17 @@ class FLTCCache:
 
     def frames(self):
         return sorted(self._by_frame.keys())
+
+    def frame_size(self):
+        """(H, W) frame utuh (di-cache). Dipakai clamp box utk IoU dgn dimensi asli."""
+        import cv2
+        if self._size is None:
+            p = os.path.join(self.img_dir, f"{self.frames()[0]:06d}.jpg")
+            img = cv2.imread(p, cv2.IMREAD_COLOR)
+            if img is None:
+                raise FileNotFoundError(p)
+            self._size = img.shape[:2]
+        return self._size
 
     def _read_crop(self, box):
         import cv2
