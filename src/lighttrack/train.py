@@ -119,8 +119,9 @@ def train(args):
             fr = fr[: args.max_frames]
         all_pairs.extend((ci, f) for f in fr)
     val_pairs, train_pairs = [], []
+    split_rng = np.random.RandomState(args.seed)   # satu rng, advancing (bukan dibuat ulang tiap frame)
     for ci, f in all_pairs:
-        (val_pairs if np.random.RandomState(args.seed + ci).rand() < args.holdout
+        (val_pairs if split_rng.rand() < args.holdout
          else train_pairs).append((ci, f))
     print(f"[train] train_frames={len(train_pairs)} val_frames={len(val_pairs)}")
 
