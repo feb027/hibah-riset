@@ -466,7 +466,7 @@ def step_eval(a: argparse.Namespace) -> None:
     if csv_path.exists():
         old = pd.read_csv(csv_path)
         df = pd.concat([old, df], ignore_index=True).drop_duplicates(
-            subset=["dataset", "tracker", "cls"], keep="last")
+            subset=["benchmark", "tracker", "cls"], keep="last")
     df.to_csv(csv_path, index=False)
     print("\n   eval_results.csv:", a.exp_dir / "eval_results.csv")
     print(df.to_string(index=False))
