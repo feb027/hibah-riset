@@ -1,7 +1,7 @@
 # Konsep Fase 3 — Latih LAE+TBSS (Jun 2026-08-05)
 
-> **Status: MENUNGGU APPROVAL.** Workflow: konsep → approval → implement. Jangan eksekusi kode sampai kamu setuju.
-> Basis: catatan paper `docs/research/fulltext-notes/S014-lighttrack-reid.md` (formula + hyperparams asli) + hasil Fase 1-2 (encodi terverifikasi, margin kecil → training wajib).
+> **Status: DIAPPROVE & DIIMPLEMENTASI (2026-08-05).** Keputusan user: ImageNet, d_model=64, batch 64, full run fold-1 semalam di kampus.
+> Basis: catatan paper `docs/research/fulltext-notes/S014-lighttrack-reid.md` (formula + hyperparams asli) + hasil Fase 1-2 (encoder terverifikasi, margin kecil → training wajib).
 
 ## Tujuan
 Mengubah LAE dari pretrained-ImageNet (margin +0.027, belum ReID) menjadi ReID terlatih, plus TBSS Transformer peer-scorer. Target degradasi: cosine same-person menembus margin >>, dan saat di-track HOTA/MOTA/IDF1 naik vs Fase 1 (IoU-only) pada protokol sama.
@@ -48,13 +48,24 @@ Mengubah LAE dari pretrained-ImageNet (margin +0.027, belum ReID) menjadi ReID t
 
 ## Oke untuk eksekusi (tanda centang setelah kamu approve)
 
-- [ ] Modul scorer/dataset/train dibangun
-- [ ] Self-check + mini-epoch
+- [x] Modul scorer/dataset/train dibangun (scorer.py + _demo, dataset.py FLTC/APS + demo OK, train.py; py_compile OK lokal)
+- [ ] Self-check + mini-epoch (jalankan di kampus — torch tidak ada di mesin rumah)
 - [ ] Full fold-1 run di kampus (backlog semalam)
-- [ ] Report + laporanfig ke plan doc / skill
+- [ ] Report + update plan doc / skill
 
 ## Yang aku butuh keputusanmu (kalau ada yang masih beda)
 
-1. Normalisasi: **ImageNet (saran) atau [0,1] per paper?**
-2. d_model=64 & batch 64 **OK?** (tunable, mulai yang kecil)
-3. Fold-1 full run diresp semalam kampus **OK?** (kalau kamu selesai pakai GPU, gantian tak jalankan)
+1. Normalisasi: **ImageNet (saran) atau [0,1] per paper?** → **KEPUTUSAN: ImageNet** (paper tidak memberi alasan [0,1]; konsistensi backbone pretrained + encoder Phase 2 terverifikasi).
+2. d_model=64 & batch 64 **OK?** → **OK**.
+3. Fold-1 full run semalam kampus **OK?** → **OK**. Perintah kampus:
+   ```bash
+   cd /home/if2011/hibah-riset  # atau lokasi repo kampus
+   git pull
+   # mini-run (uji pipa, 1 sekuens, 1 epoch, 60 frame):
+   python src/lighttrack/train.py --seq-dirs data/s2/mot20_hf/train/MOT20-01 --out out/phase3_mini --epochs 1 --max-frames 60
+   # full run fold-1 (semua data, 20 epoch) — background semalam:
+   nohup python src/lighttrack/train.py \
+     --seq-dirs data/s2/mot17_hf/train/MOT17-02:data/s2/mot17_hf/train/MOT17-04:data/s2/mot17_hf/train/MOT17-05:data/s2/mot17_hf/train/MOT17-09:data/s2/mot17_hf/train/MOT17-10:data/s2/mot17_hf/train/MOT17-11:data/s2/mot17_hf/train/MOT17-13:data/s2/mot20_hf/train/MOT20-02:data/s2/mot20_hf/train/MOT20-03:data/s2/mot20_hf/train/MOT20-04:data/s2/mot20_hf/train/MOT20-05 \
+     --out out/phase3_fold1 --epochs 20 > out/phase3_fold1.log 2>&1 &
+   ```
+   *(fold-1 = MOT20-01 sebagai test; MOT17 full + MOT20-02..05 sebagai train. Cek jalur data sebenarnya di kampus: `ls data/s2/`)*

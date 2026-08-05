@@ -1,6 +1,6 @@
 # Rencana Implementasi — Tracker Versi Kita: LightTrack-ReID-inspired (Skenario B, Phase 11)
 
-> **Status:** FASE 1-2 SELESAI (2026-08-05) — skeleton + LAE encoder terverifikasi (cosine same 0.772 vs diff 0.746, margin kecil → Phase 3 training wajib); Phase 3 menunggu approval. Workflow: konsep → approval → implement.
+> **Status:** FASE 1-3 IMPLEMENTASI (2026-08-05) — skeleton + LAE encoder terverifikasi (cosine same 0.772 vs diff 0.746, margin kecil → training wajib); Phase 3 DIAPPROVE, modul scorer/dataset/train dibangun (py_compile OK; demo dataset OK), menunggu mini-epoch + full fold-1 di kampus. Workflow: konsep → approval → implement.
 > **Referensi utama:** PLOS ONE 2026 — *LightTrack-ReID* (fulltext di `docs/research/papers/S014-*.pdf`, catatan detail implementasi di `docs/research/fulltext-notes/S014-lighttrack-reid.md` — WAJIB dibaca sebelum implement; isinya resep rumus, tabel ablasi, dan daftar celah yang harus kita putuskan sendiri).
 > **Posisi di tesis:** pelengkap Skenario B. OC-SORT = baseline ringan (selesai), DiffMOT = pembanding berat GPU (hasil mentah ada, eval menyusul), tracker ini = **proposed method** (ringan, bisa dilatih ulang ke data sendiri).
 
@@ -116,11 +116,12 @@ docs/
 - 🐛 Pitfall tercatat: `(rgb - (0.485,...))` numpy menaikkan ke float64 → `torch.cuda.DoubleTensor` vs weight FloatTensor. Fix: mean/std di-`np.float32` + `.to(dtype=torch.float32)` di `_normalize`.
 
 ### Phase 3 — TBSS scorer + training
-- `scorer.py`: Linear(73→d_model) + `nn.TransformerEncoderLayer(d_model, nhead=4)` + Linear → sigmoid. **d_model default 64** (paper tidak menyebut; input cuma 73-d, tunable).
-- `dataset.py`: FLTC (cache **kumpulan crop 224×224 uint8 per frame**, LRU cap ~2048 frame) + APS (pasangan max 50/frame dari GT MOT20-train; positif = GT id sama, negatif = beda id, seimbang).
-- `train.py`: triplet(m=1.0) + BCE, Adam 1e-3, 20 epoch, 80/20.
+- ✅ `scorer.py`: Linear(73→d_model) + `nn.TransformerEncoderLayer(d_model, nhead=4)` + Linear → sigmoid. **d_model default 64** (paper tidak menyebut; input cuma 73-d, tunable) + `_demo()` (shape, range [0,1], monoton).
+- ✅ `dataset.py`: FLTC (cache **kumpulan crop 224×224 uint8 per frame**, LRU cap ~2048 frame) + APS (pasangan max 50/frame dari GT MOT20-train; positif = GT id sama, negatif = beda id, seimbang) — demo OK (numpy-only, jalan di mesin rumah). Parser GT pakai `conf==1 & cls==1 & vis>0` (sama dgn verify script Fase 2).
+- ✅ `train.py`: triplet(m=1.0) + BCE, Adam 1e-3, 20 epoch, 80/20, batch 64, augmentasi paper (flip 50%, crop padding 10%, color jitter 0.2), normalisasi ImageNet. `_iou` per-pair (bukan mean batch). py_compile OK; torch tidak ada di mesin rumah → mini-epoch di kampus.
 - Triplet dibentuk dari pasangan APS: tiap positive pair → anchor/positive; negatif = embedding acak beda id (paper tidak merinci; pilihan kita). 
 - **Verifikasi:** loss turun; akurasi BCE val > 90%; 1 fold selesai ≤ 3 jam di 4090.
+- ⏳ **MENUNGGU RUN KAMPUS:** mini-epoch (`--max-frames 60 --epochs 1`) lalu full fold-1 semalam. Perintah lengkap di konsep doc.
 
 ### Phase 4 — CMOH + ASW lokal
 - `memory.py`: buffer K=10 embedding per track (CMOH); saat track tidak dapat match → embedding = **mean buffer** (`a_ctx`), dipakai di input TBSS menggantikan embedding track terakhir. Tier-2: long-term store untuk track yang hilang lama/recurrent (hanya dipakai saat K=10 sudah tidak menutup — **modifikasi kontribusi** "hierarchical memory").
