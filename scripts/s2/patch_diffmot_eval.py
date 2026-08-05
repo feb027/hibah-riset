@@ -10,6 +10,9 @@ Patch yang ditangani:
    hanya mengenal dataset `mot17/mot20/dance/sports`. Akibatnya `initialize_model()`
    selalu raise `RuntimeError("Need the path for a new ReID model.")` saat cache ReID
    kosong. Patch mengganti dataset hardcoded dengan peta dari `config.dataset`.
+3. Sweep numpy-alias di seluruh tree (kecuali external/): `np.float/np.int/np.bool/
+   np.object` dihapus numpy >=1.24 → ganti dengan builtin. Regex `\b` menjaga
+   `np.float32/np.float64/np.int64/np.object_` yang masih valid tidak tersentuh.
 
 Contoh:
     python scripts/s2/patch_diffmot_eval.py --diffmot-root external/diffmot
@@ -17,6 +20,7 @@ Contoh:
 from __future__ import annotations
 
 import argparse
+import re
 import sys
 from pathlib import Path
 
@@ -52,6 +56,34 @@ def patch_text(label: str, old: str, new: str, src: str) -> tuple[str, bool]:
     return src.replace(old, new), True
 
 
+NUMPY_ALIASES = [
+    (re.compile(r"np\.float\b"), "float"),
+    (re.compile(r"np\.int\b"), "int"),
+    (re.compile(r"np\.bool\b"), "bool"),
+    (re.compile(r"np\.object\b"), "object"),
+]
+
+
+def sweep_numpy_aliases(root: Path) -> int:
+    """Ganti alias numpy yang dihapus >=1.24 (np.float/np.int/np.bool/np.object).
+
+    \\b mencegah `np.float32/np.float64/np.int64/np.object_` (masih valid) tersentuh.
+    Kembalikan jumlah file yang berubah; idempotent.
+    """
+    n = 0
+    for py in sorted(root.rglob("*.py")):
+        if "external" in py.parts or "site-packages" in py.parts:
+            continue
+        src = py.read_text()
+        new_src = src
+        for rx, repl in NUMPY_ALIASES:
+            new_src = rx.subn(repl, new_src)[0]
+        if new_src != src:
+            py.write_text(new_src)
+            n += 1
+    return n
+
+
 def main() -> int:
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--diffmot-root", required=True, help="root repo Kroery/DiffMOT")
@@ -79,6 +111,12 @@ def main() -> int:
             print(f"PATCH DITERAPKAN ({n} perubahan) di {fp}")
         else:
             print(f"SUDAH TERPATCH di {fp} — tidak ada perubahan")
+
+    n = sweep_numpy_aliases(root)
+    if n:
+        print(f"NUMPY ALIAS DIPATCH ({n} file) di {root}")
+    else:
+        print("NUMPY ALIAS: SUDAH BERSIH")
     return 0
 
 
