@@ -71,8 +71,14 @@ def sweep_numpy_aliases(root: Path) -> int:
     Kembalikan jumlah file yang berubah; idempotent.
     """
     n = 0
+    ext_skip = root / "external"  # deep-person-reid dsb — jangan disentuh
     for py in sorted(root.rglob("*.py")):
-        if "external" in py.parts or "site-packages" in py.parts:
+        try:
+            py.relative_to(ext_skip)
+            continue
+        except ValueError:
+            pass
+        if "site-packages" in py.parts:
             continue
         src = py.read_text()
         new_src = src
