@@ -6,7 +6,7 @@ dijalankan DARI kernel `s2-diffmot` (python 3.9 + torch 2.0.1 cu118). Subproses 
 `sys.executable` (python KERNEL), bukan `!python` yang bisa menunjuk python PATH lain.
 
 Alur (idempotent; --force untuk mengulang):
-  ensure : cek torch/CUDA; auto-install deep-person-reid (torchreid) bila import gagal; patch diffmot.py
+  ensure : cek torch/CUDA; auto-install deep-person-reid (torchreid) bila import gagal; download bobot ReID umum; patch diffmot.py
   gt     : bangun trackers_gt/{split}/{seq}/img1/{frame}.txt dari gt/gt.txt (dibutuhkan DiffMOTDataset)
   config : tulis configs_s2/{mot20_test,dancetrack_test}.yaml dari threshold rilis
   run    : python main.py --dataset mot/dancetrack  (7-10 & 15-20 mnt di 4090)
@@ -81,6 +81,22 @@ def step_ensure(a: argparse.Namespace) -> None:
     src = (a.ext_dir / "diffmot" / "diffmot.py").read_text()
     for pat in ["img = cv2.imread(im_path)", "tag, img)"]:
         print(f"   patch {pat!r}:", "OK" if pat in src else "MISSING")
+
+    # Bobot ReID umum (torchreid OSNet-AIN), dipakai jalur test_dataset=False
+    # -> embedding.py::_get_general_model, di-load relatif cwd=diffmot:
+    # "external/weights/osnet_ain_ms_d_c.pth.tar". Setup notebook-10 tak pernah
+    # mengunduhnya (hanya SBS + motion), jadi pastikan di sini.
+    w = a.ext_dir / "diffmot" / "external" / "weights" / "osnet_ain_ms_d_c.pth.tar"
+    stray = a.repo_root / "external" / "weights" / w.name  # kalau pernah curl ke lokasi salah
+    if stray.exists() and not w.exists():
+        stray.replace(w)
+    if not w.exists():
+        print(f"   general ReID weight {w.name} MISSING -> download (mirror Self-MVA) ...")
+        w.parent.mkdir(parents=True, exist_ok=True)
+        run(["curl", "-sL", "-o", str(w),
+             "https://s3.unistra.fr/camma_public/github/Self-MVA/weights/osnet_ain_ms_d_c.pth.tar"])
+    assert w.stat().st_size > 50 * 2**20, f"{w.name} ukuran {w.stat().st_size} B — download gagal/partial"
+    print(f"   general ReID weight: OK ({w.stat().st_size / 2**20:.1f} MiB)")
 
 
 # ---------------------------------------------------------------- gt
