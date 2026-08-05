@@ -22,7 +22,10 @@ Dipakai:
     --max-frames>0 = mini-run (uji pipa dulu, 1-3 epoch, 1 sekuens), lalu full.
 """
 import argparse
+import json
 import os
+import subprocess
+import time
 
 import numpy as np
 import torch
@@ -96,6 +99,50 @@ def _tbss_x(box_a, box_p, iou, ea, ep):
     return torch.cat([box_a, box_p, iou, ea, ep], dim=1)
 
 
+# ---------------------------------------------------------------- resource stats
+def _proc_stat():
+    """(/proc/stat cpu line, /proc/meminfo dict) utk CPU% & RAM usage (Linux/stdlib)."""
+    with open("/proc/stat") as f:
+        cpu = f.readline().split()[1:]           # user nice system idle iowait irq ...
+    with open("/proc/meminfo") as f:
+        mem = {l.split(":")[0]: int(l.split()[1]) for l in f
+               if l.split(":")[0] in ("MemTotal", "MemAvailable")}
+    return [int(x) for x in cpu], mem
+
+
+def cpu_percent():
+    """CPU usage % antar dua panggilan (delta idle/total /proc/stat)."""
+    def load():
+        with open("/proc/stat") as f:
+            p = [int(x) for x in f.readline().split()[1:]]
+        return sum(p), p[3] + p[4]               # total, idle+iowait
+    a1, idle1 = load()
+    time.sleep(0.2)
+    a2, idle2 = load()
+    d = a2 - a1
+    return 0.0 if d <= 0 else max(0.0, 100.0 * (1 - (idle2 - idle1) / d))
+
+
+def res_stats(device):
+    """dict statistik: CPU%, RAM (total/avail), GPU (VRAM alloc/total, util% via nvidia-smi kalau ada)."""
+    s = {}
+    _, mem = _proc_stat()
+    s["cpu_percent"] = round(cpu_percent(), 1)
+    s["ram_total_gb"] = round(mem["MemTotal"] / 1e6, 2)
+    s["ram_avail_gb"] = round(mem["MemAvailable"] / 1e6, 2)
+    if device.type == "cuda":
+        try:
+            s["gpu_vram_alloc_gb"] = round(torch.cuda.memory_allocated(device) / 1e9, 2)
+            s["gpu_vram_total_gb"] = round(torch.cuda.get_device_properties(device).total_memory / 1e9, 2)
+            util = subprocess.run(
+                ["nvidia-smi", "--query-gpu=utilization.gpu", "--format=csv,noheader,nounits"],
+                capture_output=True, text=True)
+            s["gpu_util_percent"] = float(util.stdout.strip().split("\n")[0]) if util.returncode == 0 else None
+        except Exception:
+            pass
+    return s
+
+
 # ---------------------------------------------------------------- training
 def train(args):
     torch.manual_seed(args.seed)
@@ -126,15 +173,37 @@ def train(args):
     print(f"[train] train_frames={len(train_pairs)} val_frames={len(val_pairs)}")
 
     os.makedirs(args.out, exist_ok=True)
-    logf = open(os.path.join(args.out, "train.log"), "w")
+    logf = open(os.path.join(args.out, "train.log"), "a")
+    stats_jsonl = open(os.path.join(args.out, "train_stats.jsonl"), "a")
 
-    for ep in range(1, args.epochs + 1):
+    start_ep = 0
+    if args.resume:
+        ck = torch.load(args.resume, map_location=device)
+        lae.load_state_dict(ck["lae"]); tbss.load_state_dict(ck["tbss"])
+        if "opt" in ck:
+            opt.load_state_dict(ck["opt"])
+        start_ep = int(ck["epoch"])
+        print(f"[train] resume dari {args.resume} (lanjut epoch {start_ep+1})")
+
+    # metadata header (sekali, kalau file baru)
+    if logf.tell() == 0:
+        logf.write(f"# train {time.strftime('%Y-%m-%d %H:%M:%S')} "
+                   f"seq_dirs={args.seq_dirs} out={args.out} epochs={args.epochs} "
+                   f"batch={args.batch} lr={args.lr} d_model={args.d_model} "
+                   f"window={args.window} max_pairs={args.max_pairs} margin={args.margin} "
+                   f"holdout={args.holdout} device={device}\n")
+        stats_jsonl.write('{"event":"start","time":"%s","device":"%s","epochs":%d,"seq":%d}\n'
+                          % (time.strftime("%Y-%m-%d %H:%M:%S"), str(device), args.epochs, len(caches)))
+
+    t_epoch0 = time.time()
+    for ep in range(start_ep + 1, args.epochs + 1):
+        t_ep = time.time()
         lae.train(); tbss.train()
         tot_l = tot_lt = tot_lb = 0.0
         nb = 0
         rng = np.random.RandomState(args.seed + ep)
         np.random.RandomState(args.seed + ep).shuffle(train_pairs)
-        for ci, t in train_pairs:
+        for i, (ci, t) in enumerate(train_pairs):
             triplets = sampler.sample(caches[ci], t)
             if not triplets:
                 continue
@@ -168,6 +237,9 @@ def train(args):
             loss = L_triplet + L_bce
             opt.zero_grad(); loss.backward(); opt.step()
             tot_l += loss.item(); tot_lt += L_triplet.item(); tot_lb += L_bce.item(); nb += 1
+            # progress per ~10% frame (jangan tiap frame: spam)
+            if nb % max(1, (len(train_pairs) // 10)) == 0:
+                print(f"  ep={ep} [{nb}/{len(train_pairs)}] L_running={tot_l/nb:.4f}")
 
         # ---- validation (tanpa augment; tanpa grad)
         lae.eval(); tbss.eval()
@@ -198,12 +270,30 @@ def train(args):
         line = (f"ep={ep:2d} L={tot_l/max(1,nb):.4f} Lt={tot_lt/max(1,nb):.4f} "
                 f"Lb={tot_lb/max(1,nb):.4f} BCEacc={acc:.3f} "
                 f"cos_same={cos_s:.3f} cos_diff={cos_d:.3f} margin={cos_s-cos_d:+.3f}")
+        dt_ep = time.time() - t_ep
+        dt_avg = (time.time() - t_epoch0) / (ep - start_ep)
+        eta = dt_avg * (args.epochs - ep)
+        rs = res_stats(device)
+        line += (f"  [{dt_ep:.0f}s | rata {dt_avg:.0f}s/ep | ETA {eta/60:.0f}m] "
+                 f"CPU {rs.get('cpu_percent')}% RAM {rs.get('ram_avail_gb')}/{rs.get('ram_total_gb')}GB"
+                 + (f" GPU util {rs.get('gpu_util_percent')}% VRAM {rs.get('gpu_vram_alloc_gb')}/{rs.get('gpu_vram_total_gb')}GB"
+                    if "gpu_vram_alloc_gb" in rs else ""))
         print(line); logf.write(line + "\n"); logf.flush()
+        stats_jsonl.write(json.dumps({"event": "epoch", "ep": ep, "loss": tot_l / max(1, nb),
+                                      "lt": tot_lt / max(1, nb), "lb": tot_lb / max(1, nb),
+                                      "bce_acc": acc, "cos_same": cos_s, "cos_diff": cos_d,
+                                      "dt_s": round(dt_ep, 1), "eta_s": round(eta, 1),
+                                      "cpu_percent": rs.get("cpu_percent"),
+                                      "ram_avail_gb": rs.get("ram_avail_gb"),
+                                      "gpu_util_percent": rs.get("gpu_util_percent"),
+                                      "gpu_vram_alloc_gb": rs.get("gpu_vram_alloc_gb")}) + "\n")
+        stats_jsonl.flush()
 
         torch.save({"lae": lae.state_dict(), "tbss": tbss.state_dict(),
+                    "opt": opt.state_dict(),
                     "epoch": ep, "loss": tot_l / max(1, nb)},
                    os.path.join(args.out, f"lighttrack_e{ep}.pt"))
-    logf.close()
+    logf.close(); stats_jsonl.close()
     print(f"[train] selesai, ckpt terakhir di {args.out}/lighttrack_e{args.epochs}.pt")
 
 
@@ -222,6 +312,8 @@ def main():
     ap.add_argument("--max-frames", type=int, default=0,
                     help=">0 = mini-run: batasi jumlah frame per seq (uji pipa)")
     ap.add_argument("--seed", type=int, default=0)
+    ap.add_argument("--resume", default=None,
+                    help="ckpt lighttrack_eN.pt utk lanjut training dari epoch tsb (opsional)")
     args = ap.parse_args()
     train(args)
 
