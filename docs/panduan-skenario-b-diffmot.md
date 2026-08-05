@@ -25,6 +25,11 @@ Semua langkah lewat notebook — env = kernel Jupyter yang sudah ada.
   mot20_sbs_S50.pth, dance_sbs_S50.pth).
 
 Pitfall: `cython-bbox` rawan gagal build → `pip install cython-bbox --no-build-isolation`.
+Pitfall: `ModuleNotFoundError: No module named 'torchreid'` saat run notebook 50 → deep-person-reid
+belum ter-install di env kernel (step notebook 10 ter-skip/gagal). Fix: clone
+`KaiyangZhou/deep-person-reid` ke `external/`, lalu `{sys.executable} -m pip install -e <path>`
+— pakai python KERNEL (cek `sys.executable` dulu; `!python` di notebook memakai python PATH
+yang belum tentu kernel). Verifikasi `import torchreid` dan `torch.__version__` tetap 2.0.1+cu118.
 Fallback torch: kalau DiffMOT error saat run, pin `torch==2.0.1` dari index cu118
 (python ≤ 3.10; wheel PyPI 2.0.1 rusak).
 
