@@ -4,6 +4,17 @@
 > **Referensi utama:** PLOS ONE 2026 — *LightTrack-ReID: A Real-time Multi-Object Tracker...* (fulltext di `docs/research/papers/`, catatan di `docs/research/fulltext-notes/`).
 > **Posisi di tesis:** pelengkap Skenario B. OC-SORT = baseline ringan (selesai), DiffMOT = pembanding berat GPU (hasil mentah ada, eval menyusul), tracker ini = **proposed method** (ringan, bisa dilatih ulang ke data sendiri).
 
+## Hasil eval DiffMOT vs OC-SORT (protokol sama, YOLO26, TrackEval) — 2026-08-05
+
+| Benchmark | Tracker | HOTA | MOTA | IDF1 | IDSW ↓ | Frag ↓ |
+|---|---|---|---|---|---|---|
+| MOT20-train | OC-SORT | 36.51 | 55.98 | 42.88 | 14293 | 27646 |
+| MOT20-train | **DiffMOT** | **44.37** | **60.91** | **53.86** | **6905** | 15005 |
+| DanceTrack-val | OC-SORT | 28.39 | 71.38 | 26.63 | 6701 | 6936 |
+| DanceTrack-val | **DiffMOT** | **39.05** | 70.72 | **43.39** | **2784** | 6765 |
+
+DiffMOT menang di semua metrik utama (kecuali MOTA DanceTrack tipis). IDSW DiffMOT ~setengah OC-SORT di kedua benchmark. Implikasi: **DiffMOT secara akurasi jelas baseline terbaik**; kelemahannya bukan akurasi melainkan (1) biaya inference GPU (HMINet+OSNet jauh lebih berat dari LAE+TBSS), (2) black-box — tidak bisa dilatih ulang ke scene kampus, (3) dependensi patch fragile (`patch_diffmot_eval.py`). Tracker versi kita = kandidat menyamai/melampaui akurasi DiffMOT dengan biaya jauh lebih rendah + bisa train ulang.
+
 ## Goal
 
 Membangun tracker multi-object *ringan* berbasis ReID-transformer (terinspirasi LightTrack-ReID) untuk people counting realtime:
@@ -15,7 +26,7 @@ Membangun tracker multi-object *ringan* berbasis ReID-transformer (terinspirasi 
 ## Keputusan desain (sudah disepakati)
 
 1. **Deteksi = YOLO26 fine-tune Skenario A (sama untuk semua tracker).** Deteksi sudah ada di `data/s2/*/det_mot/` → dipakai ulang untuk training crops DAN eval. Aturan emas: deteksi identik.
-2. **Protokol eval = MOT20-train (leave-one-out 4 fold) + DanceTrack-val (zero-shot).** Train/test leakage dicegah: model untuk fold-i tidak pernah melihat sekuens fold-i. DanceTrack = tes generalisasi domain (model hanya dilatih MOT20).
+2. **Protokol eval = MOT20-train (leave-one-out 4 fold) + DanceTrack-val (zero-shot).** Train/test leakage dicegah: model untuk fold-i tidak pernah melihat sekuens fold-i. DanceTrack = tes generalisasi domain (model hanya dilatih MOT20). DiffMOT sudah dieval di protokol ini — lihat tabel di atas.
 3. **CMC di-skip** (kamera statis untuk people counting; paper pakai CMC untuk kamera bergerak).
 4. **Mode CPU:** flag `USE_REID=false` → cost = 1 − IoU (fallback geometris murni, setara SORT). Mode GPU: LAE+TBSS aktif. Ini menjaga narasi deployment (CPU/edge tetap bisa jalan, GPU dapat akurasi).
 5. **Reuse** Kalman + Hungarian dari `external/OC_SORT` (filterpy, sudah terpasang) — jangan tulis ulang.
@@ -62,7 +73,7 @@ docs/
 
 | Parameter | Nilai | Catatan |
 |---|---|---|
-| Data training | MOT20-train 3-of-4 sekuens per fold (~6.7k frame) | tanpa MOT17 (YAGNI — data belum ada) |
+| Data training | MOT17-train + MOT20-train 3-of-4 sekuens per fold (~14k frame) | MOT17 nambah keragaman penampilan; tanpa risiko leakage (eval tetap MOT20 leave-one-out) |
 | Pasangan/frame | max 50 (APS) | positif = pasangan track GT ID sama antar frame; negatif = beda ID, seimbang |
 | Embedding | 32-d, L2-norm | triplet margin m=1.0 |
 | Loss | L = L_triplet + BCE(s, y) | s dari TBSS, y = label pasangan |

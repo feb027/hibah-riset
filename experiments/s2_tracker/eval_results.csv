@@ -1,3 +1,5 @@
 dataset,tracker,cls,HOTA,MOTA,IDF1,IDSW,Frag,benchmark
 MotChallenge2DBox,ocsort,pedestrian,36.5116,55.9798,42.8781,14293,27646,MOT20
 MotChallenge2DBox,ocsort,pedestrian,28.3898,71.3797,26.6301,6701,6936,DanceTrack
+MotChallenge2DBox,diffmot,pedestrian,44.3732,60.9131,53.8568,6905,15005,MOT20
+MotChallenge2DBox,diffmot,pedestrian,39.0531,70.7215,43.3861,2784,6765,DanceTrack
