@@ -74,6 +74,7 @@ class FLTCCache:
 
     def _read_crop(self, img_bgr, x, y, w, h):
         """Crop (224,224,3) ONE box dari frame utuh (img_bgr) yang sudah di-baca sekali."""
+        import cv2
         hh, ww = img_bgr.shape[:2]
         x = max(0, int(round(x))); y = max(0, int(round(y)))
         x2 = min(ww, x + max(1, int(round(w))))
