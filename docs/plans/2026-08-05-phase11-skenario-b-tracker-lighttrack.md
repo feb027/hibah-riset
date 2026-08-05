@@ -106,10 +106,12 @@ docs/
 - ⚠️ Angka di atas BUKAN pembanding sah vs OC-SORT/DiffMOT (beda deteksi + 2 sekuens) — hanya validasi pipeline. Eval resmi: kampus, `run_skenario_b_ocsort.py --steps eval --tracker lighttrack` (YOLO26, 4 fold).
 - **Catatan VPS:** pip numpy>=2.3 wheel crash di CPU ini (X86_V2) → venv wajib pin `numpy==1.26.4`. Hermes guard crash saat argumen script path berisi `/` (embedded null byte) → jalanin via `source .venv-s2/bin/activate && python script.py`.
 
-### Phase 2 — LAE encoder + jalur inference
-- `encoder.py`: MobileNetV3-Small pretrained (torchvision `mobilenet_v3_small(pretrained=True)`; torch 2.0.1 → API `weights=` atau `pretrained=` sesuai versi torchvision) → GlobalAvgPool → Linear(576→32) → L2-norm.
-- Crop pipeline dari deteksi (crop → resize 224 → normalize ImageNet).
-- **Verifikasi:** embedding dua crop orang sama lebih dekat (cosine) daripada beda orang — smoke test 10 frame MOT20-01.
+### Phase 2 — LAE encoder + jalur inference ✅ KODE SELESAI 2026-08-05 (verifikasi kampus menyusul)
+- ✅ `encoder.py`: LAE = MobileNetV3-Small pretrained (`classifier` dibuang) → AvgPool internal → `Linear(576→32, bias=False)` → L2-norm. Kompatibel torchvision 0.13+ (`weights=`) dengan fallback `pretrained=`. TORCH-ONLY: tracker.py Phase 1 tidak mengimpornya (mode CPU/`USE_REID=false` tetap tanpa torch).
+- ✅ `EmbeddingComputer`: jalur inference crop → 224 → normalize ImageNet → LAE → (N,32) numpy L2-normalised; crop clip ke batas frame + cv2 INTER_AREA.
+- ✅ Self-check `_demo()` di encoder.py (sintetis: crop solid sama > beda, output (32,), ||e||=1) — jalan di mesin bertorch.
+- ✅ `scripts/s2/verify_lighttrack_encoder.py`: verifikasi GT asli MOT20 — cosine same-person (track ID sama, frame beda) vs diff-person (ID beda, frame sama), 10 frame paling ramai, assert same > diff.
+- ⏳ Verifikasi kampus: `python scripts/s2/verify_lighttrack_encoder.py --seq-dir data/s2/mot20/train/MOT20-01` (jalur kampus data: `data/s2/mot20_hf/train/MOT20-01`). Download MobileNetV3-Small ~10 MB sekali.
 
 ### Phase 3 — TBSS scorer + training
 - `scorer.py`: Linear(73→d_model) + `nn.TransformerEncoderLayer(d_model, nhead=4)` + Linear → sigmoid. **d_model default 64** (paper tidak menyebut; input cuma 73-d, tunable).
