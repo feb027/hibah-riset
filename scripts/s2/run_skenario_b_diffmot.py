@@ -7,13 +7,14 @@ dijalankan DARI kernel `s2-diffmot` (python 3.9 + torch 2.0.1 cu118). Subproses 
 
 Alur (idempotent; --force untuk mengulang):
   ensure : cek torch/CUDA; auto-install deep-person-reid (torchreid) bila import gagal; patch diffmot.py
+  gt     : bangun trackers_gt/{split}/{seq}/img1/{frame}.txt dari gt/gt.txt (dibutuhkan DiffMOTDataset)
   config : tulis configs_s2/{mot20_test,dancetrack_test}.yaml dari threshold rilis
   run    : python main.py --dataset mot/dancetrack  (7-10 & 15-20 mnt di 4090)
   verify : hitung file hasil + baris per sekuens ke experiments/s2_tracker/diffmot_results/
 
 Contoh:
-  python scripts/s2/run_skenario_b_diffmot.py                       # ensure,config,run,verify
-  python scripts/s2/run_skenario_b_diffmot.py --steps ensure,config # cek + config tanpa run
+  python scripts/s2/run_skenario_b_diffmot.py                       # ensure,gt,config,run,verify
+  python scripts/s2/run_skenario_b_diffmot.py --steps ensure,gt,config # cek + config tanpa run
   python scripts/s2/run_skenario_b_diffmot.py --steps verify        # output sudah ada, refresh hitungan
   python scripts/s2/run_skenario_b_diffmot.py --force               # ulang semua run
 """
@@ -40,8 +41,8 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--data-dir", type=Path, default=None, help="default: <repo>/data/s2")
     p.add_argument("--exp-dir", type=Path, default=None, help="default: <repo>/experiments/s2_tracker")
     p.add_argument("--ext-dir", type=Path, default=None, help="default: <repo>/external")
-    p.add_argument("--steps", default="ensure,config,run,verify",
-                   help="koma: ensure,config,run,verify (default ensure,config,run,verify)")
+    p.add_argument("--steps", default="ensure,gt,config,run,verify",
+                   help="koma: ensure,gt,config,run,verify (default ensure,gt,config,run,verify)")
     p.add_argument("--force", action="store_true", help="ulangi langkah walau output sudah ada")
     return p.parse_args()
 
@@ -82,13 +83,61 @@ def step_ensure(a: argparse.Namespace) -> None:
         print(f"   patch {pat!r}:", "OK" if pat in src else "MISSING")
 
 
+# ---------------------------------------------------------------- gt
+def step_gt(a: argparse.Namespace) -> None:
+    """Bangun folder trackers_gt dari gt/gt.txt (yang dibutuhkan DiffMOTDataset).
+
+    DiffMOTDataset membaca {data_dir}/{seq}/img1/*.txt (track GT per-frame, 7 kolom),
+    BUKAN folder data dengan gt/gt.txt + img1/*.jpg. `_build_train_loader` tetap
+    membangun dataset ini walau eval_mode, dan IndexError 'list index out of range'
+    muncul persis saat folder itu kosong. eval() sendiri tidak membaca data ini.
+    """
+    print("\n== gt: susun trackers_gt dari gt/gt.txt ==")
+    for ds, split in [("mot20", "train"), ("dancetrack", "val")]:
+        split_root = a.data_dir / ds / split
+        if not split_root.exists():
+            print(f"   (skip {ds}/{split}: belum ada)")
+            continue
+        out_root = a.data_dir / ds / "trackers_gt" / split
+        n_gt, n_empty = 0, 0
+        for seq in sorted(p for p in split_root.iterdir() if p.is_dir()):
+            gt = seq / "gt" / "gt.txt"
+            if not gt.exists():
+                print(f"   (skip {seq.name}: tidak ada gt/gt.txt)")
+                continue
+            by_frame = {}
+            for line in gt.read_text().splitlines():
+                if not line.strip():
+                    continue
+                parts = line.split(",")
+                fr = int(parts[0])
+                # 7 kolom per baris: frame,id,x,y,w,h,mark — spasi, karena
+                # DiffMOTDataset pakai np.loadtxt TANPA delimiter (beda dengan eval).
+                by_frame.setdefault(fr, []).append(" ".join([str(fr)] + parts[1:7]))
+            img1 = out_root / seq.name / "img1"
+            img1.mkdir(parents=True, exist_ok=True)
+            written = 0
+            for fr in sorted(by_frame):
+                rows = by_frame[fr]
+                if not rows:
+                    n_empty += 1
+                    continue
+                (img1 / f"{fr:08d}.txt").write_text("\n".join(rows) + "\n")
+                written += 1
+            n_gt += len(by_frame)
+            print(f"      {seq.name}: {written} frame file (dari {len(by_frame)} frame GT)")
+        if n_gt == 0:
+            print(f"   !! tidak ada GT ditulis untuk {ds} — DiffMOT akan gagal di _build_train_loader")
+        print(f"   {ds}: {n_gt} frame GT, {n_empty} frame kosong di-skip")
+
+
 # ---------------------------------------------------------------- config
 def make_config(data_dir, split, eval_expname, high_thres, low_thres, ds, exp_dir):
     import yaml
 
     return yaml.safe_dump({
         "eps": 0.001, "eval_mode": True, "lr": 0.0001,
-        "data_dir": str(data_dir / ds / split),
+        "data_dir": str(data_dir / ds / "trackers_gt" / split),  # DiffMOTDataset butuh img1/*.txt
         "diffnet": "HMINet", "interval": 5, "augment": True,
         "encoder_dim": 256, "tf_layer": 3, "epochs": 800,
         "batch_size": 2048, "seed": 123, "eval_every": 20, "gpus": [0], "eval_at": 800,
@@ -160,7 +209,7 @@ def main() -> int:
     steps = [s.strip() for s in a.steps.split(",") if s.strip()]
     t0 = time.time()
     for s in steps:
-        fn = {"ensure": step_ensure, "config": step_config,
+        fn = {"ensure": step_ensure, "gt": step_gt, "config": step_config,
               "run": step_run, "verify": step_verify}.get(s)
         if fn is None:
             print(f"!! langkah tak dikenal: {s}"); return 1
