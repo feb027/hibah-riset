@@ -1,5 +1,17 @@
 # Progress Log — Hibah Riset PUU 2026
 
+## 2026-08-05 WIB — Phase 11: Phase 1 skeleton LightTrack selesai
+
+- [x] **Phase 1 skeleton tracker** (Kalman+IoU+Hungarian+conf filter+EMA, tanpa OCM/ORU):
+      `src/lighttrack/tracker.py` + `scripts/s2/run_lighttrack_mot.py` (+ `__init__.py`).
+- [x] Smoke test VPS: MOT20-01/02 (deteksi **resmi MOT20**, bukan YOLO26), 3211 frame @ 614 FPS CPU,
+      output format MOT valid. TrackEval lokal jalan via venv `.venv-s2` (numpy 1.26.4, pin wajib
+      karena wheel numpy≥2.3 crash di CPU VPS X86_V2): HOTA 29.45 / MOTA 20.18 / IDF1 31.85 / IDSW 339.
+      ⚠️ Angka ini BUKAN pembanding vs OC-SORT/DiffMOT (beda deteksi + 2 sekuens) — hanya validasi pipeline.
+- [x] `docs/plans/...-lighttrack.md` status → FASE 1 SELESAI; catatan VPS (numpy pin, guard crash
+      → `source activate`).
+- [>] Phase 2 (LAE encoder) menunggu approval. MOT17-train sudah di kampus (`data/s2/mot17`, ~6 GB).
+
 ## 2026-08-05 WIB — Phase 11: riset LightTrack-ReID + commit eval DiffMOT vs OC-SORT
 
 - [x] Eval TrackEval DiffMOT vs OC-SORT di protokol sama (YOLO26, TrackEval, kampus):

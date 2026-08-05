@@ -1,6 +1,6 @@
 # Rencana Implementasi — Tracker Versi Kita: LightTrack-ReID-inspired (Skenario B, Phase 11)
 
-> **Status:** USULAN — belum implementasi. Workflow: konsep → approval → implement.
+> **Status:** FASE 1 SELESAI (2026-08-05) — skeleton tracker lolos smoke test; Phase 2+ menunggu. Workflow: konsep → approval → implement.
 > **Referensi utama:** PLOS ONE 2026 — *LightTrack-ReID* (fulltext di `docs/research/papers/S014-*.pdf`, catatan detail implementasi di `docs/research/fulltext-notes/S014-lighttrack-reid.md` — WAJIB dibaca sebelum implement; isinya resep rumus, tabel ablasi, dan daftar celah yang harus kita putuskan sendiri).
 > **Posisi di tesis:** pelengkap Skenario B. OC-SORT = baseline ringan (selesai), DiffMOT = pembanding berat GPU (hasil mentah ada, eval menyusul), tracker ini = **proposed method** (ringan, bisa dilatih ulang ke data sendiri).
 
@@ -98,9 +98,13 @@ docs/
 
 ## Tahapan
 
-### Phase 1 — Skeleton tracker (tanpa learning)
-- Tulis `tracker.py` pakai Kalman+Hungarian dari OC_SORT **tanpa OCM/ORU** (baseline paper = Kalman + IoU + Hungarian + confidence filtering + **EMA smoothing** box — bukan OC-SORT penuh).
-- **Verifikasi:** jalankan di MOT20-train → HOTA di bawah OC-SORT penuh (karena tanpa OCM/ORU; ini angka validasi pipeline, bukan target akhir). TrackEval via `run_skenario_b_ocsort.py --steps eval --tracker lighttrack`.
+### Phase 1 — Skeleton tracker (tanpa learning) ✅ SELESAI 2026-08-05
+- ✅ `src/lighttrack/tracker.py`: Kalman (filterpy) + IoU + Hungarian (scipy) + conf filter + **EMA smoothing** box (α=0.9). Baseline paper, TAHPA OCM/ORU.
+- ✅ `scripts/s2/run_lighttrack_mot.py`: runner deteksi MOT → hasil format TrackEval (pola `run_ocsort_mot.py`).
+- ✅ Smoke test VPS (MOT20-01/02, deteksi **resmi MOT20** — bukan YOLO26): output valid, 3211 frame @ 614 FPS CPU, format 10 kolom benar.
+- ✅ TrackEval lokal jalan (venv `.venv-s2`, numpy 1.26.4): **HOTA 29.45 / MOTA 20.18 / IDF1 31.85 / IDSW 339** (2 sekuens, det resmi).
+- ⚠️ Angka di atas BUKAN pembanding sah vs OC-SORT/DiffMOT (beda deteksi + 2 sekuens) — hanya validasi pipeline. Eval resmi: kampus, `run_skenario_b_ocsort.py --steps eval --tracker lighttrack` (YOLO26, 4 fold).
+- **Catatan VPS:** pip numpy>=2.3 wheel crash di CPU ini (X86_V2) → venv wajib pin `numpy==1.26.4`. Hermes guard crash saat argumen script path berisi `/` (embedded null byte) → jalanin via `source .venv-s2/bin/activate && python script.py`.
 
 ### Phase 2 — LAE encoder + jalur inference
 - `encoder.py`: MobileNetV3-Small pretrained (torchvision `mobilenet_v3_small(pretrained=True)`; torch 2.0.1 → API `weights=` atau `pretrained=` sesuai versi torchvision) → GlobalAvgPool → Linear(576→32) → L2-norm.
