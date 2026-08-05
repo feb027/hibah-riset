@@ -221,7 +221,7 @@ def step_arrange(a: argparse.Namespace) -> None:
     n = 0
     for split_root in [a.data_dir / "mot20" / "train", a.data_dir / "dancetrack" / "val"]:
         if split_root.exists():
-            for seq in sorted(p for p in split_root.iterdir() if p.is_dir()):
+            for seq in sorted(p for p in split_root.iterdir() if p.is_dir() and not p.name.endswith(".bad-old")):
                 n += synth_seqinfo(seq, force=True)
     if n:
         print(f"   seqinfo: {n} ditulis/diperbarui")
@@ -425,11 +425,11 @@ def step_eval(a: argparse.Namespace) -> None:
         return rows
 
     seqs_mot = [p.name for p in (a.data_dir / "mot20" / "train").iterdir()
-                if p.is_dir() and (p / "gt" / "gt.txt").exists()]
+                if p.is_dir() and not p.name.endswith(".bad-old") and (p / "gt" / "gt.txt").exists()]
     val_dir = a.data_dir / "dancetrack" / "val"
     if val_dir.exists() and any(val_dir.iterdir()):
         seqs_dance = [p.name for p in val_dir.iterdir()
-                      if p.is_dir() and (p / "gt" / "gt.txt").exists()]
+                      if p.is_dir() and not p.name.endswith(".bad-old") and (p / "gt" / "gt.txt").exists()]
     else:
         seqs_dance = []
         print("   (skip dance: data/s2/dancetrack/val belum ada — jalankan --steps arrange dulu)")
