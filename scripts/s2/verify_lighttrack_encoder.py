@@ -29,6 +29,17 @@ def _ped_rows(gt):
     return gt[m]
 
 
+def _load_gt(path):
+    """Load MOT gt.txt (ragged lines) -> (N,9) array frame,id,x,y,w,h,conf,cls,vis."""
+    rows = []
+    for line in open(path):
+        parts = line.strip().split(",")
+        if len(parts) < 9:
+            continue  # baris tidak lengkap / kosong
+        rows.append([float(p) for p in parts[:9]])
+    return np.asarray(rows, dtype=np.float64)
+
+
 def main() -> None:
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--seq-dir", required=True, help="folder seq MOT: berisi img1/ dan gt/gt.txt")
@@ -36,7 +47,7 @@ def main() -> None:
     p.add_argument("--device", default=None, help="cpu / cuda (default: otomatis)")
     args = p.parse_args()
 
-    gt = np.loadtxt(os.path.join(args.seq_dir, "gt", "gt.txt"), delimiter=",").reshape(-1, 10)
+    gt = _load_gt(os.path.join(args.seq_dir, "gt", "gt.txt"))
     ped = _ped_rows(gt)
     if len(ped) == 0:
         print("Tidak ada baris pedestrian valid di gt.txt"); sys.exit(2)
