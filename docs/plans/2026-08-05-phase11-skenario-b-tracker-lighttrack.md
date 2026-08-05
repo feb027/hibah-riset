@@ -24,13 +24,24 @@ Membangun tracker multi-object *ringan* berbasis ReID-transformer (terinspirasi 
 - **Target akurasi eksplisit:** melampaui DiffMOT pada protokol sama (HOTA 44.37 MOT20-train / 39.05 DanceTrack-val) dengan biaya asosiasi ~0.6 GFLOPs (LAE+TBSS) vs ReID OSNet DiffMOT ≳ 5 GFLOPs. Kalau hanya menyamai, argumen tesis tetap kuat (biaya <1/10 + bisa train ulang).
 - Kontribusi "versi kita" vs paper: **ASW lokal per-track** + **memory hierarkis (2-tier)** + **fine-tune domain kampus** — ketiganya persis future work yang diakui paper (ASW global, CMOH K=10 gagal long-term, encoder kurang generalisasi).
 
+## Kelayakan (bisa kita lakukan? — dicek 2026-08-05)
+
+**Ya.** Hasil verifikasi:
+
+1. **Tidak ada kode publik** (paper 2026-03-25, 0 sitasi; semua hit web = mirror paper/Pubmed/ResearchGate). Implementasi = dari nol, tapi **semua modul terspesifikasi lengkap** (rumus + hiperparameter eksak di `docs/research/fulltext-notes/S014-lighttrack-reid.md`) — tidak ada "infer dari abtraksi".
+2. **Semua dependency sudah ada di env kampus** (jupyterhub-env, py3.8, torch 2.0.1+cu118): torchvision 0.15 (→ `mobilenet_v3_small` ada), filterpy (dep OC_SORT, jalan), scipy (Hungarian), numpy/opencv, TrackEval (sudah dipakai). **Tidak ada dependency baru** kecuali pretrained MobileNetV3-Small (~10 MB, download 1×, internet kampus tersedia).
+3. **Komponen non-torch cuma 3:** Kalman (filterpy), Hungarian (scipy), format MOT (sudah berpola di `run_ocsort_mot.py`). Tidak ada bagian eksotis.
+4. **Data:** kampus sudah punya MOT20-train 4 sekuens + DanceTrack-val (dipakai eval DiffMOT). PC rumah cuma MOT20-01/02 (dev + smoke test saja). MOT17-train sedang di-download user → pindah via WinSCP.
+5. **Compute:** RTX 4090 24 GB. Estimasi paper (GTX 1080, 10 jam/20 ep) → ~3 jam/fold → 4 fold ± 12 jam (semalam) + ~6 jam ablasi fold-1.
+6. **Risiko nyata bukan "bisa/tidak" tapi:** (a) waktu training, (b) pola ablasi mungkin tidak persis seperti paper (lapor relatif, bukan absolut), (c) satu API torchvision (`mobilenet_v3_small` weights) perlu dicek sekali di kampus — sudah masuk cek `--steps doctor`.
+
 ## Keputusan desain (sudah disepakati)
 
 1. **Deteksi = YOLO26 fine-tune Skenario A (sama untuk semua tracker).** Deteksi sudah ada di `data/s2/*/det_mot/` → dipakai ulang untuk training crops DAN eval. Aturan emas: deteksi identik.
 2. **Protokol eval = MOT20-train (leave-one-out 4 fold) + DanceTrack-val (zero-shot).** Train/test leakage dicegah: model untuk fold-i tidak pernah melihat sekuens fold-i. DanceTrack = tes generalisasi domain (model hanya dilatih MOT20). DiffMOT sudah dieval di protokol ini — lihat tabel di atas.
 3. **CMC di-skip** (kamera statis untuk people counting; paper pakai CMC untuk kamera bergerak).
 4. **Mode CPU:** flag `USE_REID=false` → cost = 1 − IoU (fallback geometris murni, setara SORT). Mode GPU: LAE+TBSS aktif. Ini menjaga narasi deployment (CPU/edge tetap bisa jalan, GPU dapat akurasi).
-5. **Reuse** Kalman + Hungarian dari `external/OC_SORT` (filterpy, sudah terpasang) — jangan tulis ulang.
+5. **Reuse** Kalman + Hungarian via `filterpy.KalmanFilter` + `scipy.optimize.linear_sum_assignment` (dua-duanya sudah terpasang di env kampus sebagai dependency OC_SORT) — JANGAN import internal `external/OC_SORT` (repo itu di-clone on demand, fragile; pakai library langsung).
 
 ## Arsitektur (ringkas, detail formula di paper §method)
 
@@ -65,6 +76,7 @@ scripts/s2/
   (eval: reuse step_eval run_skenario_b_ocsort.py dengan --tracker lighttrack)
 experiments/s2_tracker/
   lt_models/                   # checkpoint per fold + ablasi
+  lt_runs/                     # doctor.txt, run log (runs.yaml), loss, stats per step
   lighttrack_results/{mot20,dancetrack}/
   trackeval_trackers/{mot20,dance}/lighttrack/
 docs/
@@ -116,6 +128,57 @@ docs/
 
 ### Phase 6 — (Opsional, kalau waktu cukup) Fine-tune data kampus
 - Rekam/ambil scene kampus, label deteksi (atau pseudo-label dari YOLO26), fine-tune LAE 5-10 epoch → ukur IDSW/IDF1 vs model MOT20-only. Ini bagian cerita "domain gap" di tesis.
+
+## Orkestrasi run di kampus — modular, satu script, hasil otomatis terdokumentasi
+
+`scripts/s2/run_skenario_b_lighttrack.py` (mirror pola `run_skenario_b_ocsort.py` — 1 orkestrator, step terpisah, resume aman):
+
+```
+# Env & data dicek dulu (1×, sebelum apa pun):
+python scripts/s2/run_skenario_b_lighttrack.py --steps doctor
+#  → cek: torch+cuda, torchvision mobilenet_v3_small, filterpy, scipy, data MOT20/DanceTrack/MOT17,
+#    download pretrained MobileNetV3-Small (sekali), tulis laporan env ke lt_runs/doctor.txt
+
+# Pipeline penuh (4 fold):
+python scripts/s2/run_skenario_b_lighttrack.py --steps prepare,train,track,eval,report
+#  → 1 perintah, berjalan malam hari di 4090; tiap step resume (output sudah ada → skip, kecuali --force)
+
+# Ablasi fold-1 (setelah pipeline utama jalan):
+python scripts/s2/run_skenario_b_lighttrack.py --steps ablation --fold 1
+# → 5 config (ioU-only, +LAE, +TBSS, +CMOH, +ASW) → lt_runs/ablation_1.csv + tabel
+
+# Ulang eval saja / satu fold:
+python scripts/s2/run_skenario_b_lighttrack.py --steps track,eval --fold 2
+```
+
+Setiap step **idempotent** (ada output → skip; `--force` untuk ulang) dan **menulis run log** (timestamp, config, metrik) ke `experiments/s2_tracker/lt_runs/runs.yaml` (append). Artinya progres kampus otomatis tercatat — tinggal `git pull` di rumah untuk lihat.
+
+## Test per fase (WAJIB lolos sebelum lanjut ke fase berikutnya)
+
+| Fase | Perintah test | Lolos bila | Artefak yang dihasilkan |
+|---|---|---|---|
+| Semua | `--steps doctor` | semua cek PASS (torch/cuda/weights/data ada) | `lt_runs/doctor.txt` |
+| 1 Skeleton | `--steps track --fold 1 --model none` di PC rumah (2 sekuens) | TrackEval jalan, HOTA > 0 (validasi pipeline), file output format MOT valid | `lighttrack_results/mot20/MOT20-01.txt` |
+| 2 LAE | `--steps test --unit encoder` (smoke 10 frame MOT20-01) | cos(same-person) > cos(different); dim = 32; L2-norm | log + 1 assert |
+| 3 TBSS | `--steps train --fold 1` (mini: 1 epoch) lalu `--steps test --unit scorer` | loss turun antar epoch; BCE val > 90% | `lt_models/sim_fold1.pth` + kurva loss |
+| 4 CMOH+ASW | `--steps test --unit memory` (unit: celah 20 frame) + `--steps track --fold 1` | ID track **tidak berganti** setelah gap oklusi; IDSW fold-1 turun vs Phase 3 | log unit + `lighttrack_results/...` |
+| 5 Eval+ablasi | `--steps eval` + `--steps ablation --fold 1` | 4 fold selesai; CSV 5 config terisi; pola relatif: LAE lompat terbesar, CMOH pangkas IDSW | `eval_results.csv`, `lt_runs/ablation_1.csv` |
+| 6 Kampus FT | `--steps train --stage finetune` + `--steps track,eval` | IDF1/IDSW data kampus membaik vs model MOT20-only | `lt_models/ft_kampus.pth` + CSV |
+
+Setiap unit test = **satu assert** (pola ponytail), bukan framework; dijalankan via `--steps test --unit <name>`. Dev/smoke test cukup di PC rumah (2 sekuens); pipeline penuh & training hanya di kampus.
+
+## Artefak & dokumentasi otomatis
+
+```
+experiments/s2_tracker/
+  lt_models/            # sim_fold{1..4}.pth, ablasi config, ft_kampus.pth
+  lighttrack_results/{mot20,dancetrack}/   # output tracker format MOT (masuk TrackEval)
+  lt_runs/              # doctor.txt, prepare_{fold}/stats, train_{fold}/loss.png+log,
+                        # ablation_{1}/tabel, runs.yaml (run log append otomatis)
+  eval_results.csv      # (dipakai bersama OC-SORT/DiffMOT — baris lighttrack di-append)
+```
+
+`--steps report` merangkum: metrik 4 fold (mean±std) + DanceTrack + tabel ablasi + FPS tracking → append ke `docs/reports/laporan-skenario-b-tracker.md` + `docs/PROGRESS.md` (pola yang sama seperti OC-SORT/DiffMOT). Dengan begitu kampus tinggal run, hasilnya sudah jadi bahan laporan — nggak ada step manual yang bisa terlewat.
 
 ## File yang berubah
 - Baru: `src/lighttrack/**` (6 file), `scripts/s2/run_skenario_b_lighttrack.py`, `docs/panduan-skenario-b-lighttrack.md`.
