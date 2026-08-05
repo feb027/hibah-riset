@@ -62,3 +62,22 @@ Taruh bobot Skenario A **`.pt`** (bukan `.onnx`) di `data/s2/weights/best.pt`:
 | DanceTrack | OC-SORT | 28.39  | 71.38  | 26.63  | 6701 | 6936  |
 
 Hasil DiffMOT masuk `experiments/s2_tracker/diffmot_results/` → bandingkan dengan baris OC-SORT.
+
+## 0. Jalur script (pengganti notebook 40 + 50)
+
+Kalau tahap 1–3 (setup/data/deteksi) sudah beres, notebook 40–50 bisa dilewati total
+dengan satu perintah dari kernel `s2-diffmot`:
+
+```
+python scripts/s2/run_skenario_b_diffmot.py
+```
+
+- `ensure`: cek torch/CUDA, auto-install deep-person-reid kalau `import torchreid` gagal
+  (pitfall di atas), patch `diffmot.py`.
+- `config`: tulis `configs_s2/*_test.yaml` (threshold rilis, identik dengan notebook 50).
+- `run`: `main.py --dataset mot` lalu `dancetrack` (7–10 + 15–20 mnt di 4090);
+  skip otomatis kalau hasil sudah ada.
+- `verify`: hitung file hasil di `experiments/s2_tracker/diffmot_results/`.
+
+Opsional: `--steps ensure,config` (cek tanpa run), `--steps verify` (hasil sudah ada),
+`--force` (ulang run). Semua subproses memakai `sys.executable` = python KERNEL.
