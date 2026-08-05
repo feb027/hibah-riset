@@ -72,33 +72,36 @@ class FLTCCache:
             self._size = img.shape[:2]
         return self._size
 
-    def _read_crop(self, box):
-        import cv2
-        fr, _, x, y, w, h = box
-        p = os.path.join(self.img_dir, f"{fr:06d}.jpg")
-        bgr = cv2.imread(p, cv2.IMREAD_COLOR)
-        if bgr is None:
-            return None
-        hh, ww = bgr.shape[:2]
+    def _read_crop(self, img_bgr, x, y, w, h):
+        """Crop (224,224,3) ONE box dari frame utuh (img_bgr) yang sudah di-baca sekali."""
+        hh, ww = img_bgr.shape[:2]
         x = max(0, int(round(x))); y = max(0, int(round(y)))
         x2 = min(ww, x + max(1, int(round(w))))
         y2 = min(hh, y + max(1, int(round(h))))
-        c = bgr[y:y2, x:x2]
+        c = img_bgr[y:y2, x:x2]
         if c.size == 0:
             return None
         return cv2.resize(c, (CROP, CROP), interpolation=cv2.INTER_AREA)
 
     def frame(self, t):
-        """list deteksi frame t dengan crop (LRU-dicache)."""
+        """list deteksi frame t dengan crop (LRU-dicache).
+
+        Baca frame JPEG SEKALI per panggilan, lalu crop SEMUA deteksi dari buffer
+        yg sama (awalnya: imread per deteksi -> 20-50x decode JPEG per frame).
+        """
         if t in self._frames:
             self._frames.move_to_end(t)
             return self._frames[t]
+        import cv2
+        p = os.path.join(self.img_dir, f"{t:06d}.jpg")
+        bgr = cv2.imread(p, cv2.IMREAD_COLOR)
         items = []
-        for box in self._by_frame.get(t, ()):
-            crop = self._read_crop(box)
-            if crop is None:
-                continue
-            items.append(dict(id=box[1], box=(box[2], box[3], box[4], box[5]), crop=crop))
+        if bgr is not None:
+            for box in self._by_frame.get(t, ()):
+                crop = self._read_crop(bgr, box[2], box[3], box[4], box[5])
+                if crop is None:
+                    continue
+                items.append(dict(id=box[1], box=(box[2], box[3], box[4], box[5]), crop=crop))
         self._frames[t] = items
         self._frames.move_to_end(t)
         while len(self._frames) > self.cap:
