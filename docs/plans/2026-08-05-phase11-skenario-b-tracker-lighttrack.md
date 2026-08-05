@@ -1,7 +1,7 @@
 # Rencana Implementasi — Tracker Versi Kita: LightTrack-ReID-inspired (Skenario B, Phase 11)
 
 > **Status:** USULAN — belum implementasi. Workflow: konsep → approval → implement.
-> **Referensi utama:** PLOS ONE 2026 — *LightTrack-ReID: A Real-time Multi-Object Tracker...* (fulltext di `docs/research/papers/`, catatan di `docs/research/fulltext-notes/`).
+> **Referensi utama:** PLOS ONE 2026 — *LightTrack-ReID* (fulltext di `docs/research/papers/S014-*.pdf`, catatan detail implementasi di `docs/research/fulltext-notes/S014-lighttrack-reid.md` — WAJIB dibaca sebelum implement; isinya resep rumus, tabel ablasi, dan daftar celah yang harus kita putuskan sendiri).
 > **Posisi di tesis:** pelengkap Skenario B. OC-SORT = baseline ringan (selesai), DiffMOT = pembanding berat GPU (hasil mentah ada, eval menyusul), tracker ini = **proposed method** (ringan, bisa dilatih ulang ke data sendiri).
 
 ## Hasil eval DiffMOT vs OC-SORT (protokol sama, YOLO26, TrackEval) — 2026-08-05
@@ -21,7 +21,8 @@ Membangun tracker multi-object *ringan* berbasis ReID-transformer (terinspirasi 
 - Tracking stage GPU: **target >100 FPS di RTX 4090** (paper: ~30 FPS di GTX 1080).
 - Bisa dilatih ulang dari data sendiri (MOT20-train + opsional data kampus) → bukan black-box.
 - Dievaluasi di **protokol yang sama** dengan OC-SORT & DiffMOT (deteksi YOLO26 sama, TrackEval sama) → perbandingan sah.
-- Kontribusi "versi kita" vs paper: **ASW lokal per-track** + **memory dua tingkat (2-tier)** — dua kelemahan yang diakui paper sebagai future work.
+- **Target akurasi eksplisit:** melampaui DiffMOT pada protokol sama (HOTA 44.37 MOT20-train / 39.05 DanceTrack-val) dengan biaya asosiasi ~0.6 GFLOPs (LAE+TBSS) vs ReID OSNet DiffMOT ≳ 5 GFLOPs. Kalau hanya menyamai, argumen tesis tetap kuat (biaya <1/10 + bisa train ulang).
+- Kontribusi "versi kita" vs paper: **ASW lokal per-track** + **memory hierarkis (2-tier)** + **fine-tune domain kampus** — ketiganya persis future work yang diakui paper (ASW global, CMOH K=10 gagal long-term, encoder kurang generalisasi).
 
 ## Keputusan desain (sudah disepakati)
 
@@ -39,12 +40,13 @@ deteksi YOLO26 → filter conf (≥0.3, sama dgn OC-SORT) → tracker.update(box
   ├─ LAE   : MobileNetV3-Small → head → embedding a ∈ R^32 (L2-normalized)
   ├─ TBSS  : 1-layer transformer, 4 heads. Input x = [b_t, b_{t-1}, IoU, a_t, a_{t-1}] ∈ R^73 → skor s ∈ [0,1]
   ├─ CMOH  : buffer K=10 embedding terakhir per track; saat track hilang → pakai mean konteks
-  ├─ ASW   : bobot oklusi w = σ(N_occ/N)  →  cost = 1 − [w·s + (1−w)·IoU]   (MODIFIKASI: w per-track, bukan global)
+  ├─ ASW   : paper w_t = σ(N_occ/N) global per frame (N_occ = deteksi dgn IoU overlap > 0.5 dgn deteksi lain)
+  │         →  cost = 1 − [w·s + (1−w)·IoU]   (MODIFIKASI kita: w per-track, bukan global)
   └─ Hungarian → update Kalman / track baru / track mati
 keluaran: [frame,id,x1,y1,w,h,conf,-1,-1,-1] (format MOT, langsung TrackEval)
 ```
 
-Komponen biaya (paper): LAE ~0.5 GFLOPs + TBSS ~0.1 GFLOPs → jauh lebih ringan dari DiffMOT (HMINet + OSNet ReID). Ini argumen utama "lebih ideal dari DiffMOT".
+Komponen biaya (paper): LAE ~0.5 GFLOPs + TBSS ~0.1 GFLOPs; detektor (YOLOX-S) ~26.8 GFLOPs = dominan → asosiasi cuma <3% tambahan. Jauh lebih ringan dari DiffMOT (HMINet + OSNet ReID). Ini argumen utama "lebih ideal dari DiffMOT". Catatan: torchvision `mobilenet_v3_small` ~0.11 GFLOPs — angka paper 0.5 kemungkinan over-estimate; pakai yang torchvision (lebih hemat).
 
 ## Struktur file
 
@@ -79,14 +81,14 @@ docs/
 | Loss | L = L_triplet + BCE(s, y) | s dari TBSS, y = label pasangan |
 | Optimizer | Adam, lr=0.001 | 20 epoch, 80/20 split dalam fold |
 | Input | crop 224×224 | augmentasi: flip 50%, crop 10%, color jitter 0.2 |
-| FLTC | cache tensor frame 0.5×, LRU cap ~2048 frame | ponytail: LRU cap; naikkan bila cache miss dominan |
-| GPU | RTX 4090 kampus (kernel jupyterhub-env, py3.8, torch 2.0.1+cu118) | per fold ~2-3 jam → 4 fold ± 12 jam (semalam) |
+| FLTC | cache **kumpulan crop 224×224 per frame** (uint8, bukan frame setengah-res), LRU cap ~2048 frame | paper: ~100rb pair-tensor → ~2rb frame-tensor, loading <30 dtk (cached); ponytail: LRU cap, naikkan bila cache miss dominan |
+| GPU | RTX 4090 kampus (kernel jupyterhub-env, py3.8, torch 2.0.1+cu118) | paper: MOT17+MOT20 full 20 ep ≈ 10 jam GTX 1080 → di 4090 ~2.5-5 jam utk dua dataset; per fold (MOT17+3/4 MOT20) ~3 jam → 4 fold ± 12 jam (semalam) |
 
 ## Tahapan
 
 ### Phase 1 — Skeleton tracker (tanpa learning)
-- Tulis `tracker.py` pakai Kalman+Hungarian dari OC_SORT; asosiasi IoU murni.
-- **Verifikasi:** jalankan di MOT20-train → HOTA harus mendekati OC-SORT tanpa OCM/ORU (angka validasi pipeline, bukan target akhir). TrackEval via `run_skenario_b_ocsort.py --steps eval --tracker lighttrack`.
+- Tulis `tracker.py` pakai Kalman+Hungarian dari OC_SORT **tanpa OCM/ORU** (baseline paper = Kalman + IoU + Hungarian + confidence filtering + **EMA smoothing** box — bukan OC-SORT penuh).
+- **Verifikasi:** jalankan di MOT20-train → HOTA di bawah OC-SORT penuh (karena tanpa OCM/ORU; ini angka validasi pipeline, bukan target akhir). TrackEval via `run_skenario_b_ocsort.py --steps eval --tracker lighttrack`.
 
 ### Phase 2 — LAE encoder + jalur inference
 - `encoder.py`: MobileNetV3-Small pretrained (torchvision `mobilenet_v3_small(pretrained=True)`; torch 2.0.1 → API `weights=` atau `pretrained=` sesuai versi torchvision) → GlobalAvgPool → Linear(576→32) → L2-norm.
@@ -94,20 +96,22 @@ docs/
 - **Verifikasi:** embedding dua crop orang sama lebih dekat (cosine) daripada beda orang — smoke test 10 frame MOT20-01.
 
 ### Phase 3 — TBSS scorer + training
-- `scorer.py`: Linear(73→d_model) + `nn.TransformerEncoderLayer(d_model, nhead=4)` + Linear → sigmoid.
-- `dataset.py`: FLTC (cache tensor 0.5× per frame, LRU) + APS (pasangan max 50/frame dari GT MOT20-train).
+- `scorer.py`: Linear(73→d_model) + `nn.TransformerEncoderLayer(d_model, nhead=4)` + Linear → sigmoid. **d_model default 64** (paper tidak menyebut; input cuma 73-d, tunable).
+- `dataset.py`: FLTC (cache **kumpulan crop 224×224 uint8 per frame**, LRU cap ~2048 frame) + APS (pasangan max 50/frame dari GT MOT20-train; positif = GT id sama, negatif = beda id, seimbang).
 - `train.py`: triplet(m=1.0) + BCE, Adam 1e-3, 20 epoch, 80/20.
-- **Verifikasi:** loss turun; akurasi BCE val > 90%; 1 fold selesai < 3 jam di 4090.
+- Triplet dibentuk dari pasangan APS: tiap positive pair → anchor/positive; negatif = embedding acak beda id (paper tidak merinci; pilihan kita). 
+- **Verifikasi:** loss turun; akurasi BCE val > 90%; 1 fold selesai ≤ 3 jam di 4090.
 
 ### Phase 4 — CMOH + ASW lokal
-- `memory.py`: buffer K=10 embedding per track; saat oklusi (tidak ada match) → embedding = mean buffer.
-- ASW: w per-track dari rasio frame oklusi track tsb (bukan σ global satu frame — **modifikasi kontribusi**).
+- `memory.py`: buffer K=10 embedding per track (CMOH); saat track tidak dapat match → embedding = **mean buffer** (`a_ctx`), dipakai di input TBSS menggantikan embedding track terakhir. Tier-2: long-term store untuk track yang hilang lama/recurrent (hanya dipakai saat K=10 sudah tidak menutup — **modifikasi kontribusi** "hierarchical memory").
+- ASW: paper = σ(N_occ/N) global satu skalar per frame; modifikasi kita = w per-track dari rasio oklusi track tsb (lokal) — **modifikasi kontribusi**.
 - **Verifikasi:** IDSW fold-1 turun vs Phase 3 tanpa CMOH.
 
 ### Phase 5 — Eval lengkap + ablasi + laporan
 - 4 fold leave-one-out MOT20-train (mean ± std) + zero-shot DanceTrack-val.
 - Ablasi di fold-1: (a) IoU-only [=Phase 1], (b) +LAE, (c) +TBSS, (d) +CMOH, (e) +ASW-lokal [full] → tabel ala paper.
-- FPS: tracking stage di 4090 (GPU mode) + PC rumah (CPU, kedua mode).
+- **Ekspektasi ablasi (dari paper, MOT17/20 half-split):** LAE = lompatan terbesar; TBSS naik stabil di atas LAE; CMOH memangkas IDSW drastis; ASW cuma increment tipis. ⚠️ Angka absolut paper TIDAK sebanding protokol kita — lapor pola kontribusi relatif + jangan overclaim.
+- FPS: ukur **tracking stage terpisah** dari pipeline penuh (detektor dominan, paper: YOLOX-S 26.8 GFLOPs vs asosiasi 0.6); crop diekstrak batch → satu tensor GPU (hindari loop crop CPU jadi bottleneck). Di 4090 (GPU mode) + PC rumah (CPU, kedua mode).
 - Update `eval_results.csv` (reuse step_eval `--tracker lighttrack`) + tabel perbandingan OC-SORT/DiffMOT/lighttrack + update laporan Skenario B.
 
 ### Phase 6 — (Opsional, kalau waktu cukup) Fine-tune data kampus
@@ -122,9 +126,21 @@ docs/
 1. **Angka tidak akan menembus paper (66.6 HOTA MOT20-test)** — protokol kita beda (train-protocol + deteksi sendiri). Yang dilaporkan: perbandingan relatif pada protokol sama. Jangan overclaim.
 2. **Python 3.8 di kernel kampus** — tanpa `list[str]` dsb (sudah jadi kebiasaan di script s2).
 3. **torchvision di jupyterhub-env**: pastikan `mobilenet_v3_small` tersedia (torch 2.0.1 → torchvision 0.15). Kalau API pretrained berubah, sesuaikan.
-4. **FLTC VRAM**: cache 0.5× + LRU cap; jangan cache full-res (MOT20 1080p = ~8 MB/frame × 8.9k frame ≫ VRAM).
+4. **FLTC VRAM**: cache crop 224² uint8 per frame + LRU cap (~2048 frame); jangan cache full-res (MOT20 1080p = ~8 MB/frame × 8.9k frame ≫ VRAM). uint8 = 4× lebih kecil dari float32.
 5. **Leakage**: jangan pernah train di sekuens yang dieval (leave-one-out wajib). DanceTrack-val tidak boleh masuk training kalau mau dipakai zero-shot.
 6. **ReID di CPU tidak realtime** — encodernya 0.5 GFLOPs/crop; di scene padat (>30 orang) CPU gagal. Makanya mode `USE_REID=false` sebagai fallback deployment. Sebutkan di laporan (jujur).
+
+## Keputusan reimplementasi (kekosongan yang TIDAK dijelaskan paper — diputuskan oleh kita)
+
+| # | Kekosongan paper | Keputusan kita | Alasan |
+|---|---|---|---|
+| 1 | d_model TBSS tidak disebut | default 64, tunable | input cuma 73-d; kecil sudah cukup |
+| 2 | Pembentukan triplet dari pasangan APS tidak dirinci | dari tiap positive pair ambil negatif acak beda id | sederhana, stabil; hard mining opsional belakangan |
+| 3 | "Soft IoU" disebut di prose, rumus pakai IoU biasa | pakai IoU biasa | rumus (Eq 5/10) lebih otoritatif; soft-IoU = varian kalau ada waktu |
+| 4 | GFLOPs LAE 0.5 vs MobileNetV3-Small ~0.11 (torchvision) | pakai torchvision `mobilenet_v3_small` | lebih hemat, pretrained ImageNet siap pakai |
+| 5 | Negatif sampling APS tidak dirinci | acak, seimbang dgn positif, max 50 pasangan/frame | match paper (Eq 1) |
+| 6 | Threshold conf & max age track tidak disebut | conf ≥ 0.3, max age analog OC-SORT (lapor) | konsisten dgn pipeline OC-SORT |
+| 7 | Formula EMA baseline tidak dirinci | EMA biasa di koordinat box (α=0.9) | cukup untuk smoothing; lapor |
 
 ## Estimasi
 - Development: ~1.5–2 minggu part-time (Phase 1-4).
@@ -132,6 +148,7 @@ docs/
 - DiffMOT eval (satu perintah, 10 menit): `python scripts/s2/run_skenario_b_ocsort.py --steps eval --tracker diffmot` di kampus.
 
 ## Open questions
-1. Download MOT17-train (untuk training lebih kaya) atau cukup MOT20-train? (default: cukup — YAGNI)
-2. Phase 6 (fine-tune kampus) dijalankan atau tidak? Tergantung jadwal.
-3. Tracker versi kita dipakai di demo realtime Skenario C juga, atau OC-SORT tetap untuk demo?
+1. ~~MOT17 vs MOT20?~~ **Diputuskan: dua-duanya** (MOT17-train + MOT20-train; user download manual, pindah ke kampus via WinSCP). Ambil satu varian detektor per sekuens (gambar & GT identik antar DPM/SDP/FRCNN; yang beda cuma `det/`).
+2. Phase 6 (fine-tune kampus) dijalankan atau tidak? Tergantung jadwal — sekarang punya dukungan teoritis (future work #3 paper).
+3. Tracker versi kita dipakai di demo realtime Skenario C juga, atau OC-SORT tetap untuk demo? — keputusan di Phase 5 (siapa menang eval).
+4. Ablasi penuh (5 config × fold-1) atau subset (mis. tanpa +TBSS individual)? — kalau waktu ketat, subset; pola kontribusi tetap terbaca.

@@ -1,5 +1,20 @@
 # Progress Log — Hibah Riset PUU 2026
 
+## 2026-08-05 WIB — Phase 11: riset LightTrack-ReID + commit eval DiffMOT vs OC-SORT
+
+- [x] Eval TrackEval DiffMOT vs OC-SORT di protokol sama (YOLO26, TrackEval, kampus):
+      `experiments/s2_tracker/eval_results.csv` — MOT20: DiffMOT 44.37 vs OC-SORT 36.51 HOTA;
+      DanceTrack-val: DiffMOT 39.05 vs OC-SORT 28.39 HOTA. DiffMOT = baseline akurasi terbaik,
+      IDSW ~setengah OC-SORT. (commit `114819f`, `bec90d5`, `53125cf`)
+- [x] Riset detail paper LightTrack-ReID (PLOS ONE 2026, kandidat proposed method): catatan
+      reimplementasi lengkap di `docs/research/fulltext-notes/S014-lighttrack-reid.md`
+      (rumus, tabel ablasi, daftar kekosongan paper yang harus kita putuskan sendiri).
+- [x] Update plan `docs/plans/2026-08-05-phase11-skenario-b-tracker-lighttrack.md`:
+      FLTC cache crop per frame (bukan half-res), d_model TBSS default 64, baseline
+      = Kalman+IoU+EMA (bukan OC-SORT penuh), ekspektasi ablasi, tabel keputusan reimplementasi,
+      target akurasi eksplisit (menyamai/lampaui DiffMOT dgn biaya <1/10).
+- [>] Belum implementasi — menunggu approval. User download MOT17-train manual → kampus via WinSCP.
+
 ## 2026-08-03 WIB — Phase 9b: Skenario B baseline OC-SORT selesai
 
 - [x] Baseline **OC-SORT** selesai di PC rumah (CPU, deteksi `best.onnx` YOLO26 fine-tune):
