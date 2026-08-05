@@ -226,9 +226,11 @@ def train(args):
             dpos = ((ea - ep_) ** 2).sum(1)
             dneg = ((ea - en_) ** 2).sum(1)
             L_triplet = torch.clamp(dpos - dneg + m_triplet, min=0.0).mean()
-            # BCE (a,p)->1 ; (a,n)->0
-            x_ap = _tbss_x(ba, bp, iou_ap.expand(len(use), 1), ea, ep_)
-            x_an = _tbss_x(ba, bn, iou_an.expand(len(use), 1), ea, en_)
+            # BCE (a,p)->1 ; (a,n)->0  -- box TERNORMALISASI [0,1] (skala & IoU & embedding
+            #                          sebanding; lihat _to_xyxy doc). WAJIB sama di val & Phase 4.
+            b_ap = _to_xyxy(ba, W, H); b_an = _to_xyxy(bn, W, H)
+            x_ap = _tbss_x(b_ap, _to_xyxy(bp, W, H), iou_ap, ea, ep_)
+            x_an = _tbss_x(b_an, _to_xyxy(bn, W, H), iou_an, ea, en_)
             y = torch.cat([torch.ones(len(use), 1, device=device),
                            torch.zeros(len(use), 1, device=device)])
             L_bce = nn.functional.binary_cross_entropy(
@@ -259,10 +261,11 @@ def train(args):
                     ba = torch.tensor([u["a"][1]], device=device).float()
                     bp = torch.tensor([u["p"][1]], device=device).float()
                     bn = torch.tensor([u["n"][1]], device=device).float()
-                    iou_ap = _iou(_to_xyxy(ba, W, H), _to_xyxy(bp, W, H)).reshape(1, 1)
-                    iou_an = _iou(_to_xyxy(ba, W, H), _to_xyxy(bn, W, H)).reshape(1, 1)
-                    s_ap = float(tbss(_tbss_x(ba, bp, iou_ap, ea, ep_))[0, 0])
-                    s_an = float(tbss(_tbss_x(ba, bn, iou_an, ea, en_))[0, 0])
+                    b_ap = _to_xyxy(ba, W, H); b_an = _to_xyxy(bn, W, H)
+                    iou_ap = _iou(b_ap, _to_xyxy(bp, W, H)).reshape(1, 1)
+                    iou_an = _iou(b_an, _to_xyxy(bn, W, H)).reshape(1, 1)
+                    s_ap = float(tbss(_tbss_x(b_ap, _to_xyxy(bp, W, H), iou_ap, ea, ep_))[0, 0])
+                    s_an = float(tbss(_tbss_x(b_an, _to_xyxy(bn, W, H), iou_an, ea, en_))[0, 0])
                     acc_t += int(s_ap > 0.5); acc_d += int(s_an < 0.5)
         acc = (acc_t + acc_d) / max(1, n_s + n_d)
         cos_s = cos_same / max(1, n_s)
