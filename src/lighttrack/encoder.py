@@ -87,10 +87,10 @@ class EmbeddingComputer:
         return outs
 
     def _normalize(self, crops):
-        rgb = np.stack([c[..., ::-1] for c in crops]).astype(np.float32) / 255.0  # (N,H,W,3) RGB
-        rgb = (rgb - _IMAGENET_MEAN) / _IMAGENET_STD
-        x = torch.from_numpy(rgb.transpose(0, 3, 1, 2)).to(self.device)
-        return x
+        import numpy as np
+        rgb = np.stack([c[..., ::-1] for c in crops]).astype(np.float32) / np.float32(255.0)  # (N,H,W,3) RGB
+        rgb = (rgb - np.array(_IMAGENET_MEAN, dtype=np.float32)) / np.array(_IMAGENET_STD, dtype=np.float32)
+        return torch.from_numpy(rgb.transpose(0, 3, 1, 2)).to(dtype=torch.float32, device=self.device)
 
 
 def _demo():
