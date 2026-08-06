@@ -40,6 +40,7 @@ Versi script asli (kalau mau dipakai di terminal): `src/lighttrack/train.py`
 
 cells.append(code(
 """import os, sys, time, json, glob, subprocess
+print("[1/2] import numpy/torch (bisa 10-30 detik pertama) ...", flush=True)
 import numpy as np
 import torch
 import torch.nn as nn
@@ -53,10 +54,12 @@ os.chdir(ROOT)
 sys.path.insert(0, os.path.join(ROOT, "src", "lighttrack"))
 print("ROOT =", ROOT)
 
+print("[2/2] import modul lighttrack (encoder/scorer/dataset) ...", flush=True)
 from encoder import LAE, _IMAGENET_MEAN, _IMAGENET_STD
 from scorer import SimilarityModel
 from dataset import FLTCCache, APSSampler, CROP
 
+print("[2/2] selesai. Cek GPU ...", flush=True)
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print("device =", device, "| torch", torch.__version__)
 if device.type == "cuda":
