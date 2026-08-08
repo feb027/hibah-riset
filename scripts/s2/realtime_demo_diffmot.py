@@ -93,7 +93,8 @@ def check(a: argparse.Namespace) -> int:
             errs.append(f"import DiffMOT gagal: {e!r}")
         try:
             import torch
-            print(f"torch {torch.__version__} | cuda={torch.cuda.is_available()}")
+            print(f"python : {sys.executable}")
+            print(f"torch  : {torch.__version__} | cuda={torch.cuda.is_available()}")
             if not torch.cuda.is_available():
                 errs.append("CUDA tidak aktif — DiffMOT butuh GPU")
         except Exception as e:
