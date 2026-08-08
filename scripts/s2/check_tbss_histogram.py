@@ -59,21 +59,22 @@ def main():
     args = ap.parse_args()
 
     device = torch.device(args.device or ("cuda" if torch.cuda.is_available() else "cpu"))
-    print(f"[ckpt] {args.ckpt}  device={device}")
+    print(f"[ckpt] {args.ckpt}  device={device}", flush=True)
 
     ck = torch.load(args.ckpt, map_location=device)
     lae = LAE().to(device).eval()
     tbss = SimilarityModel().to(device).eval()
     lae.load_state_dict(ck["lae"]); tbss.load_state_dict(ck["tbss"])
-    print(f"[ckpt] epoch={ck.get('epoch')} loss={ck.get('loss')}")
+    print(f"[ckpt] epoch={ck.get('epoch')} loss={ck.get('loss')}", flush=True)
 
+    print("[val] memuat cache & index GT ...", flush=True)
     caches = [FLTCCache(d) for d in args.seq_dirs.split(":")]
     sampler = APSSampler(window=15, max_pairs=50, seed=args.seed)
 
     all_pairs = [(ci, f) for ci, c in enumerate(caches) for f in c.frames()]
     split_rng = np.random.RandomState(args.seed)   # sama dgn train.py
     val_pairs = [(ci, f) for ci, f in all_pairs if split_rng.rand() < args.holdout]
-    print(f"[val] frame={len(val_pairs)} (cap {args.max_pairs} triplet)")
+    print(f"[val] frame={len(val_pairs)} (cap {args.max_pairs} triplet)", flush=True)
 
     s_ap, s_an, c_ap, c_an = [], [], [], []
     v_n = 0
@@ -111,12 +112,12 @@ def main():
     n = min(len(s_ap), len(s_an))
     s_ap, s_an = s_ap[:n], s_an[:n]
 
-    print(f"\nn={n}  (positif & negatif sama banyak — seimbang seperti train)\n")
+    print(f"\nn={n}  (positif & negatif sama banyak — seimbang seperti train)\n", flush=True)
     _ascii_hist(s_ap, "s_ap (pasangan SAMA)")
     _ascii_hist(s_an, "s_an (pasangan BEDA)")
 
     acc05 = ((s_ap > 0.5).mean() + (s_an < 0.5).mean()) / 2
-    print(f"\nBCEacc @0.5  = {acc05:.3f}   (yang dilaporkan di log)")
+    print(f"\nBCEacc @0.5  = {acc05:.3f}   (yang dilaporkan di log)", flush=True)
 
     # signal: akurasi terbaik atas semua threshold -> skor bawa informasi apa tidak
     thr = np.linspace(0.05, 0.95, 19)
@@ -124,18 +125,19 @@ def main():
     print(f"BCEacc terbaik (cari threshold) = {best:.3f}")
 
     sep = float(s_ap.mean() - s_an.mean())
-    print(f"mean s_ap={s_ap.mean():.3f}  mean s_an={s_an.mean():.3f}  selisih={sep:+.3f}")
-    print(f"cosine  same={c_ap.mean():.3f}  diff={c_an.mean():.3f}  margin={c_ap.mean()-c_an.mean():+.3f}")
+    print(f"mean s_ap={s_ap.mean():.3f}  mean s_an={s_an.mean():.3f}  selisih={sep:+.3f}", flush=True)
+    print(f"cosine  same={c_ap.mean():.3f}  diff={c_an.mean():.3f}  margin={c_ap.mean()-c_an.mean():+.3f}",
+          flush=True)
 
     if sep > 0.3 and best > 0.8:
-        print("\nVERDICT: skor TERPISAH (s_ap > s_an) tapi BCEacc@0.5 rendah ->")
-        print("  threshold/akumulasi val bermasalah, bukan model. Cek >0.5 di val.")
+        print("\nVERDICT: skor TERPISAH (s_ap > s_an) tapi BCEacc@0.5 rendah ->", flush=True)
+        print("  threshold/akumulasi val bermasalah, bukan model. Cek >0.5 di val.", flush=True)
     elif best > 0.8:
-        print("\nVERDICT: ada signal (best acc tinggi) tapi skor tidak terkalibrasi 0.5 ->")
-        print("  model bisa dipakai asal threshold dicari (lihat best acc).")
+        print("\nVERDICT: ada signal (best acc tinggi) tapi skor tidak terkalibrasi 0.5 ->", flush=True)
+        print("  model bisa dipakai asal threshold dicari (lihat best acc).", flush=True)
     else:
-        print("\nVERDICT: TBSS COLLAPSE — skor tidak membawa signal (best acc ~0.5).")
-        print("  Cek jalur training TBSS: input _tbss_x, gradien BCE, LR per-modul.")
+        print("\nVERDICT: TBSS COLLAPSE — skor tidak membawa signal (best acc ~0.5).", flush=True)
+        print("  Cek jalur training TBSS: input _tbss_x, gradien BCE, LR per-modul.", flush=True)
 
 
 if __name__ == "__main__":
