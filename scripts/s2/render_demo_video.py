@@ -102,9 +102,13 @@ def main():
     ap.add_argument("--end", type=int, default=0, help="frame akhir (0 = sampai habis)")
     ap.add_argument("--fps", type=int, default=0, help="override fps (default: baca seqinfo)")
     ap.add_argument("--source", choices=["track", "gt"], default="track",
-                    help="track = hasil OC-SORT; gt = ground truth (referensi)")
+                    help="track = hasil tracker (OC-SORT/DiffMOT); gt = ground truth (referensi)")
+    ap.add_argument("--tracker", choices=["ocsort", "diffmot"], default="ocsort",
+                    help="hasil tracking mana yang dirender (format MOT di experiments/s2_tracker/<tracker>_results/)")
     ap.add_argument("--max-w", type=int, default=960)
     args = ap.parse_args()
+
+    TRACKER_LABEL = {"ocsort": "OC-SORT", "diffmot": "DiffMOT"}
 
     is_mot = args.seq.startswith("MOT20")
     fallback_fps = SEQ_DEFAULT_FPS.get("MOT20" if is_mot else "dancetrack", 30)
@@ -115,12 +119,12 @@ def main():
         if total == 0:
             print("!! frame dataset belum diunduh — jalankan sekali tanpa --source untuk download")
             return 1
-        src_path = EXP / "ocsort_results" / ("mot20" if is_mot else "dancetrack") / f"{args.seq}.txt"
+        src_path = EXP / f"{args.tracker}_results" / ("mot20" if is_mot else "dancetrack") / f"{args.seq}.txt"
         if not src_path.exists():
             print("!! tidak ada hasil tracking:", src_path)
             return 1
         data = load_mot(src_path)
-        label = "OC-SORT"
+        label = TRACKER_LABEL[args.tracker]
     else:
         gt_path = DATA / "mot20_hf" / "train" / args.seq / "gt" / "gt.txt"
         total = len(list((DATA / "mot20_hf" / "train" / args.seq / "img1").glob("*.jpg")))
@@ -134,10 +138,20 @@ def main():
     assert 1 <= args.start <= end <= total, f"range frame salah ({args.start}..{end} / {total})"
     OUT.mkdir(parents=True, exist_ok=True)
 
-    from huggingface_hub import snapshot_download
+    from PIL import Image, ImageDraw, ImageFont
+    try:
+        font = ImageFont.truetype("DejaVuSans-Bold.ttf", 16)
+        font_small = ImageFont.truetype("DejaVuSans.ttf", 13)
+    except Exception:
+        font = font_small = None
+
     img_dir = DATA / "mot20_hf" / "train" / args.seq / "img1"
     if not any(img_dir.glob("*.jpg")):
         print(f"[1/4] unduh frame {args.seq} dari HF ...")
+        try:
+            from huggingface_hub import snapshot_download
+        except ModuleNotFoundError:
+            sys.exit("huggingface_hub tidak ada di venv ini; install: pip install huggingface_hub")
         snapshot_download(
             repo_id="Lekim89/MOT20", repo_type="dataset",
             allow_patterns=[f"train/{args.seq}/*"],
@@ -149,17 +163,12 @@ def main():
         end = len(frames)
 
     from PIL import Image, ImageDraw, ImageFont
-    try:
-        font = ImageFont.truetype("DejaVuSans-Bold.ttf", 16)
-        font_small = ImageFont.truetype("DejaVuSans.ttf", 13)
-    except Exception:
-        font = font_small = None
 
     sample = Image.open(frames[args.start - 1])
     scale = args.max_w / sample.width
     H = int(sample.height * scale)
     W = args.max_w
-    tag = f"{args.seq}_f{args.start}-{end}_{'gt' if args.source == 'gt' else 'tracked'}"
+    tag = f"{args.seq}_f{args.start}-{end}_{'gt' if args.source == 'gt' else f'tracked_{args.tracker}'}"
     out_mp4 = OUT / f"{tag}.mp4"
     proc = ffmpeg_writer(out_mp4, W, H, fps)
 
