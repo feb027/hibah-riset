@@ -238,18 +238,18 @@ def _watchdog():
             continue
         dump = os.path.join(OUT, "hang_%s.log" % time.strftime("%Y%m%d_%H%M%S"))
         with open(dump, "w") as fh:
-            fh.write("=== HANG %ds idle ===" % idle + "\n")
-            fh.write("torch=%s cuda=%s cudnn=%s device=%s\n" % (
+            fh.write("=== HANG %ds idle ===" % idle + "\\n")
+            fh.write("torch=%s cuda=%s cudnn=%s device=%s\\n" % (
                 torch.__version__, torch.version.cuda,
                 torch.backends.cudnn.version(), device))
             try:
                 r = subprocess.run(["nvidia-smi"], capture_output=True, text=True, timeout=15)
                 fh.write(r.stdout + (r.stderr or ""))
             except Exception as e:
-                fh.write("nvidia-smi fail: %r\n" % e)
-            fh.write("=== STACKS ===\n")
+                fh.write("nvidia-smi fail: %r\\n" % e)
+            fh.write("=== STACKS ===\\n")
             for tid, frame in sys._current_frames().items():
-                fh.write("\n-- thread %d --\n%s" % (
+                fh.write("\\n-- thread %d --\\n%s" % (
                     tid, "".join(traceback.format_stack(frame))))
         print("  \u26a0 HANG %.0fs idle \u2192 lihat %s" % (idle, dump), flush=True)
         _prog["t"] = time.time()  # jangan spam: tunggu HANG_S lagi sebelum cek ulang
@@ -342,11 +342,11 @@ for ep in range(start_ep + 1, EPOCHS + 1):
             use = use[:val_bs]
             H, W = caches[ci].frame_size()
             a, p, nn = [_crops_to_tensor([u[k][0] for u in use], device) for k in ("a", "p", "n")]
-            a, p, nn_ = _normalize(a), _normalize(p), _normalize(nn_)
+            a, p, nn = _normalize(a), _normalize(p), _normalize(nn)
             ba = torch.tensor([u["a"][1] for u in use], device=device).float()
             bp = torch.tensor([u["p"][1] for u in use], device=device).float()
             bn = torch.tensor([u["n"][1] for u in use], device=device).float()
-            ea, ep_, en_ = lae(a), lae(p), lae(nn_)
+            ea, ep_, en_ = lae(a), lae(p), lae(nn)
             cos_same += float((ea * ep_).sum()); n_s += len(use)
             cos_diff += float((ea * en_).sum()); n_d += len(use)
             b_ap = _to_xyxy(ba, W, H); b_an = _to_xyxy(bn, W, H)
@@ -359,9 +359,9 @@ for ep in range(start_ep + 1, EPOCHS + 1):
             _prog["t"] = time.time()  # heartbeat utk watchdog
             if time.time() - v_tick > 1.0:
                 v_tick = time.time()
-                sys.stdout.write(f"\r\033[K  [val] {v_n}/{min(MAX_VAL_PAIRS, len(val_pairs))} tr | {seq_names[ci]} fr={t} | {time.time()-v_0:.0f}s")
+                sys.stdout.write(f"\\r\\033[K  [val] {v_n}/{min(MAX_VAL_PAIRS, len(val_pairs))} tr | {seq_names[ci]} fr={t} | {time.time()-v_0:.0f}s")
                 sys.stdout.flush()
-    sys.stdout.write("\r\033[K"); sys.stdout.flush()
+    sys.stdout.write("\\r\\033[K"); sys.stdout.flush()
 
     acc = (acc_t + acc_d) / max(1, n_s + n_d)
     cos_s = cos_same / max(1, n_s)
