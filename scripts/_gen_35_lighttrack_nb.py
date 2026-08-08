@@ -330,6 +330,8 @@ for ep in range(start_ep + 1, EPOCHS + 1):
     n_s = n_d = 0
     v_n = 0
     val_bs = 64
+    v_0 = time.time(); v_tick = 0.0
+    print(f"  [val] mulai — hingga {min(MAX_VAL_PAIRS, len(val_pairs))} triplet, batch-{val_bs} GPU ...", flush=True)
     with torch.inference_mode():
         for ci, t in val_pairs:
             if v_n >= MAX_VAL_PAIRS:
@@ -337,7 +339,7 @@ for ep in range(start_ep + 1, EPOCHS + 1):
             use = list(sampler.sample(caches[ci], t))
             if not use:
                 continue
-            use = use[:BATCH]
+            use = use[:val_bs]
             H, W = caches[ci].frame_size()
             a, p, nn = [_crops_to_tensor([u[k][0] for u in use], device) for k in ("a", "p", "n")]
             a, p, nn_ = _normalize(a), _normalize(p), _normalize(nn_)
@@ -355,8 +357,11 @@ for ep in range(start_ep + 1, EPOCHS + 1):
             acc_t += int((s_ap[:, 0] > 0.5).sum()); acc_d += int((s_an[:, 0] < 0.5).sum())
             v_n += len(use)
             _prog["t"] = time.time()  # heartbeat utk watchdog
-            if v_n % (8 * BATCH) == 0:
-                print(f"  val {seq_names[ci]} fr={t} v_n={v_n}/{min(MAX_VAL_PAIRS, len(val_pairs))}", flush=True)
+            if time.time() - v_tick > 1.0:
+                v_tick = time.time()
+                sys.stdout.write(f"\r\033[K  [val] {v_n}/{min(MAX_VAL_PAIRS, len(val_pairs))} tr | {seq_names[ci]} fr={t} | {time.time()-v_0:.0f}s")
+                sys.stdout.flush()
+    sys.stdout.write("\r\033[K"); sys.stdout.flush()
 
     acc = (acc_t + acc_d) / max(1, n_s + n_d)
     cos_s = cos_same / max(1, n_s)
