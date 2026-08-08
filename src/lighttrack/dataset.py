@@ -12,6 +12,10 @@ APS (Active Pair Sampling): per frame, bangun sampel triplet
 Maks `max_pairs` triplet/frame, seimbang. Kedua loss (triplet + BCE) diturunkan
 dari satu triplet: triplet memakai (a,p,n); BCE memakai (a,p)->1 dan (a,n)->0.
 
+Index id->frames (FLTC): kandidat positif dicari lewat index GT — TANPA decode
+gambar — persis APS paper (maks 50 pasangan/frame, sampling dari label).
+Frame yang benar-benar dipakai baru diterjemahkan via LRU cache.
+
 py3.8-friendly (tanpa list[int]/X | None). TORCH-ONLY di jalur training.
 """
 import os
@@ -27,6 +31,7 @@ class FLTCCache:
     """Cache crop per frame (LRU) dari satu sekuens MOT.
 
     `.frame(t)` mengembalikan list dict: {id:int, box:(x,y,w,h), crop:uint8 (CROP,CROP,3)}.
+    `.frames_of(i)` mengembalikan sorted frame list dari GT index (nol I/O gambar).
     """
 
     def __init__(self, seq_dir, cap=2048):
@@ -36,10 +41,14 @@ class FLTCCache:
         self._gt = self._load_gt()
         self._frames = OrderedDict()  # LRU: frame -> list dict
         self._by_frame = defaultdict(list)
+        self._by_id = defaultdict(list)  # index id -> sorted frame list
         self._size = None
         for row in self._gt:
             fr = int(row[0])
             self._by_frame[fr].append(row)
+            self._by_id[int(row[1])].append(fr)
+        for k in self._by_id:
+            self._by_id[k] = sorted(set(self._by_id[k]))
 
     def _load_gt(self):
         rows = []
@@ -61,8 +70,15 @@ class FLTCCache:
     def frames(self):
         return sorted(self._by_frame.keys())
 
+    def frames_of(self, track_id):
+        """Sorted frame list di mana track_id muncul — dari GT, TANPA decode gambar.
+
+        Inti FLTC+APS: cari kandidat positif lewat index, bukan decode.
+        """
+        return self._by_id.get(track_id, ())
+
     def frame_size(self):
-        """(H, W) frame utuh (di-cache). Dipakai clamp box utk IoU dgn dimensi asli."""
+        """(H, W) frame utuh (di-cache). Dipakai clamp box utk IoU dgn frame dimensi asli."""
         import cv2
         if self._size is None:
             p = os.path.join(self.img_dir, f"{self.frames()[0]:06d}.jpg")
@@ -73,7 +89,7 @@ class FLTCCache:
         return self._size
 
     def _read_crop(self, img_bgr, x, y, w, h):
-        """Crop (224,224,3) ONE box dari frame utuh (img_bgr) yang sudah di-baca sekali."""
+        """Crop (224,224,3) ONE box dari frame utuh (img_bgr) yang sudah dibaca sekali."""
         import cv2
         hh, ww = img_bgr.shape[:2]
         x = max(0, int(round(x))); y = max(0, int(round(y)))
@@ -113,17 +129,15 @@ class FLTCCache:
 class APSSampler:
     """APS: triplet (anchor,pos,neg) per frame, max max_pairs/frame.
 
-    Dihubungi tiap epoch dengan urutan frame random. Dapat dipakai tanpa trainer
-    langsung memegang crop; cukup tanya `.sample(cache, t)`.
+    Dipanggil tiap epoch dengan urutan frame per-sekuens (bukan shuffle global,
+    supaya LRU cache frame bertahan). Cari positif dari index GT — TANPA decode
+    frame kandidat. Frame terpilih didecode sekali via LRU.
     """
 
     def __init__(self, window=15, max_pairs=50, seed=0):
         self.window = window   # jendela frame utk cari pos (id sama, frame ~dekat)
         self.max_pairs = max_pairs
         self.rng = np.random.RandomState(seed)
-
-    def _ids_of(self, cache, t):
-        return {d["id"] for d in cache.frame(t)}
 
     def sample(self, cache, t):
         """List maks max_pairs triplet (anchor,pos,neg) + box untuk frame t.
@@ -133,31 +147,32 @@ class APSSampler:
         dets = cache.frame(t)
         if len(dets) < 2:
             return []
-        byid = defaultdict(list)
-        for d in dets:
-            byid[d["id"]].append(d)
-        fis = self._ids_of(cache, t)
-        # kandidat frame lain utk cari crop positif (id sama)
-        cand = [tt for tt in cache.frames()
-                if tt != t and abs(tt - t) <= self.window and any(
-                    i in self._ids_of(cache, tt) for i in fis)]
-        if len(dets) < 2 or not cand:
+        ids = {d["id"] for d in dets}
+        # kandidat: semua frame dalam window yang memuat id manapun di frame t
+        cand = []
+        for i in ids:
+            for tt in cache.frames_of(i):
+                if tt != t and abs(tt - t) <= self.window and tt not in cand:
+                    cand.append(tt)
+        if not cand:
             return []
         self.rng.shuffle(cand)
         out = []
-        ids_by_tt = {tt: self._ids_of(cache, tt) for tt in cand}
+        pos_cache = {}
         for d in dets:
             if len(out) >= self.max_pairs:
                 break
-            # positif: id sama dari frame kandidat terdekat
-            pos = None
-            for tt in cand:
-                if d["id"] in ids_by_tt[tt]:
-                    pos = tt
-                    break
+            # positif: frame kandidat yang memuat id yang sama (id sama)
+            fr_id = set(cache.frames_of(d["id"]))
+            pos = next((tt for tt in cand if tt in fr_id), None)
             if pos is None:
                 continue
-            pos_d = next(r for r in cache.frame(pos) if r["id"] == d["id"])
+            if pos not in pos_cache:
+                pos_cache[pos] = cache.frame(pos)
+            pos_frm = pos_cache[pos]
+            pos_d = next((r for r in pos_frm if r["id"] == d["id"]), None)
+            if pos_d is None:
+                continue
             # negatif: id beda dalam frame yang sama
             negs = [r for r in dets if r["id"] != d["id"]]
             if not negs:
@@ -178,16 +193,15 @@ def _demo():
                             dict(id=3, box=(80, 1, 8, 8), crop=np.full((CROP, CROP, 3), 200, np.uint8))]}
         def frame(self, t):
             return self._fr[t]
-        def frames(self):
-            return [1, 2]
+        def frames_of(self, i):
+            return [t for t, ds in self._fr.items() if any(d["id"] == i for d in ds)]
     s = APSSampler(window=5, max_pairs=10, seed=1)
     out = s.sample(FakeCache(), 1)
     assert out, "APS kosong di frame penuh"
-    # tiap triplet: anchor & pos harus id sama; neg id beda (late: cek via box)
     for tr in out:
         a, p, n = tr["a"][0], tr["p"][0], tr["n"][0]
         assert (a == p).all()
-        assert (a == n).any() is False or not (a == n).all()
+        assert not (a == n).all()
         assert len(tr["a"][1]) == 4 and len(tr["p"][1]) == 4
     print("demo OK", {"triplet_cnt": len(out),
                       "sample_shapes": [tuple(tr["a"][0].shape), tuple(tr["p"][0].shape),

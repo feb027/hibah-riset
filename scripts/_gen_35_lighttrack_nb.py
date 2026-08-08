@@ -156,10 +156,18 @@ for ci, c in enumerate(caches):
     print(f"  seq {os.path.basename(seq_dirs[ci]):<14} frames={len(fr)}")
 
 val_pairs, train_pairs = [], []
+val_pairs, train_pairs = [], []
 split_rng = np.random.RandomState(SEED)
 for ci, f in all_pairs:
     (val_pairs if split_rng.rand() < HOLDOUT else train_pairs).append((ci, f))
 print(f"train_frames={len(train_pairs)} val_frames={len(val_pairs)}")
+
+# urutan per-sekuens (bukan shuffle global): frame dalam satu seq tetap urut,
+# supaya LRU cache FLTC panas dan ndak decode ulang tiap sample.
+seq_frames = [(ci, [f for c, f in train_pairs if c == ci])
+              for ci in range(len(seq_dirs))]
+seq_frames = [(ci, frs) for ci, frs in seq_frames if frs]
+print(f"seq_blocks={len(seq_frames)}")
 """))
 
 cells.append(code(
@@ -205,11 +213,18 @@ for ep in range(start_ep + 1, EPOCHS + 1):
     tot_l = tot_lt = tot_lb = 0.0
     nb = 0
     rng = np.random.RandomState(SEED + ep)
-    np.random.RandomState(SEED + ep).shuffle(train_pairs)
-    print(f"ep{ep}/{EPOCHS} TRAIN mulai — {len(train_pairs)} triplet frame", flush=True)
+    # urutan per-sekuens: rotasi start + shuffle antar seq, frame dalam seq tetap
+    # urut -> LRU FLTC panas, ndak re-decode tiap sample seperti shuffle global.
+    order = []
+    seqs = list(seq_frames)
+    rng.shuffle(seqs)
+    for ci, frs in seqs:
+        k = rng.randint(len(frs))
+        order.extend((ci, t) for t in frs[k:] + frs[:k])
+    print(f"ep{ep}/{EPOCHS} TRAIN mulai — {len(order)} triplet frame", flush=True)
     t_tick = time.time()
 
-    for i, (ci, t) in enumerate(train_pairs):
+    for i, (ci, t) in enumerate(order):
         it0 = time.time()
         triplets = sampler.sample(caches[ci], t)
         if not triplets:
