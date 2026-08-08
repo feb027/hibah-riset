@@ -207,6 +207,36 @@ seq_names = [os.path.basename(d) for d in seq_dirs]
 t_epoch0 = time.time()
 TICK_EVER = 10.0  # update status 1 baris tiap 10s (progress + fps + ETA)
 
+# ---- watchdog: kalau training hang (tidak ada iter > HANG_S), dump diagnostik ----
+import threading, traceback, sys, subprocess
+HANG_S = 120
+_prog = {"t": time.time()}
+def _watchdog():
+    while True:
+        time.sleep(HANG_S)
+        idle = time.time() - _prog["t"]
+        if idle < HANG_S - 2:
+            continue
+        dump = os.path.join(OUT, "hang_%s.log" % time.strftime("%Y%m%d_%H%M%S"))
+        with open(dump, "w") as fh:
+            fh.write("=== HANG %ds idle ===" % idle + "\n")
+            fh.write("torch=%s cuda=%s cudnn=%s device=%s\n" % (
+                torch.__version__, torch.version.cuda,
+                torch.backends.cudnn.version(), device))
+            try:
+                r = subprocess.run(["nvidia-smi"], capture_output=True, text=True, timeout=15)
+                fh.write(r.stdout + (r.stderr or ""))
+            except Exception as e:
+                fh.write("nvidia-smi fail: %r\n" % e)
+            fh.write("=== STACKS ===\n")
+            for tid, frame in sys._current_frames().items():
+                fh.write("\n-- thread %d --\n%s" % (
+                    tid, "".join(traceback.format_stack(frame))))
+        print("  \u26a0 HANG %.0fs idle \u2192 lihat %s" % (idle, dump), flush=True)
+        _prog["t"] = time.time()  # jangan spam: tunggu HANG_S lagi sebelum cek ulang
+watchdog = threading.Thread(target=_watchdog, daemon=True)
+watchdog.start()
+
 for ep in range(start_ep + 1, EPOCHS + 1):
     t_ep = time.time()
     lae.train(); tbss.train()
@@ -226,6 +256,7 @@ for ep in range(start_ep + 1, EPOCHS + 1):
 
     for i, (ci, t) in enumerate(order):
         it0 = time.time()
+        _prog["t"] = time.time()  # heartbeat utk watchdog
         triplets = sampler.sample(caches[ci], t)
         if not triplets:
             continue
