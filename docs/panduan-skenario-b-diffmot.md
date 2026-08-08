@@ -81,3 +81,36 @@ python scripts/s2/run_skenario_b_diffmot.py
 
 Opsional: `--steps ensure,config` (cek tanpa run), `--steps verify` (hasil sudah ada),
 `--force` (ulang run). Semua subproses memakai `sys.executable` = python KERNEL.
+
+## 5. Demo realtime (headless, output mp4)
+
+DiffMOT tidak punya entrypoint demo di upstream — script
+`scripts/s2/realtime_demo_diffmot.py` menyusun pipeline sendiri: **YOLO26 fine-tune
+(deteksi, GPU) + D2MP (prediksi gerak) + ReID SBS/osnet (embedding live) +
+association** via `diffmottracker`. Berbeda dari eval (yang memakai cache embedding
+pkl), demo mengirim `img` asli ke tracker → embedding dihitung per frame.
+
+Wajib: bobot D2MP (`experiments/diffmot_{mot,dance}/*_epoch800.pt` — hasil run
+skenario B) dan ReID (`external/weights/osnet_ain_ms_d_c.pth.tar` untuk dataset
+`mot`; `dance_sbs_S50.pth` untuk `dancetrack`). `run_skenario_b_diffmot.py ensure`
+sudah menyiapkan keduanya. Patch `diffmot.py` TIDAK diperlukan untuk demo (script
+tidak instansiasi class `DiffMOT`, hanya `diffmottracker` + `D2MP` langsung).
+
+```
+# cek dulu (import + CUDA + path), tanpa run
+python scripts/s2/realtime_demo_diffmot.py --check
+
+# demo video file → mp4 (headless; default dataset=mot)
+python scripts/s2/realtime_demo_diffmot.py --source video.mp4 --save demo_mot.mp4
+
+# webcam → mp4, dataset dancetrack
+python scripts/s2/realtime_demo_diffmot.py --source 0 --dataset dancetrack --save demo_dance.mp4
+
+# kalau ada display (PC rumah + GPU): --show
+python scripts/s2/realtime_demo_diffmot.py --source video.mp4 --save out.mp4 --show
+```
+
+Output default: `experiments/s2_tracker/demo/diffmot_realtime.mp4`. Arg lain:
+`--weights data/s2/weights/best.pt`, `--imgsz 640`, `--conf 0.3`, `--cls 0`,
+`--max-w 960`, `--diffmot-root external/diffmot`. HUD: FPS DiffMOT (EMA),
+waktu deteksi, jumlah track aktif, box per-ID.
