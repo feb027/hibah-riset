@@ -44,6 +44,7 @@ print("[1/2] import numpy/torch (bisa 10-30 detik pertama) ...", flush=True)
 import numpy as np
 import torch
 import torch.nn as nn
+torch.backends.cudnn.enabled = False  # cuDNN8.7 + drv580/CUDA13 -> wedge ~frame 120-130; pakai ATen fallback
 
 # root repo = parent dari notebooks/ (atau cwd kalau bukan di notebooks/)
 if os.path.basename(os.getcwd()) == "notebooks":
@@ -209,6 +210,7 @@ for ep in range(start_ep + 1, EPOCHS + 1):
     t_tick = time.time()
 
     for i, (ci, t) in enumerate(train_pairs):
+        it0 = time.time()
         triplets = sampler.sample(caches[ci], t)
         if not triplets:
             continue
@@ -241,6 +243,8 @@ for ep in range(start_ep + 1, EPOCHS + 1):
         loss = L_triplet + L_bce
         opt.zero_grad(); loss.backward(); opt.step()
         tot_l += loss.item(); tot_lt += L_triplet.item(); tot_lb += L_bce.item(); nb += 1
+        if time.time() - it0 > 30:
+            print(f"  ⚠ iter {time.time()-it0:.0f}s @ {seq_names[ci]} fr={t} (nb={nb})", flush=True)
         if time.time() - t_tick > TICK_EVER and nb > 0:
             t_tick = time.time()
             dt_run = time.time() - t_ep
