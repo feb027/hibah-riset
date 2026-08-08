@@ -196,7 +196,7 @@ stats_jsonl = open(os.path.join(OUT, "train_stats.jsonl"), "a")
 hist = {"ep": [], "loss": [], "lt": [], "lb": [], "bce_acc": [], "margin": [], "dt": []}
 seq_names = [os.path.basename(d) for d in seq_dirs]
 t_epoch0 = time.time()
-PRINT_EVER = 200  # update status 1 baris tiap 200 frame (tidak naikin output)
+TICK_EVER = 10.0  # update status 1 baris tiap 10s (progress + fps + ETA)
 
 for ep in range(start_ep + 1, EPOCHS + 1):
     t_ep = time.time()
@@ -205,6 +205,8 @@ for ep in range(start_ep + 1, EPOCHS + 1):
     nb = 0
     rng = np.random.RandomState(SEED + ep)
     np.random.RandomState(SEED + ep).shuffle(train_pairs)
+    print(f"ep{ep}/{EPOCHS} TRAIN mulai — {len(train_pairs)} triplet frame", flush=True)
+    t_tick = time.time()
 
     for i, (ci, t) in enumerate(train_pairs):
         triplets = sampler.sample(caches[ci], t)
@@ -239,10 +241,15 @@ for ep in range(start_ep + 1, EPOCHS + 1):
         loss = L_triplet + L_bce
         opt.zero_grad(); loss.backward(); opt.step()
         tot_l += loss.item(); tot_lt += L_triplet.item(); tot_lb += L_bce.item(); nb += 1
-        if nb % PRINT_EVER == 0:
+        if time.time() - t_tick > TICK_EVER and nb > 0:
+            t_tick = time.time()
+            dt_run = time.time() - t_ep
+            fps = nb / max(dt_run, 1e-6)
+            eta_min = (len(train_pairs) - nb) / max(fps, 1e-6) / 60
             clear_output(wait=True)
-            print(f"ep{ep}/{EPOCHS} | train {nb} fr | L={tot_l/nb:.4f} Lt={tot_lt/nb:.4f} "
-                  f"Lb={tot_lb/nb:.4f} | {seq_names[ci]} fr={t}", flush=True)
+            print(f"ep{ep}/{EPOCHS} train {nb}/{len(train_pairs)} fr | {fps:.1f} fr/s | "
+                  f"L={tot_l/nb:.3f} Lt={tot_lt/nb:.3f} Lb={tot_lb/nb:.3f} | "
+                  f"ETA {eta_min:.1f}m | {seq_names[ci]} fr={t}", flush=True)
 
     # ---- validation (tanpa augment; tanpa grad) ----
     lae.eval(); tbss.eval()
