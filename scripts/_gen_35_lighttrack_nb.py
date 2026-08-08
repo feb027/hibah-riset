@@ -44,9 +44,9 @@ cells.append(code(
 """import os, sys, time, json, glob, subprocess, copy
 # JANGAN downgrade MPS: GPU kampus = COMPUTE EXCLUSIVE (JupyterHub multi-user, lihat
 # nvidia-smi "Compute Mode"). CUDA cuma jalan via MPS server; direct context ditolak
-# ("CUDA-capable device(s) busy/unavailable"). Hang dulu BUKAN dari train via MPS — itu
-# cuDNN eval batch-1 pada pass VALIDATION (akhir tiap epoch). Fix: validation -> CPU
-# (di bawah), train tetap GPU/MPS normal seperti run 7.6 fr/s.
+# ("CUDA-capable device(s) busy/unavailable"). Hang dulu BUKAN dari train via MPS —
+# itu val-loop per-sample batch-1 (puluhan ribu forward 1x1) yang kelihatan "hang"
+# → sekarang val di-batch-64 di GPU (kernel sama dgn training) + cap MAX_VAL_PAIRS.
 print("[1/2] import numpy/torch (bisa 10-30 detik pertama) ...", flush=True)
 import numpy as np
 import torch
@@ -154,6 +154,7 @@ LR      = 1e-3
 D_MODEL = 64
 WINDOW  = 15
 MAX_PAIRS = 50
+MAX_VAL_PAIRS = 1200  # batasi total triplet validasi per epoch (batch, cepat) — bukan semua frame
 MARGIN  = 1.0
 HOLDOUT = 0.2
 SEED    = 0
@@ -317,33 +318,45 @@ for ep in range(start_ep + 1, EPOCHS + 1):
                   f"L={tot_l/nb:.3f} Lt={tot_lt/nb:.3f} Lb={tot_lb/nb:.3f} | "
                   f"ETA {eta_min:.1f}m | {seq_names[ci]} fr={t}", flush=True)
 
-    # ---- validation (tanpa augment; tanpa grad) ----
+    # ---- validation (batched: 64 triplet/fwd, GPU — BUKAN batch-1) ----
+    # Kenapa diubah: dulu val = satu triplet satu forward (per-sample, CPU),
+    # puluhan ribu forward 1x1 → jalan berjam-jam, GPU idle, watchdog bilang
+    # "HANG" (padahal cuma lambat). Sekarang val = batch-64 di GPU, kernel sama
+    # persis training (yg terbukti jalan 14.9 fr/s lewat MPS), plus pembatas
+    # MAX_VAL_PAIRS + heartbeat biar watchdog tahu masih hidup.
     lae.eval(); tbss.eval()
-    # HANG val-loop = cuDNN eval batch-1 via MPS (nvidia-cuda-mps-server aktif). Bypass ganda:
-    # MPS diputus di cell 1; & val dijalankan di CPU (MobileNetV3-Small kecil, val = hitungan
-    # puluhan detik). Model copy CPU sekali per epoch, bukan per triplet.
-    lae_cpu = copy.deepcopy(lae).to("cpu").eval()
-    tbss_cpu = copy.deepcopy(tbss).to("cpu").eval()
     acc_t = acc_d = 0
     cos_same = cos_diff = 0.0
     n_s = n_d = 0
+    v_n = 0
+    val_bs = 64
     with torch.inference_mode():
         for ci, t in val_pairs:
-            for u in sampler.sample(caches[ci], t):
-                H, W = caches[ci].frame_size()
-                a, p, nn_ = [_normalize(_crops_to_tensor([u[k][0]], "cpu")) for k in ("a", "p", "n")]
-                ea, ep_, en_ = lae_cpu(a), lae_cpu(p), lae_cpu(nn_)
-                cos_same += float((ea * ep_).sum()); n_s += 1
-                cos_diff += float((ea * en_).sum()); n_d += 1
-                ba = torch.tensor([u["a"][1]]).float()
-                bp = torch.tensor([u["p"][1]]).float()
-                bn = torch.tensor([u["n"][1]]).float()
-                b_ap = _to_xyxy(ba, W, H); b_an = _to_xyxy(bn, W, H)
-                iou_ap = _iou(b_ap, _to_xyxy(bp, W, H)).reshape(1, 1)
-                iou_an = _iou(b_an, _to_xyxy(bn, W, H)).reshape(1, 1)
-                s_ap = float(tbss_cpu(_tbss_x(b_ap, _to_xyxy(bp, W, H), iou_ap, ea, ep_))[0, 0])
-                s_an = float(tbss_cpu(_tbss_x(b_an, _to_xyxy(bn, W, H), iou_an, ea, en_))[0, 0])
-                acc_t += int(s_ap > 0.5); acc_d += int(s_an < 0.5)
+            if v_n >= MAX_VAL_PAIRS:
+                break
+            use = list(sampler.sample(caches[ci], t))
+            if not use:
+                continue
+            use = use[:BATCH]
+            H, W = caches[ci].frame_size()
+            a, p, nn = [_crops_to_tensor([u[k][0] for u in use], device) for k in ("a", "p", "n")]
+            a, p, nn_ = _normalize(a), _normalize(p), _normalize(nn_)
+            ba = torch.tensor([u["a"][1] for u in use], device=device).float()
+            bp = torch.tensor([u["p"][1] for u in use], device=device).float()
+            bn = torch.tensor([u["n"][1] for u in use], device=device).float()
+            ea, ep_, en_ = lae(a), lae(p), lae(nn_)
+            cos_same += float((ea * ep_).sum()); n_s += len(use)
+            cos_diff += float((ea * en_).sum()); n_d += len(use)
+            b_ap = _to_xyxy(ba, W, H); b_an = _to_xyxy(bn, W, H)
+            iou_ap = _iou(b_ap, _to_xyxy(bp, W, H)).reshape(-1, 1)
+            iou_an = _iou(b_an, _to_xyxy(bn, W, H)).reshape(-1, 1)
+            s_ap = tbss(_tbss_x(b_ap, _to_xyxy(bp, W, H), iou_ap, ea, ep_))
+            s_an = tbss(_tbss_x(b_an, _to_xyxy(bn, W, H), iou_an, ea, en_))
+            acc_t += int((s_ap[:, 0] > 0.5).sum()); acc_d += int((s_an[:, 0] < 0.5).sum())
+            v_n += len(use)
+            _prog["t"] = time.time()  # heartbeat utk watchdog
+            if v_n % (8 * BATCH) == 0:
+                print(f"  val {seq_names[ci]} fr={t} v_n={v_n}/{min(MAX_VAL_PAIRS, len(val_pairs))}", flush=True)
 
     acc = (acc_t + acc_d) / max(1, n_s + n_d)
     cos_s = cos_same / max(1, n_s)
