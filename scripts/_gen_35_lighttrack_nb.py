@@ -184,7 +184,7 @@ else:
 
 cells.append(code(
 """# ---------------- TRAINING (jalankan cell ini; cekpt tiap epoch) ----------------
-from tqdm.notebook import tqdm
+from tqdm.auto import tqdm
 from IPython.display import clear_output
 try:
     import matplotlib.pyplot as plt
