@@ -22,12 +22,15 @@ import sys
 import numpy as np
 import torch
 
-sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), ".."))
-from src.lighttrack.train import (_to_xyxy, _iou, _tbss_x, _normalize,  # noqa: E402
-                                 _crop_to_tensor)
-from src.lighttrack.encoder import LAE  # noqa: E402
-from src.lighttrack.scorer import SimilarityModel  # noqa: E402
-from src.lighttrack.dataset import FLTCCache, APSSampler  # noqa: E402
+# train.py memakai import datar ("from encoder import ...") -> harus lewat sys.path
+# langsung ke folder src/lighttrack, bukan lewat package src.lighttrack.*
+_LT_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+                       "..", "src", "lighttrack")
+sys.path.insert(0, os.path.normpath(_LT_DIR))
+from train import _to_xyxy, _iou, _tbss_x, _normalize, _crop_to_tensor  # noqa: E402
+from encoder import LAE  # noqa: E402
+from scorer import SimilarityModel  # noqa: E402
+from dataset import FLTCCache, APSSampler  # noqa: E402
 
 BINS = 10
 
