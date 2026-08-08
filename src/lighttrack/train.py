@@ -13,7 +13,8 @@ Normalisasi: ImageNet (konsisten dengan encoder inference Phase 2).
 Augmentasi (paper): flip 50%, crop padding 10%, color jitter 0.2.
 Keputusan konsep: d_model=64, batch 64, ImageNet.
 
-py3.8-friendly, TORCH-ONLY. Simpan ckpt jadi {out}/lighttrack_e{ep}.pt:
+py3.8-friendly, TORCH-ONLY. Simpan ckpt {out}/last.pt (tiap epoch) +
+{out}/best.pt (BCEacc val terbaik, ala YOLO).
     {"lae": LAE.state_dict(), "tbss": TBSS.state_dict(), "epoch": k, "loss": ..}
 
 Dipakai:
@@ -41,8 +42,8 @@ from dataset import FLTCCache, APSSampler, CROP
 def _to_xyxy(boxes, W, H):
     """(B,4) tlwh -> (B,4) xyxy ternormalisasi [0,1] (clamp ke frame asli W,H).
 
-    Normalisasi penting: TBSS mencampur bbox + IoU(0..1) + embedding L2-norm;
-    koordinat piksel mentah (0..1920) akan mendominasi Linear(73->64).
+    Normalisasi penting: TBSS mencampur bbox + IoU(0..1) + embedding L2-norm (v1
+    73-d / v2 6-d); koordinat piksel mentah (0..1920) akan mendominasi Linear.
     Wajib direplikasi identik di inference (Phase 4 tracker).
     """
     x, y, w, h = boxes.T
@@ -97,7 +98,13 @@ def _crop_to_tensor(crop_uint8_bgr, device):
 
 
 def _tbss_x(box_a, box_p, iou, ea, ep):
-    return torch.cat([box_a, box_p, iou, ea, ep], dim=1)
+    # v2 — input ringkas 6-d (fix collapse):
+    #   [IoU(1), cos(e_a,e_p)(1), bbox-diff termormalisasi(4)]
+    # bukan concat bbox/embedding 73-d (embedding unit-vector bikin sinyal
+    # informasi tenggelam). Skala seluruh fitur di [-1,1] utk input MLP TBSS.
+    cos = (ea * ep).sum(dim=1, keepdim=True)          # embedding L2-unit -> cosine
+    bd = box_a - box_p                                 # (B,4) diff, sudah [0,1]^4
+    return torch.cat([iou, cos, bd], dim=1)            # (B,6)
 
 
 # ---------------------------------------------------------------- resource stats
@@ -152,7 +159,12 @@ def train(args):
 
     lae = LAE().to(device).train()
     tbss = SimilarityModel(d_model=args.d_model).to(device).train()
-    opt = torch.optim.Adam(list(lae.parameters()) + list(tbss.parameters()), lr=args.lr)
+    # opsi 2 — optimizer pisah per modul (LR sendiri2), cekpt opt
+    # state_dict() sama bentuknya: dua param group.
+    opt = torch.optim.Adam([
+        {"params": lae.parameters(), "lr": args.lr},
+        {"params": tbss.parameters(), "lr": args.tbss_lr},
+    ])
     m_triplet = args.margin
 
     caches = [FLTCCache(d) for d in args.seq_dirs.split(":")]
@@ -178,13 +190,15 @@ def train(args):
     stats_jsonl = open(os.path.join(args.out, "train_stats.jsonl"), "a")
 
     start_ep = 0
+    best_acc = 0.0
     if args.resume:
         ck = torch.load(args.resume, map_location=device)
         lae.load_state_dict(ck["lae"]); tbss.load_state_dict(ck["tbss"])
         if "opt" in ck:
             opt.load_state_dict(ck["opt"])
         start_ep = int(ck["epoch"])
-        print(f"[train] resume dari {args.resume} (lanjut epoch {start_ep+1})")
+        best_acc = float(ck.get("best_acc", 0.0))
+        print(f"[train] resume dari {args.resume} (lanjut epoch {start_ep+1}, best_acc={best_acc:.3f})")
 
     # metadata header (sekali, kalau file baru)
     if logf.tell() == 0:
@@ -236,8 +250,13 @@ def train(args):
             x_an = _tbss_x(b_an, _to_xyxy(bn, W, H), iou_an, ea, en_)
             y = torch.cat([torch.ones(len(use), 1, device=device),
                            torch.zeros(len(use), 1, device=device)])
+            # opsi 2 — BCE berbobot: kelas negatif (y=0) lebih penting utk
+            # mendorong skor pasangan beda turun (v1 gagal krn s_an nyangkut
+            # ~0.95). weight dihitung per-elemen y.
+            bce_w = torch.where(y > 0, torch.ones_like(y) * args.bce_pos_w,
+                                torch.ones_like(y) * args.bce_neg_w)
             L_bce = nn.functional.binary_cross_entropy(
-                torch.cat([tbss(x_ap), tbss(x_an)]), y)
+                torch.cat([tbss(x_ap), tbss(x_an)]), y, weight=bce_w)
 
             loss = L_triplet + L_bce
             opt.zero_grad(); loss.backward(); opt.step()
@@ -318,12 +337,19 @@ def train(args):
                                       "gpu_vram_alloc_gb": rs.get("gpu_vram_alloc_gb")}) + "\n")
         stats_jsonl.flush()
 
-        torch.save({"lae": lae.state_dict(), "tbss": tbss.state_dict(),
-                    "opt": opt.state_dict(),
-                    "epoch": ep, "loss": tot_l / max(1, nb)},
-                   os.path.join(args.out, f"lighttrack_e{ep}.pt"))
+        # YOLO-style: last.pt selalu ditimpa tiap epoch; best.pt hanya kalau
+        # BCEacc val membaik (bukan loss — loss gak mencerminkan diskriminasi TBSS).
+        ck = {"lae": lae.state_dict(), "tbss": tbss.state_dict(),
+              "opt": opt.state_dict(),
+              "epoch": ep, "loss": tot_l / max(1, nb), "best_acc": best_acc}
+        torch.save(ck, os.path.join(args.out, "last.pt"))
+        if acc >= best_acc:
+            best_acc = acc
+            ck["best_acc"] = best_acc
+            torch.save(ck, os.path.join(args.out, "best.pt"))
+
     logf.close(); stats_jsonl.close()
-    print(f"[train] selesai, ckpt terakhir di {args.out}/lighttrack_e{args.epochs}.pt")
+    print(f"[train] selesai. Best BCEacc={best_acc:.3f} -> {args.out}/best.pt; last -> {args.out}/last.pt")
 
 
 def main():
@@ -333,6 +359,12 @@ def main():
     ap.add_argument("--epochs", type=int, default=20)
     ap.add_argument("--batch", type=int, default=64)
     ap.add_argument("--lr", type=float, default=1e-3)
+    ap.add_argument("--tbss-lr", type=float, default=1e-3,
+                    help="LR khusus TBSS (opsi 2: optimizer pisah per modul)")
+    ap.add_argument("--bce-pos-w", type=float, default=1.0,
+                    help="bobot BCE kelas positif (y=1)")
+    ap.add_argument("--bce-neg-w", type=float, default=1.0,
+                    help="bobot BCE kelas negatif (y=0) — naikkan utk s_an turun")
     ap.add_argument("--d-model", type=int, default=64)
     ap.add_argument("--window", type=int, default=15)
     ap.add_argument("--max-pairs", type=int, default=50)
@@ -342,7 +374,7 @@ def main():
                     help=">0 = mini-run: batasi jumlah frame per seq (uji pipa)")
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--resume", default=None,
-                    help="ckpt lighttrack_eN.pt utk lanjut training dari epoch tsb (opsional)")
+                    help="ckpt .pt (last.pt/best.pt) utk lanjut training (opsional)")
     args = ap.parse_args()
     train(args)
 

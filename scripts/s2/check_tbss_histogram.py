@@ -6,7 +6,7 @@ Membedakan dua dugaan saat BCEacc val mentok ~0.5:
 
 Cara pakai (kampus, kernel jupyterhub-env, sama seperti train):
     python scripts/s2/check_tbss_histogram.py \
-        --ckpt out/phase3_fold1/lighttrack_e20.pt \
+        --ckpt out/phase3_fold1_v2/best.pt \
         --seq-dirs data/s2/mot17_hf/train/MOT17-02:data/s2/mot20_hf/train/MOT20-01
 
 Replikasi persis logika val notebook 35 (batch-64 GPU, cap MAX_VAL_PAIRS,
@@ -49,7 +49,7 @@ def _ascii_hist(vals, label, lo=0.0, hi=1.0, width=40):
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("--ckpt", required=True, help="lighttrack_eN.pt")
+    ap.add_argument("--ckpt", required=True, help="best.pt/last.pt hasil train")
     ap.add_argument("--seq-dirs", required=True, help="path sekuens dipisah ':'")
     ap.add_argument("--batch", type=int, default=64)
     ap.add_argument("--max-pairs", type=int, default=1200, help="cap triplet val (MAX_VAL_PAIRS)")

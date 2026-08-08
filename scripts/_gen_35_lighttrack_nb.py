@@ -32,7 +32,7 @@ crop padding 10%, color jitter 0.2. Keputusan konsep: `d_model=64, batch 64, lr 
    Setup env: `docs/setup-phase3-4090.md`.
 2. Buka notebook ini di folder repo (`notebooks/35_...ipynb`), jalankan cell dari atas.
 3. Path data RELATIF ke root repo — jalan dari mana pun cwd-nya.
-4. **PC mati?** Cekpt disimpan tiap epoch (`out/phase3_fold1/lighttrack_eN.pt`).
+4. **PC mati?** Cekpt YOLO-style: `last.pt` ditimpa tiap epoch, `best.pt` kalau BCEacc membaik. Jalankan ulang cell training -> auto-resume dari `last.pt`.
    Jalankan ulang cell "Model + auto-resume" dan cell training → lanjut otomatis
    dari epoch terakhir, tanpa kehilangan apa pun.
 5. Jangan tutup tab browser selama training — cell training bisa jalan berjam-jam.
@@ -128,7 +128,11 @@ def _crops_to_tensor(list_bgr, device):
     return t.to(device)
 
 def _tbss_x(box_a, box_p, iou, ea, ep):
-    return torch.cat([box_a, box_p, iou, ea, ep], dim=1)
+    # v2: 6-d compact [iou(1), cos(1), bbox-diff(4)] — sinyal cosinus tak
+    # tenggelam di 73-d; sinkron dgn src/lighttrack/train.py.
+    cos = (ea * ep).sum(dim=1, keepdim=True)
+    bd = box_a - box_p
+    return torch.cat([iou, cos, bd], dim=1)
 
 print("helper OK")
 """))
@@ -147,10 +151,13 @@ SEQ_DIRS = (
     "data/s2/mot20_hf/train/MOT20-03:"
     "data/s2/mot20_hf/train/MOT20-05"
 )
-OUT     = "out/phase3_fold1"   # cekpt: {OUT}/lighttrack_eN.pt
+OUT     = "out/phase3_fold1_v2"  # cekpt v2 (keep out/phase3_fold1/* as baseline): {OUT}/{last,best}.pt
 EPOCHS  = 20
 BATCH   = 64
 LR      = 1e-3
+TBSS_LR = 1e-3       # optimizer pisah: TBSS dapat lr sendiri (v2 fix collapse)
+BCE_POS_W = 1.0      # bobot BCE utk pasangan positif (same-id)
+BCE_NEG_W = 1.0      # bobot BCE utk pasangan negatif (different-id)
 D_MODEL = 64
 WINDOW  = 15
 MAX_PAIRS = 50
@@ -193,19 +200,22 @@ cells.append(code(
 """# ---------------- Model + optimizer + AUTO-RESUME ----------------
 lae = LAE().to(device).train()
 tbss = SimilarityModel(d_model=D_MODEL).to(device).train()
-opt = torch.optim.Adam(list(lae.parameters()) + list(tbss.parameters()), lr=LR)
+opt = torch.optim.Adam([
+    {"params": lae.parameters(), "lr": LR},
+    {"params": tbss.parameters(), "lr": TBSS_LR}])
 
 start_ep = 0
+best_acc = 0.0
+last_pt = os.path.join(OUT, "last.pt")
 os.makedirs(OUT, exist_ok=True)
-ckpts = sorted(glob.glob(os.path.join(OUT, "lighttrack_e*.pt")),
-               key=lambda p: int(os.path.basename(p).split("_e")[1].split(".")[0]))
-if ckpts:
-    ck = torch.load(ckpts[-1], map_location=device)
+if os.path.exists(last_pt):
+    ck = torch.load(last_pt, map_location=device)
     lae.load_state_dict(ck["lae"]); tbss.load_state_dict(ck["tbss"])
     if "opt" in ck:
         opt.load_state_dict(ck["opt"])
     start_ep = int(ck["epoch"])
-    print(f"RESUME dari {ckpts[-1]} -> lanjut epoch {start_ep + 1}")
+    best_acc = float(ck.get("best_acc", 0.0))
+    print(f"RESUME dari {last_pt} -> lanjut epoch {start_ep + 1} (best_acc={best_acc:.3f})")
 else:
     print("Mulai dari awal (epoch 1)")
 """))
@@ -300,8 +310,10 @@ for ep in range(start_ep + 1, EPOCHS + 1):
         x_an = _tbss_x(b_an, _to_xyxy(bn, W, H), iou_an, ea, en_)
         y = torch.cat([torch.ones(len(use), 1, device=device),
                        torch.zeros(len(use), 1, device=device)])
+        bce_w = torch.where(y > 0, torch.ones_like(y) * BCE_POS_W,
+                            torch.ones_like(y) * BCE_NEG_W)
         L_bce = nn.functional.binary_cross_entropy(
-            torch.cat([tbss(x_ap), tbss(x_an)]), y)
+            torch.cat([tbss(x_ap), tbss(x_an)]), y, weight=bce_w)
 
         loss = L_triplet + L_bce
         opt.zero_grad(); loss.backward(); opt.step()
@@ -381,10 +393,15 @@ for ep in range(start_ep + 1, EPOCHS + 1):
                                   "dt_s": round(dt_ep, 1), "eta_s": round(eta, 1)}) + "\\n")
     stats_jsonl.flush()
 
-    torch.save({"lae": lae.state_dict(), "tbss": tbss.state_dict(),
-                "opt": opt.state_dict(),
-                "epoch": ep, "loss": tot_l / max(1, nb)},
-               os.path.join(OUT, f"lighttrack_e{ep}.pt"))
+    # YOLO-style: last.pt ditimpa tiap epoch; best.pt hanya kalau BCEacc val membaik.
+    ck = {"lae": lae.state_dict(), "tbss": tbss.state_dict(),
+          "opt": opt.state_dict(),
+          "epoch": ep, "loss": tot_l / max(1, nb), "best_acc": best_acc}
+    torch.save(ck, os.path.join(OUT, "last.pt"))
+    if acc >= best_acc:
+        best_acc = acc
+        ck["best_acc"] = best_acc
+        torch.save(ck, os.path.join(OUT, "best.pt"))
 
     hist["ep"].append(ep); hist["loss"].append(tot_l / max(1, nb))
     hist["lt"].append(tot_lt / max(1, nb)); hist["lb"].append(tot_lb / max(1, nb))
@@ -406,7 +423,7 @@ for ep in range(start_ep + 1, EPOCHS + 1):
         print(line)
 
 logf.close(); stats_jsonl.close()
-print(f"DONE — ckpt terakhir {OUT}/lighttrack_e{EPOCHS}.pt")
+print(f"DONE — best {OUT}/best.pt (BCEacc={best_acc:.3f}), last {OUT}/last.pt")
 """))
 
 cells.append(code(
