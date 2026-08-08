@@ -27,7 +27,9 @@ Data: FLTCCache + APSSampler (dataset.py). Normalisasi ImageNet; augment flip 50
 crop padding 10%, color jitter 0.2. Keputusan konsep: `d_model=64, batch 64, lr 1e-3`.
 
 **Cara pakai (JupyterHub kampus, RTX 4090):**
-1. Pastikan kernel = **jupyterhub-env** (Python 3.8, torch 2.0.1+cu118).
+1. Pastikan kernel = **lt** (Python 3.11, torch 2.3.1+cu118) — BUKAN jupyterhub-env
+   (runtime torch 2.0.1/cu118 di env lama vs driver 580/CUDA13 → GPU wedge: conv & batch_norm).
+   Setup env: `docs/setup-phase3-4090.md`.
 2. Buka notebook ini di folder repo (`notebooks/35_...ipynb`), jalankan cell dari atas.
 3. Path data RELATIF ke root repo — jalan dari mana pun cwd-nya.
 4. **PC mati?** Cekpt disimpan tiap epoch (`out/phase3_fold1/lighttrack_eN.pt`).
