@@ -341,12 +341,12 @@ for ep in range(start_ep + 1, EPOCHS + 1):
                 continue
             use = use[:val_bs]
             H, W = caches[ci].frame_size()
-            a, p, nn = [_crops_to_tensor([u[k][0] for u in use], device) for k in ("a", "p", "n")]
-            a, p, nn = _normalize(a), _normalize(p), _normalize(nn)
+            a, p, n = [_crops_to_tensor([u[k][0] for u in use], device) for k in ("a", "p", "n")]
+            a, p, n = _normalize(a), _normalize(p), _normalize(n)
             ba = torch.tensor([u["a"][1] for u in use], device=device).float()
             bp = torch.tensor([u["p"][1] for u in use], device=device).float()
             bn = torch.tensor([u["n"][1] for u in use], device=device).float()
-            ea, ep_, en_ = lae(a), lae(p), lae(nn)
+            ea, ep_, en_ = lae(a), lae(p), lae(n)
             cos_same += float((ea * ep_).sum()); n_s += len(use)
             cos_diff += float((ea * en_).sum()); n_d += len(use)
             b_ap = _to_xyxy(ba, W, H); b_an = _to_xyxy(bn, W, H)
