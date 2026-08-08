@@ -108,6 +108,20 @@ def _tbss_x(box_a, box_p, iou, ea, ep):
 
 
 # ---------------------------------------------------------------- resource stats
+def _cuda_available(timeout=10):
+    """torch.cuda.is_available() bisa HANG selamanya di GPU COMPUTE EXCLUSIVE
+    (JupyterHub kampus) tanpa MPS server -> probe di proses terpisah + timeout.
+    Return True cuma kalau CUDA benar2 siap; selain itu False (cpu, aman)."""
+    import subprocess
+    code = "import torch; print(torch.cuda.is_available())"
+    try:
+        r = subprocess.run([sys.executable, "-c", code],
+                           capture_output=True, text=True, timeout=timeout)
+        return r.stdout.strip() == "True"
+    except Exception:
+        return False
+
+
 def _proc_stat():
     """(/proc/stat cpu line, /proc/meminfo dict) utk CPU% & RAM usage (Linux/stdlib)."""
     with open("/proc/stat") as f:
@@ -154,7 +168,7 @@ def res_stats(device):
 # ---------------------------------------------------------------- training
 def train(args):
     torch.manual_seed(args.seed)
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    device = torch.device("cuda" if _cuda_available() else "cpu")
     print(f"[train] device={device}")
 
     lae = LAE().to(device).train()

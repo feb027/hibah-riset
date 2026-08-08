@@ -70,12 +70,20 @@ print("[2/2] import modul lighttrack (encoder/scorer/dataset) ...", flush=True)
 from encoder import LAE, _IMAGENET_MEAN, _IMAGENET_STD
 from scorer import SimilarityModel
 from dataset import FLTCCache, APSSampler, CROP
+from train import _cuda_available
 
 print("[2/2] selesai. Cek GPU ...", flush=True)
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+device = torch.device("cuda" if _cuda_available() else "cpu")
 print("device =", device, "| torch", torch.__version__)
 if device.type == "cuda":
     print("GPU:", torch.cuda.get_device_name(0))
+else:
+    # JANGAN langsung start MPS di notebook: JupyterHub multi-user biasa
+    # `nvidia-cuda-mps-control -d` butuh grup/permission sendiri. Kalau angka
+    # device=cpu, jalankan dari terminal Jupyter: nvidia-cuda-mps-control -d
+    print("PERINGATAN: CUDA tak tersedia (probe timeout). Kalau GPU kampus\n"
+          "  COMPUTE EXCLUSIVE, start MPS server dulu di terminal,\n"
+          "  lalu Restart Kernel & Run All: nvidia-cuda-mps-control -d")
 """))
 
 cells.append(code(
