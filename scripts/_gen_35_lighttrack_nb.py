@@ -41,7 +41,12 @@ Versi script asli (kalau mau dipakai di terminal): `src/lighttrack/train.py`
 """ ))
 
 cells.append(code(
-"""import os, sys, time, json, glob, subprocess
+"""import os, sys, time, json, glob, subprocess, copy
+# BYPASS NVIDIA MPS (server pembagi GPU aktif di JupyterHub kampus — nvidia-cuda-mps-server
+# aktif 24/7 & cuDNN-eval batch-1 [val loop] wedge lewat MPS kalo nggak dipotong).
+# Cara resmi (docs NVIDIA MPS, "bypass MPS"): CUDA_MPS_PIPE_DIRECTORY kosong/nonexistent.
+# WAJIB di-set SEBELUM CUDA context pertama dibuat (sebelum import torch).
+os.environ["CUDA_MPS_PIPE_DIRECTORY"] = ""
 print("[1/2] import numpy/torch (bisa 10-30 detik pertama) ...", flush=True)
 import numpy as np
 import torch
@@ -314,6 +319,11 @@ for ep in range(start_ep + 1, EPOCHS + 1):
 
     # ---- validation (tanpa augment; tanpa grad) ----
     lae.eval(); tbss.eval()
+    # HANG val-loop = cuDNN eval batch-1 via MPS (nvidia-cuda-mps-server aktif). Bypass ganda:
+    # MPS diputus di cell 1; & val dijalankan di CPU (MobileNetV3-Small kecil, val = hitungan
+    # puluhan detik). Model copy CPU sekali per epoch, bukan per triplet.
+    lae_cpu = copy.deepcopy(lae).to("cpu").eval()
+    tbss_cpu = copy.deepcopy(tbss).to("cpu").eval()
     acc_t = acc_d = 0
     cos_same = cos_diff = 0.0
     n_s = n_d = 0
@@ -321,18 +331,18 @@ for ep in range(start_ep + 1, EPOCHS + 1):
         for ci, t in val_pairs:
             for u in sampler.sample(caches[ci], t):
                 H, W = caches[ci].frame_size()
-                a, p, nn_ = [_normalize(_crops_to_tensor([u[k][0]], device)) for k in ("a", "p", "n")]
-                ea, ep_, en_ = lae(a), lae(p), lae(nn_)
+                a, p, nn_ = [_normalize(_crops_to_tensor([u[k][0]], "cpu")) for k in ("a", "p", "n")]
+                ea, ep_, en_ = lae_cpu(a), lae_cpu(p), lae_cpu(nn_)
                 cos_same += float((ea * ep_).sum()); n_s += 1
                 cos_diff += float((ea * en_).sum()); n_d += 1
-                ba = torch.tensor([u["a"][1]], device=device).float()
-                bp = torch.tensor([u["p"][1]], device=device).float()
-                bn = torch.tensor([u["n"][1]], device=device).float()
+                ba = torch.tensor([u["a"][1]]).float()
+                bp = torch.tensor([u["p"][1]]).float()
+                bn = torch.tensor([u["n"][1]]).float()
                 b_ap = _to_xyxy(ba, W, H); b_an = _to_xyxy(bn, W, H)
                 iou_ap = _iou(b_ap, _to_xyxy(bp, W, H)).reshape(1, 1)
                 iou_an = _iou(b_an, _to_xyxy(bn, W, H)).reshape(1, 1)
-                s_ap = float(tbss(_tbss_x(b_ap, _to_xyxy(bp, W, H), iou_ap, ea, ep_))[0, 0])
-                s_an = float(tbss(_tbss_x(b_an, _to_xyxy(bn, W, H), iou_an, ea, en_))[0, 0])
+                s_ap = float(tbss_cpu(_tbss_x(b_ap, _to_xyxy(bp, W, H), iou_ap, ea, ep_))[0, 0])
+                s_an = float(tbss_cpu(_tbss_x(b_an, _to_xyxy(bn, W, H), iou_an, ea, en_))[0, 0])
                 acc_t += int(s_ap > 0.5); acc_d += int(s_an < 0.5)
 
     acc = (acc_t + acc_d) / max(1, n_s + n_d)
