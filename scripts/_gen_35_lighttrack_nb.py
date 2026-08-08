@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Generate notebooks/35_s2_lighttrack_train.ipynb — Phase 3 training LAE+TBSS (Fold-1).
 Logika training identik dgn src/lighttrack/train.py (hash-for-hash behavior), hanya
-progress diganti tqdm.notebook + live plot. py3.8-friendly. Auto-resume dari epoch
+progress 1-baris + live plot. py3.8-friendly. Auto-resume dari epoch
 terakhir di OUT (cekpt tiap epoch) — aman kalau PC mati: run ulang cell training.
 """
 import json, os
@@ -184,7 +184,6 @@ else:
 
 cells.append(code(
 """# ---------------- TRAINING (jalankan cell ini; cekpt tiap epoch) ----------------
-from tqdm.auto import tqdm
 from IPython.display import clear_output
 try:
     import matplotlib.pyplot as plt
@@ -197,6 +196,7 @@ stats_jsonl = open(os.path.join(OUT, "train_stats.jsonl"), "a")
 hist = {"ep": [], "loss": [], "lt": [], "lb": [], "bce_acc": [], "margin": [], "dt": []}
 seq_names = [os.path.basename(d) for d in seq_dirs]
 t_epoch0 = time.time()
+PRINT_EVER = 200  # update status 1 baris tiap 200 frame (tidak naikin output)
 
 for ep in range(start_ep + 1, EPOCHS + 1):
     t_ep = time.time()
@@ -206,8 +206,7 @@ for ep in range(start_ep + 1, EPOCHS + 1):
     rng = np.random.RandomState(SEED + ep)
     np.random.RandomState(SEED + ep).shuffle(train_pairs)
 
-    pbar = tqdm(train_pairs, desc=f"ep{ep}/{EPOCHS} train", unit="fr", leave=False)
-    for i, (ci, t) in enumerate(pbar):
+    for i, (ci, t) in enumerate(train_pairs):
         triplets = sampler.sample(caches[ci], t)
         if not triplets:
             continue
@@ -240,16 +239,18 @@ for ep in range(start_ep + 1, EPOCHS + 1):
         loss = L_triplet + L_bce
         opt.zero_grad(); loss.backward(); opt.step()
         tot_l += loss.item(); tot_lt += L_triplet.item(); tot_lb += L_bce.item(); nb += 1
-        pbar.set_postfix(L=f"{tot_l/max(1,nb):.4f}", seq=seq_names[ci], fr=t)
+        if nb % PRINT_EVER == 0:
+            clear_output(wait=True)
+            print(f"ep{ep}/{EPOCHS} | train {nb} fr | L={tot_l/nb:.4f} Lt={tot_lt/nb:.4f} "
+                  f"Lb={tot_lb/nb:.4f} | {seq_names[ci]} fr={t}", flush=True)
 
     # ---- validation (tanpa augment; tanpa grad) ----
     lae.eval(); tbss.eval()
     acc_t = acc_d = 0
     cos_same = cos_diff = 0.0
     n_s = n_d = 0
-    vbar = tqdm(val_pairs, desc=f"ep{ep}/{EPOCHS} val  ", unit="fr", leave=False)
     with torch.inference_mode():
-        for ci, t in vbar:
+        for ci, t in val_pairs:
             for u in sampler.sample(caches[ci], t):
                 H, W = caches[ci].frame_size()
                 a = _normalize(_crop_to_tensor(u["a"][0], device))
@@ -267,7 +268,6 @@ for ep in range(start_ep + 1, EPOCHS + 1):
                 s_ap = float(tbss(_tbss_x(b_ap, _to_xyxy(bp, W, H), iou_ap, ea, ep_))[0, 0])
                 s_an = float(tbss(_tbss_x(b_an, _to_xyxy(bn, W, H), iou_an, ea, en_))[0, 0])
                 acc_t += int(s_ap > 0.5); acc_d += int(s_an < 0.5)
-            vbar.set_postfix(seq=seq_names[ci], fr=t, n_s=n_s, n_d=n_d)
 
     acc = (acc_t + acc_d) / max(1, n_s + n_d)
     cos_s = cos_same / max(1, n_s)
