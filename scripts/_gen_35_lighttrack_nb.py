@@ -44,7 +44,11 @@ print("[1/2] import numpy/torch (bisa 10-30 detik pertama) ...", flush=True)
 import numpy as np
 import torch
 import torch.nn as nn
-torch.backends.cudnn.enabled = False  # cuDNN8.7 + drv580/CUDA13 -> wedge ~frame 120-130; pakai ATen fallback
+# ENV 2.3+: cuDNN 8.9 utk drv 580 (CUDA13) — jangan disable cuDNN (wedge lama = mismatch runtime
+# torch 2.0.1/cu118 vs drv13; solved by upgrade). TF32 matmul/conv biar 4090 kepake optimal.
+torch.backends.cuda.matmul.allow_tf32 = True
+torch.backends.cudnn.allow_tf32 = True
+assert torch.__version__.startswith("2."), f"butuh torch 2.x, dapat {torch.__version__}"
 
 # root repo = parent dari notebooks/ (atau cwd kalau bukan di notebooks/)
 if os.path.basename(os.getcwd()) == "notebooks":
@@ -107,6 +111,13 @@ def _normalize(crops):
 def _crop_to_tensor(crop_uint8_bgr, device):
     rgb = crop_uint8_bgr[..., ::-1].copy()
     t = torch.from_numpy(rgb).permute(2, 0, 1).float().unsqueeze(0) / 255.0
+    return t.to(device)
+
+def _crops_to_tensor(list_bgr, device):
+    # Banyak crop -> SATU tensor [B,3,H,W] (1 from_numpy + 1 /255 + 1 .to(device)).
+    # Bukan loop _crop_to_tensor per crop (hundreds of tiny ops + transfer per bit).
+    rgb = np.stack([c[..., ::-1] for c in list_bgr])
+    t = torch.from_numpy(rgb).permute(0, 3, 1, 2).float() / 255.0
     return t.to(device)
 
 def _tbss_x(box_a, box_p, iou, ea, ep):
@@ -262,9 +273,7 @@ for ep in range(start_ep + 1, EPOCHS + 1):
             continue
         H, W = caches[ci].frame_size()
         use = triplets[:BATCH]
-        a = torch.cat([_crop_to_tensor(u["a"][0], device) for u in use])
-        p = torch.cat([_crop_to_tensor(u["p"][0], device) for u in use])
-        n = torch.cat([_crop_to_tensor(u["n"][0], device) for u in use])
+        a, p, n = [_crops_to_tensor([u[k][0] for u in use], device) for k in ("a", "p", "n")]
         a, p, n = _normalize(_augment(a, rng)), _normalize(_augment(p, rng)), _normalize(_augment(n, rng))
 
         ba = torch.tensor([u["a"][1] for u in use], device=device).float()
@@ -310,9 +319,7 @@ for ep in range(start_ep + 1, EPOCHS + 1):
         for ci, t in val_pairs:
             for u in sampler.sample(caches[ci], t):
                 H, W = caches[ci].frame_size()
-                a = _normalize(_crop_to_tensor(u["a"][0], device))
-                p = _normalize(_crop_to_tensor(u["p"][0], device))
-                nn_ = _normalize(_crop_to_tensor(u["n"][0], device))
+                a, p, nn_ = [_normalize(_crops_to_tensor([u[k][0]], device)) for k in ("a", "p", "n")]
                 ea, ep_, en_ = lae(a), lae(p), lae(nn_)
                 cos_same += float((ea * ep_).sum()); n_s += 1
                 cos_diff += float((ea * en_).sum()); n_d += 1
