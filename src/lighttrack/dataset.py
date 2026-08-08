@@ -27,19 +27,31 @@ import numpy as np
 CROP = 224
 
 
-class FLTCCache:
-    """Cache crop per frame (LRU) dari satu sekuens MOT.
+def _entry_bytes(items):
+    """Memori (byte) crop uint8 utk satu entri frame cache."""
+    return sum(int(r["crop"].nbytes) for r in items)
 
-    `.frame(t)` mengembalikan list dict: {id:int, box:(x,y,w,h), crop:uint8 (CROP,CROP,3)}.
+
+class FLTCCache:
+    """Cache frame per frame (LRU) dari satu sekuens MOT.
+
+    `.frame(t)` mengembalikan list dict: {id: int, box:(x,y,w,h), crop:uint8 (CROP,CROP,3)}.
     `.frames_of(i)` mengembalikan sorted frame list dari GT index (nol I/O gambar).
+
+    LRU dibatasi DUA macam: jumlah frame (`cap`) DAN total memori (`byte_cap`).
+    cap frame 2048 saja TIDAK menahan ledakan RAM: frame padat MOT20 ~240 box
+    = ~40 MB × 2048 ≈ 80 GB -> OOM kill diam-diam di Jupyter (kernel mati,
+    tanpa traceback). byte_cap dilanggar lebih dulu -> evict frame tertua.
     """
 
-    def __init__(self, seq_dir, cap=2048):
+    def __init__(self, seq_dir, cap=2048, byte_cap=4 << 30):
         self.seq_dir = seq_dir
         self.cap = cap
+        self.byte_cap = byte_cap  # ~4 GiB: ~100 frame padat atau ~400 frame jarang
         self.img_dir = os.path.join(seq_dir, "img1")
         self._gt = self._load_gt()
         self._frames = OrderedDict()  # LRU: frame -> list dict
+        self._bytes = 0          # total byte crop saat ini (evict by budget)
         self._by_frame = defaultdict(list)
         self._by_id = defaultdict(list)  # index id -> sorted frame list
         self._size = None
@@ -121,9 +133,15 @@ class FLTCCache:
                 items.append(dict(id=box[1], box=(box[2], box[3], box[4], box[5]), crop=crop))
         self._frames[t] = items
         self._frames.move_to_end(t)
-        while len(self._frames) > self.cap:
-            self._frames.popitem(last=False)
+        self._bytes += _entry_bytes(items)
+        self._evict()
         return items
+
+    def _evict(self):
+        """Evict frame tertua sampai jumlah frame & byte budget terpenuhi."""
+        while len(self._frames) > self.cap or self._bytes > self.byte_cap:
+            _, entry = self._frames.popitem(last=False)
+            self._bytes -= _entry_bytes(entry)
 
 
 class APSSampler:
@@ -206,6 +224,21 @@ def _demo():
     print("demo OK", {"triplet_cnt": len(out),
                       "sample_shapes": [tuple(tr["a"][0].shape), tuple(tr["p"][0].shape),
                                         tuple(tr["n"][0].shape)]})
+    # byte-budget LRU: cache kecil harus evict by BYTES, bukan cuma count.
+    import collections
+    c = object.__new__(FLTCCache)
+    c.cap, c._bytes = 1000, 0
+    c.byte_cap = 224 * 224 * 3 + 1  # muat TEPAT 1 entri (multiples non-exact)
+    c._frames = collections.OrderedDict()
+    big = dict(id=1, box=(0, 0, 8, 8), crop=np.zeros((CROP, CROP, 3), np.uint8))
+    for t in range(5):
+        c._frames[t] = [big]
+        c._frames.move_to_end(t)
+        c._bytes += _entry_bytes([big])
+        c._evict()
+    assert len(c._frames) == 1, "byte_cap tidak evict: %d frame tersisa" % len(c._frames)
+    assert c._bytes == _entry_bytes([big])
+    print("byte-cap LRU OK", {"kept_frames": len(c._frames), "bytes": c._bytes})
 
 
 if __name__ == "__main__":

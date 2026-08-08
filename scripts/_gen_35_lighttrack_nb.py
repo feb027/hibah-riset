@@ -205,7 +205,7 @@ stats_jsonl = open(os.path.join(OUT, "train_stats.jsonl"), "a")
 hist = {"ep": [], "loss": [], "lt": [], "lb": [], "bce_acc": [], "margin": [], "dt": []}
 seq_names = [os.path.basename(d) for d in seq_dirs]
 t_epoch0 = time.time()
-TICK_EVER = 10.0  # update status 1 baris tiap 10s (progress + fps + ETA)
+TICK_EVER = 5.0  # update status 1 baris tiap 5s (progress + fps + ETA)
 
 # ---- watchdog: kalau training hang (tidak ada iter > HANG_S), dump diagnostik ----
 import threading, traceback, sys, subprocess
