@@ -84,6 +84,7 @@ def check(a: argparse.Namespace) -> int:
             errs.append(f"{label} tidak ada: {path}")
     if not errs:
         sys.path.insert(0, a.diffmot_root)
+        sys.path.insert(0, os.path.join(a.diffmot_root, "external"))  # fast_reid/YOLOX hidup via path (tanpa setup.py)
         try:
             from models.autoencoder import D2MP                      # noqa: F401
             from models.condition_embedding import History_motion_embedding  # noqa: F401
