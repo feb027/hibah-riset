@@ -42,11 +42,11 @@ Versi script asli (kalau mau dipakai di terminal): `src/lighttrack/train.py`
 
 cells.append(code(
 """import os, sys, time, json, glob, subprocess, copy
-# BYPASS NVIDIA MPS (server pembagi GPU aktif di JupyterHub kampus — nvidia-cuda-mps-server
-# aktif 24/7 & cuDNN-eval batch-1 [val loop] wedge lewat MPS kalo nggak dipotong).
-# Cara resmi (docs NVIDIA MPS, "bypass MPS"): CUDA_MPS_PIPE_DIRECTORY kosong/nonexistent.
-# WAJIB di-set SEBELUM CUDA context pertama dibuat (sebelum import torch).
-os.environ["CUDA_MPS_PIPE_DIRECTORY"] = ""
+# JANGAN downgrade MPS: GPU kampus = COMPUTE EXCLUSIVE (JupyterHub multi-user, lihat
+# nvidia-smi "Compute Mode"). CUDA cuma jalan via MPS server; direct context ditolak
+# ("CUDA-capable device(s) busy/unavailable"). Hang dulu BUKAN dari train via MPS — itu
+# cuDNN eval batch-1 pada pass VALIDATION (akhir tiap epoch). Fix: validation -> CPU
+# (di bawah), train tetap GPU/MPS normal seperti run 7.6 fr/s.
 print("[1/2] import numpy/torch (bisa 10-30 detik pertama) ...", flush=True)
 import numpy as np
 import torch
