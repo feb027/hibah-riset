@@ -76,19 +76,19 @@ Angka di paper (konteks, bukan target reproduksi):
 | Biaya asosiasi | sekitar 0,6 GFLOPs/frame |
 | Training | MOT17 + MOT20, 20 epoch, sekitar 10 jam di GTX 1080 |
 
-## 5. Pola Ablasi Paper (Data Asli, MOT17 val)
+## 5. Pola Ablasi Paper (Data Asli, val split paper)
 
-| Konfigurasi | HOTA | IDSW | Bacaannya |
-|---|---|---|---|
-| Baseline (Kalman + IoU + EMA) | 66,13 | 227 | titik awal |
-| +LAE | 70,88 | 168 | kenaikan terbesar, penampilan sinyal utama |
-| +TBSS | 73,38 | 138 | menambah stabil di atas LAE |
-| +CMOH | 74,88 | 80 | paling memangkas pergantian identitas |
-| +ASW | 75,63 | 79 | tambahan tipis |
+| Konfigurasi | HOTA (MOT17) | HOTA (MOT20) | IDSW (MOT17) | Bacaannya |
+|---|---|---|---|---|
+| Baseline (Kalman + IoU + EMA) | 66,13 | 56,17 | 227 | titik awal |
+| +LAE | 70,88 | 60,38 | 168 | kenaikan terbesar, penampilan sinyal utama |
+| +LAE +TBSS | 73,38 | 63,94 | 138 | menambah stabil di atas LAE |
+| +LAE +TBSS +CMOH | 74,88 | 65,74 | 80 | paling memangkas pergantian identitas |
+| +LAE +TBSS +CMOH +ASW | 75,63 | 66,70 | 79 | tambahan tipis |
 
 Istilah teknisnya: Kalman = prediktor posisi (asumsi gerak lurus), IoU = seberapa tumpang tindih dua kotak, EMA = penghalus kotak supaya tidak goyang, LAE = sidik jari penampilan, TBSS = penilai kemiripan, CMOH = memori oklusi, ASW = penyeimbang posisi vs penampilan.
 
-Contoh analogi sederhana untuk dosen: Kalman menebak orang ada di mana, IoU melihat kotaknya nyambung atau tidak, LAE mengenali orang dari penampilannya, CMOH mengingat orang yang sempat hilang dari layar, ASW memutuskan kapan lebih percaya mata (penampilan) dan kapan lebih percaya posisi.
+Analoginya: Kalman menebak orang ada di mana, IoU melihat kotaknya nyambung atau tidak, LAE mengenali orang dari penampilannya, CMOH mengingat orang yang sempat hilang dari layar, ASW memutuskan kapan lebih percaya mata (penampilan) dan kapan lebih percaya posisi.
 
 ## 6. Tracker Usulan (Per Resep Paper)
 
@@ -124,13 +124,12 @@ Catatan jujur untuk presentasi: angka HOTA/IDF1 tracker usulan belum ada. Yang t
 
 ## Lampiran. Materi Pendukung
 
-| Materi | Lokasi |
-|---|---|
-| Tabel hasil lengkap | experiments/s2_tracker/eval_results.csv |
-| Video demo klip padat, OC-SORT vs DiffMOT vs GT | experiments/s2_tracker/demo/MOT20-02_f1-450_tracked.mp4, ..._tracked_diffmot.mp4, ..._gt.mp4 |
-| Laporan detail Skenario B | docs/reports/laporan-skenario-b-tracker.md |
-| Catatan implementasi paper S014 | docs/research/fulltext-notes/S014-lighttrack-reid.md |
-| Rencana fase 11 | docs/plans/2026-08-05-phase11-skenario-b-tracker-lighttrack.md |
+- Video demo klip padat MOT20-02 (450 frame, 18 detik): [OC-SORT](experiments/s2_tracker/demo/MOT20-02_f1-450_tracked.mp4) | [DiffMOT](experiments/s2_tracker/demo/MOT20-02_f1-450_tracked_diffmot.mp4) | [Ground truth](experiments/s2_tracker/demo/MOT20-02_f1-450_gt.mp4). Bandingkan langsung di klip yang sama: ID switch jauh lebih jarang saat oklusi pada versi DiffMOT.
+- Video demo klip jarang MOT20-01 penuh (429 frame): [OC-SORT](experiments/s2_tracker/demo/MOT20-01_f1-429_tracked.mp4)
+- Tabel hasil lengkap: experiments/s2_tracker/eval_results.csv
+- Laporan detail Skenario B: docs/reports/laporan-skenario-b-tracker.md
+- Catatan implementasi paper S014: docs/research/fulltext-notes/S014-lighttrack-reid.md
+- Rencana fase 11: docs/plans/2026-08-05-phase11-skenario-b-tracker-lighttrack.md
 
 ## Daftar Pustaka
 
