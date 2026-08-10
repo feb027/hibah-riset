@@ -1,174 +1,151 @@
-# Laporan Presentasi: Dari DiffMOT ke Tracker Usulan LightTrack-ReID-inspired
+# Laporan Kemajuan Skenario B: Evaluasi Tracker dan Arah Tracker Usulan
 
-**Konteks:** Skenario B — evaluasi dan pemilihan lapisan *tracker* untuk sistem *people counting* real-time.
-**Disusun:** 11 Agustus 2026 (bahan presentasi kemajuan riset).
+Bahan presentasi, 11 Agustus 2026.
 
----
-
-## 1. Konteks Singkat: Mengapa Tracker Diperlukan
-
-Deteksi tidak sama dengan *counting*. Detektor (YOLO26 fine-tune, Skenario A) menghasilkan kotak orang per bingkai, tetapi tidak tahu apakah kotak di bingkai *t* adalah orang yang sama dengan kotak di bingkai *t−1*. Tanpa lapisan **tracker** yang menjaga identitas temporal, orang yang melewati garis hitung dapat dihitung berkali-kali — terutama saat tertutup objek lain (oklusi) lalu muncul kembali.
-
-Skenario B menjawab: **tracker mana, pada kondisi apa, yang mampu menjaga identitas cukup lama untuk counting yang akurat?** Dua kandidat dievaluasi pada protokol yang sama, lalu diputuskan arah pengembangan:
-
-- **OC-SORT** (Cao et al., 2023) — berbasis gerak murni (Kalman + IoU), cepat, tanpa GPU. Jalur efisien/fallback.
-- **DiffMOT** (Lv et al., 2024 – S021) — prediksi gerak diffusion + ReID, butuh GPU. Dipilih dari proposal sebagai kandidat akurasi tertinggi.
-- **Tracker usulan** — LightTrack-ReID-inspired (Khan et al., 2026 – S014): ringan, dapat dilatih ulang, target real-time.
-
-**Protokol (kejujuran eksperimen):** kedua tracker memakai **deteksi YOLO26 yang identik** (hasil Skenario A), dievaluasi dengan TrackEval pada benchmark MOT20-train (4 sekuens, 8.931 bingkai, GT publik) dan DanceTrack-val (25 sekuens, 25.508 bingkai, GT publik), `DO_PREPROC=False`. Karena deteksi bukan deteksi resmi MOTChallenge, angka **tidak sebanding 1:1 dengan leaderboard**; perbandingan yang sah adalah antar-tracker pada deteksi yang sama.
+Skenario B adalah tahap pemilihan lapisan tracker pada sistem people counting. Ceritanya begini: deteksi saja tidak cukup untuk menghitung orang. Detektor seperti YOLO26 hanya memberi kotak di tiap frame, tapi tidak tahu apakah kotak di frame berikutnya masih orang yang sama. Kalau tidak ada tracker, orang yang tertutup objek lain lalu muncul lagi bisa dihitung dua kali. Skenario B menguji dua tracker pembanding pada deteksi yang identik, lalu memutuskan arah pengembangan selanjutnya.
 
 ---
 
-## 2. Hasil DiffMOT (Evaluasi Selesai, 5 Agustus 2026)
+## 1. Konteks dan Protokol
 
-DiffMOT v1.0 dijalankan penuh di GPU kampus (RTX 4090) pada deteksi YOLO26 yang sama dengan OC-SORT. Hasil TrackEval:
+Dua tracker diuji: OC-SORT yang hanya memakai gerak (murah, tanpa GPU), dan DiffMOT yang memakai prediksi gerak berbasis diffusion plus ReID (mahal, butuh GPU). Keduanya memakai deteksi YOLO26 fine-tune yang sama persis, supaya perbandingannya mengukur kualitas tracking, bukan perbedaan detektor.
+
+Datanya: MOT20-train (4 sekuens, 8.931 frame) untuk kerumunan sangat padat, dan DanceTrack-val (25 sekuens, 25.508 frame) untuk gerak non-linear dengan penampilan seragam. Metrik dihitung dengan TrackEval: HOTA, MOTA, IDF1, dan jumlah ID switch (IDSW). Satu catatan penting: karena deteksi yang dipakai bukan deteksi resmi MOTChallenge, angka hasil kita tidak bisa dibandingkan 1:1 dengan leaderboard. Perbandingan yang sah adalah antar tracker pada deteksi yang sama.
+
+## 2. Hasil DiffMOT
 
 | Benchmark | Tracker | HOTA | MOTA | IDF1 | IDSW | Frag |
 |---|---|---|---|---|---|---|
 | MOT20 (train) | OC-SORT | 36,51 | 55,98 | 42,88 | 14.293 | 27.646 |
-| MOT20 (train) | **DiffMOT** | **44,37** | **60,91** | **53,86** | **6.905** | **15.005** |
+| MOT20 (train) | DiffMOT | 44,37 | 60,91 | 53,86 | 6.905 | 15.005 |
 | DanceTrack (val) | OC-SORT | 28,39 | 71,38 | 26,63 | 6.701 | 6.936 |
-| DanceTrack (val) | **DiffMOT** | **39,05** | 70,72 | **43,39** | **2.784** | **6.765** |
+| DanceTrack (val) | DiffMOT | 39,05 | 70,72 | 43,39 | 2.784 | 6.765 |
 
-Pembacaan:
+Selisih antar keduanya bisa dilihat lebih jelas begini:
 
-| Metrik | OC-SORT | DiffMOT | Δ |
+| Metrik | OC-SORT | DiffMOT | Perubahan |
 |---|---|---|---|
-| MOT20 HOTA | 36,51 | **44,37** | +7,86 |
-| MOT20 IDF1 | 42,88 | **53,86** | +10,98 |
-| MOT20 IDSW | 14.293 | **6.905** | **−7.388 (−52%)** |
-| DanceTrack HOTA | 28,39 | **39,05** | +10,66 |
-| DanceTrack IDF1 | 26,63 | **43,39** | +16,76 |
-| DanceTrack IDSW | 6.701 | **2.784** | **−3.917 (−58%)** |
+| MOT20 HOTA | 36,51 | 44,37 | +7,86 |
+| MOT20 IDF1 | 42,88 | 53,86 | +10,98 |
+| MOT20 IDSW | 14.293 | 6.905 | −7.388 (turun 52%) |
+| DanceTrack HOTA | 28,39 | 39,05 | +10,66 |
+| DanceTrack IDF1 | 26,63 | 43,39 | +16,76 |
+| DanceTrack IDSW | 6.701 | 2.784 | −3.917 (turun 58%) |
 
-**Temuan kunci:**
+Dua temuan penting dari angka ini.
 
-1. **Masalah sesungguhnya adalah asosiasi, bukan deteksi.** OC-SORT mencapai MOTA 55,98 pada kepadatan rata-rata 179 deteksi/bingkai (GT 127; puncak 272 di MOT20-05) — deteksi kuat — tetapi **14.293 ID switch** (±1,6 per bingkai): identitas sering putus saat oklusi. IDF1 42,88 berarti ±57% bobot asosiasi tidak cocok dengan GT. Untuk counting, inilah masalah utama: orang yang tertutup 2–3 bingkai lalu terdeteksi ulang dihitung sebagai orang baru.
-2. **OC-SORT gagal pada gerak non-linear.** Di DanceTrack (penari seragam, gerak berakselerasi) HOTA jatuh ke 28,39 dan IDF1 ke 26,63 — asumsi kalman kecepatan konstan runtuh. Ini persis skenario motivasi DiffMOT.
-3. **DiffMOT memperbaiki asosiasi secara drastis**: IDSW turun >50% di kedua benchmark, IDF1 naik 11–17 poin, HOTA naik 8–11 poin. Prediksi diffusion + ReID terbukti bekerja.
+Pertama, masalah yang dihadapi sistem kita memang di asosiasi identitas, bukan deteksi. OC-SORT di MOT20 tetap mencapai MOTA 55,98 (deteksi kuat) tapi mencatat 14.293 ID switch, rata-rata 1,6 kali per frame. Kepadatan di benchmark ini tinggi, sekitar 179 deteksi per frame dari GT 127, dengan puncak 272 di satu sekuens. Saat orang saling menutupi, pencocokan berbasis IoU mudah salah sambung, identitas putus, dan orang muncul kembali dihitung sebagai orang baru. IDF1 42,88 artinya sekitar 57 persen bobot asosiasi tidak cocok dengan ground truth.
 
----
+Kedua, DiffMOT memang memperbaiki asosiasi secara nyata. ID switch turun lebih dari setengah di kedua benchmark, IDF1 naik 11 sampai 17 poin, HOTA naik 8 sampai 11 poin. Ini bukti eksperimental bahwa penambahan informasi penampilan (ReID) dan prediksi gerak yang lebih baik memperbaiki hal yang selama ini lemah.
 
-## 3. Kenapa Pivot: Tiga Hambatan DiffMOT untuk Deployment
+## 3. Kenapa Pivot dari DiffMOT
 
-Akurasi bukan satu-satunya kriteria. Untuk people counting real-time di kamera kampus, DiffMOT gagal di tiga dimensi:
+Akurasi bukan satu-satunya kriteria, dan DiffMOT punya tiga masalah untuk sistem people counting real-time di kampus.
 
-**1. Throughput tidak mencukupi, bahkan di GPU kuat.** Keseluruhan pipeline DiffMOT diukur **±20–25 FPS (tracking-only) pada RTX 4090** — pada video demo klip MOT20-02 (450 bingkai) tercatat ±20 FPS. Kebutuhan pipeline real-time adalah **≥30 FPS (≤33–40 ms/bingkai)** pada perangkat murah/embedded. ReID (OSNet) + denoising diffusion + Hungarian membuat DiffMOT sudah melewati anggaran waktu per bingkai **sebelum detektor dihitung**; publikasi sendiri menyebut 22,7 FPS pada RTX 3090 *termasuk* deteksi YOLOX.
+Pertama, kecepatannya tidak cukup. Pada video demo klip MOT20-02, pipeline DiffMOT tercatat sekitar 20 FPS di RTX 4090, dan pengukuran tracking-only di benchmark juga berada di kisaran 20 sampai 25 FPS. Target kita minimal 30 FPS (anggaran 33 sampai 40 ms per frame) di perangkat yang lebih murah dari RTX 4090. Publikasi DiffMOT sendiri menyebut 22,7 FPS di RTX 3090 sudah termasuk detektor, jadi dari sisi throughput tracker ini tidak menyisakan ruang untuk detektor.
 
-**2. Black-box — tidak dapat dilatih ulang.** DiffMOT adalah sistem lengkap dengan bobot pra-latih. Untuk scene kampus (iluminasi, sudut kamera, kepadatan berbeda), kita tidak bisa fine-tune — salah satu kontribusi riset (adaptasi domain) hilang.
+Kedua, DiffMOT black box. Bobotnya sudah dilatih pengembang, tidak bisa dilatih ulang untuk data kampus yang beda iluminasi dan sudut kamera. Padahal kemampuan fine-tune ke scene sendiri justru salah satu kontribusi riset yang kita incar.
 
-**3. Rantai dependensi rapuh.** DiffMOT butuh env torch khusus (cu118), patch lokal `patch_diffmot_eval.py` (5+ bug runtime di-fix manual), format deteksi dan cache embedding yang harus disetel persis. Tidak layak didistribusikan sebagai artefak deployment.
+Ketiga, rantai dependensinya rapuh. DiffMOT butuh environment torch khusus, patch lokal untuk memperbaiki beberapa bug runtime, dan format data yang harus disetel persis. Sebagai artefak deployment, ini sulit didistribusikan dan dirawat.
 
-| Dimensi | OC-SORT (baseline) | DiffMOT | Tracker usulan |
+Ringkasnya:
+
+| Dimensi | OC-SORT | DiffMOT | Tracker usulan |
 |---|---|---|---|
-| Biaya asosiasi | ~0 GFLOPs, 54+ FPS CPU | HMINet + ReID berat, **±20–25 FPS di RTX 4090** | LAE+TBSS **~0,6 GFLOPs**, target >100 FPS GPU |
-| Dapat dilatih ulang | Tidak perlu | ✗ Black-box | ✅ Dari data sendiri |
-| Dependensi | Pip minimal | Patch fragile + env khusus | Torch + filterpy |
-| Posisi | Cepat, asosiasi rapuh | Akurat, **tidak deployable** | Akurat + ringan + trainable |
+| Biaya asosiasi | hampir nol, 54+ FPS di CPU | berat, butuh GPU, 20 sampai 25 FPS di RTX 4090 | sekitar 0,6 GFLOPs, target jauh di atas 30 FPS |
+| Bisa dilatih ulang | tidak perlu | tidak bisa | bisa, dari data sendiri |
+| Dependensi | pip minimal | patch lokal plus env khusus | torch dan modul ringan lain |
+| Posisi | cepat tapi asosiasi rapuh | akurat tapi tidak layak deploy | akurat, ringan, bisa dilatih |
 
-**Kesimpulan:** DiffMOT meninggalkan warisan penting — bukti kuantitatif bahwa **ReID + memory diperlukan** untuk counting yang akurat (IDSW turun 52–58%) — tetapi arsitekturnya tidak bisa menjadi tracker utama. Dicari: tracker dengan kualitas asosiasi gaya DiffMOT, biaya sepersekian, dan bisa dilatih ulang.
+Kesimpulan dari tahap ini: arah riset butuh ReID plus memori, tapi arsitekturnya harus ringan dan trainable. DiffMOT tetap dipertahankan sebagai pembanding kualitas kedua pada tabel hasil.
 
----
+## 4. Paper LightTrack-ReID dan Pola Ablasinya
 
-## 4. Penemuan Paper LightTrack-ReID (Khan et al., 2026 – S014)
+Pencarian tracker 2025 sampai 2026 menemukan paper yang paling cocok dengan kebutuhan: LightTrack-ReID dari Khan dkk. (2026, S014), terbit di PLOS ONE 21(3), DOI 10.1371/journal.pone.0342246. Paper ini peer-reviewed, melaporkan MOT17 dan MOT20, dan menekankan efisiensi.
 
-Survei lanskap tracker 2025–2026 (setelah eval DiffMOT) menemukan kandidat yang paling pas dengan kebutuhan: **LightTrack-ReID** — peer-reviewed di *PLOS ONE* 21(3):e0342246, DOI 10.1371/journal.pone.0342246 (Khan et al., 2026 – S014).
-
-**Klaim paper (konteks, bukan target reproduksi — protokol beda):**
+Angka di paper (konteks saja, bukan target reproduksi, karena protokol evaluasi mereka berbeda):
 
 | Metrik | Nilai paper |
 |---|---|
-| MOT17 test (YOLOX, protokol resmi) | HOTA 66,92 · MOTA 82,81 · IDF1 82,52 |
-| MOT20 test | HOTA 66,6 · MOTA 79,1 · IDF1 82,2 |
-| Kecepatan | ±30 FPS di GTX 1080, i7-6700 |
-| Biaya asosiasi | ±0,6 GFLOPs/bingkai (LAE ~0,5 + TBSS ~0,1); detektor YOLOX-S ~26,8 GFLOPs = dominan |
-| Training | MOT17 + MOT20, 20 epoch, ±10 jam GTX 1080 |
+| MOT17 test | HOTA 66,92, MOTA 82,81, IDF1 82,52 |
+| MOT20 test | HOTA 66,6, MOTA 79,1, IDF1 82,2 |
+| Kecepatan | sekitar 30 FPS di GTX 1080 |
+| Biaya asosiasi | sekitar 0,6 GFLOPs per frame |
+| Training | MOT17 plus MOT20, 20 epoch, sekitar 10 jam di GTX 1080 |
 
-**Mengapa paper ini dipilih (kesesuaian dengan tesis):**
+Di paper, pengaruh tiap komponen diuji dengan cara ditambahkan satu per satu ke baseline. Baseline-nya detektor YOLOX plus asosiasi sederhana (Kalman, IoU, Hungarian, EMA). Hasilnya (angka MOT17 val):
 
-1. **Paradigma real-time + deep learning memang di jalur target**: asosiasi ringan, bukan diffusion. Asosiasi cuma ~0,6 GFLOPs — kecepatan didominasi detektor, bukan tracker.
-2. **Ringan dan trainable**: backbone MobileNetV3-Small (32-d embedding) — bisa dilatih ulang di data kampus, beda dari DiffMOT.
-3. **Menyerap kelemahan yang ditemukan eksperimen kita**: komponen memory (CMOH) secara ablasi memangkas ID switch drastis (MOT17 val: 138→80; MOT20 val: 882→701) — persis metrik yang rapuh di OC-SORT dan masih tersisa di DiffMOT (6.905 di MOT20).
-4. **TIDAK ada kode resmi → reimplementasi = kontribusi riset mandiri**, bukan sekadar replikasi; konsisten dengan kontribusi usulan (tracker versi kita).
-
-**Pola ablasi paper (pembelajaran desain, bukan angka pembanding):**
-
-| Konfigurasi | HOTA (MOT17 val) | HOTA (MOT20 val) | Pembacaan |
-|---|---|---|---|
-| Baseline (Kalman+IoU+EMA) | 66,13 | 56,17 | — |
-| +LAE (ReID embedding) | 70,88 | 60,38 | **Kenaikan terbesar — penampilan adalah sinyal utama** |
-| +TBSS (scorer) | 73,38 | 63,94 | Stabil di atas LAE |
-| +CMOH (memory oklusi) | 74,88 | 65,74 | **Menggantikan IDSW drastis** |
-| +ASW (bobot oklusi) | 75,63 | 66,70 | Increment tipis |
-
----
-
-## 5. Tracker Usulan Menurut Paper (LightTrack-ReID-inspired)
-
-Arsitektur disusun mengikuti resep paper (S014), disesuaikan dengan ekosistem proyek (YOLO26, python 3.8 di kampus):
-
-**Komponen:**
-
-- **LAE (Lightweight Appearance Embedding)** — MobileNetV3-Small → embedding 32-d L2-normalized. ReID ringan; di inference cosine sebagai sinyal kemiripan penampilan.
-- **TBSS (Transformer-Based Similarity Scoring)** — skor kemiripan `s ∈ [0,1]` dari kombinasi bbox, IoU, dan embedding — pengganti IoU murni pada matriks cost asosiasi. Cost: `C = 1 − [w_t·s + (1−w_t)·IoU]` (persamaan 10 paper).
-- **Asosiasi inti** — Kalman filter + Hungarian + confidence filter + EMA (baseline yang dipakai ablasi paper).
-- **CMOH (Context Memory)** — buffer embedding K=10 agar tracklet yang tertutup singkat tetap bisa dicocokkan saat muncul kembali.
-- **ASW (Adaptive Occlusion Weight)** — bobot global per bingkai dari rasio deteksi beroklusi.
-
-**Resep training (persis paper, S014 catatan implementasi):**
-
-- Data: MOT17-train + MOT20-train (APS ±135.000 sampel; split 80/20).
-- Loss: `L = L_triplet + L_BCE` — triplet margin 1,0 pada embedding + BCE pada skor TBSS; Adam lr 0,001, 20 epoch.
-- Crop 224×224 (ImageNet), augmentasi flip 50% / crop padding 10% / color jitter 0,2; maksimum 50 pasangan per bingkai.
-- Estimasi: ±2,5–5 jam/20 epoch di RTX 4090.
-
-**Protokol evaluasi (anti-overclaim):** leave-one-out MOT20-train 4-fold + zero-shot DanceTrack-val, deteksi YOLO26 identik dengan OC-SORT/DiffMOT, TrackEval yang sama. Hasil dilaporkan **relatif terhadap OC-SORT (36,51 HOTA) dan DiffMOT (44,37 HOTA) MOT20** — bukan dibandingkan ke tabel paper (protokol berbeda).
-
----
-
-## 6. Status Implementasi (Faktual per 10 Agustus 2026)
-
-| Fase | Status | Bukti |
+| Konfigurasi | HOTA MOT17 val | HOTA MOT20 val |
 |---|---|---|
-| Phase 1 — skeleton tracker | ✅ Selesai | Kalman+IoU+Hungarian+EMA; smoke 3.211 bingkai @ 614 FPS CPU |
-| Phase 2 — LAE encoder | ✅ Selesai, verifikasi kampus | MobileNetV3-Small → 32-d; cosine same 0,772 vs diff 0,746 (MOT20-01, GPU) |
-| Phase 3 — training (fold-1, batch v1) | ✅ Selesai, **diagnosa** | Loss 0,139→0,054; **LAE sehat** (cos_same 0,93–0,98; Lt 0,070→0,021) — **TBSS BCEacc flat ~0,5** |
-| Phase 3 v2 — redesign TBSS | 🔄 Sedang dieksekusi | MLP 6-d input (IoU, cos, geometri bbox), optimizer pisah, BCE berbobot, ckpt last/best.pt; GPU kampus sedang tidak tersedia |
-| Evaluasi tracker usulan | ⏳ Belum | Histogram skor TBSS (`check_tbss_histogram.py`) menunggu GPU kampus aktif |
+| Baseline | 66,13 | 56,17 |
+| +LAE | 70,88 | 60,38 |
+| +LAE+TBSS | 73,38 | 63,94 |
+| +LAE+TBSS+CMOH | 74,88 | 65,74 |
+| +LAE+TBSS+CMOH+ASW | 75,63 | 66,70 |
 
-**Kejujuran pelaporan:** **belum ada angka HOTA/IDF1 tracker usulan.** Yang sudah terbukti: pipeline training berjalan (LAE terlatih memisahkan penampilan), sementara komponen skor kemiripan (TBSS) belum menunjukkan pembelajaran di validasi (BCEacc ≈ 0,5 = lempar koin) dan sedang diperbaiki (v2). Temuan diagnosis, dengan cepat: loss BCE total ~0,03 tidak mungkin dari output semua ~0,5 (BCE lempar koin = 0,69) — indikasi awal bukan "collapse mati", melainkan ketidakcocokan train/val yang dibedah lewat histogram skor s_ap vs s_an segera setelah GPU aktif.
+Supaya pembacaannya jelas, berikut maksud tiap komponen dengan bahasa sederhana.
 
-**Langkah berikut (tergantung hasil diagnosa):**
-1. `scripts/s2/check_tbss_histogram.py` pada `out/phase3_fold1_v2/best.pt` (5 menit) → verdict: threshold/val bermasalah vs collapse asli.
-2. Lanjut training fold-1 full (resume `last.pt`), lalu evaluasi TrackEval pada protokol sama.
-3. Masuk tabel pembanding Skenario B vs OC-SORT (36,51) dan DiffMOT (44,37).
+Kalman filter. Prediktor posisi. Dari posisi dan arah gerak di frame sebelumnya, tracker memperkirakan di mana orang itu di frame berikutnya. Asumsinya gerak lurus beraturan, karena itu penari yang berbelok mendadak bisa meleset dari perkiraan.
+
+IoU (Intersection over Union). Ukuran seberapa besar dua kotak saling menutupi. Dua kotak yang tumpang tindih banyak kemungkinan besar orang yang sama. Ini cara paling sederhana mencocokkan deteksi antar frame.
+
+EMA (Exponential Moving Average). Penghalusan koordinat kotak supaya hasil tidak goyang antar frame. Rata-rata bergerak yang memberi bobot lebih ke frame terbaru. Ini merapikan output, bukan pengambil keputusan asosiasi.
+
+LAE. Model kecil berbasis MobileNetV3-Small yang mengubah potongan gambar orang menjadi vektor 32 angka, semacam sidik jari penampilan. Dua potongan orang yang sama akan menghasilkan vektor yang mirip, dua orang berbeda vektornya beda, diukur dengan cosine similarity. Inilah komponen yang pada ablasi paper memberi kenaikan paling besar, artinya penampilan adalah sinyal paling informatif untuk membedakan orang.
+
+TBSS. Penilai kemiripan. Model kecil yang menerima gabungan informasi posisi dan penampilan lalu mengeluarkan skor 0 sampai 1 untuk sepasang deteksi. Dengan IoU saja, orang yang berdiri berdekatan mudah tertukar; TBSS menambahkan informasi penampilan ke keputusan.
+
+CMOH. Memori konteks. Tracker menyimpan 10 embedding terakhir untuk tiap tracklet. Saat orang tertutup dua atau tiga frame lalu muncul lagi, pencocokan memakai rata-rata embedding lama, bukan hanya yang terakhir. Pada ablasi paper, komponen inilah yang paling memangkas ID switch (di MOT17 dari 138 menjadi 80).
+
+ASW. Bobot oklusi adaptif. Satu angka per frame yang menghitung seberapa ramai frame itu. Kalau sedang banyak orang saling menutupi, keputusan lebih mengandalkan penampilan; kalau sepi, lebih mengandalkan posisi.
+
+Kenapa paper ini dipilih. Pertama, paradigma real-time dan deep learning memang di jalur target: biaya asosiasi hanya 0,6 GFLOPs, kecepatan didominasi detektor, bukan tracker. Kedua, ringan dan bisa dilatih ulang di data sendiri, beda dari DiffMOT. Ketiga, pola ablasi selaras dengan kelemahan yang kita ukur: CMOH memangkas ID switch, dan ini justru kelemahan utama baseline kita. Keempat, paper tidak merilis kode, sehingga reimplementasi menjadi kontribusi mandiri, bukan sekadar replikasi.
+
+## 5. Tracker Usulan Menurut Paper
+
+Tracker versi kita disusun mengikuti resep paper, dengan penyesuaian untuk ekosistem proyek (YOLO26, Python 3.8 di kampus).
+
+Komponennya: LAE sebagai encoder penampilan, TBSS sebagai penilai kemiripan, asosiasi inti Kalman plus Hungarian plus filter confidence plus EMA, lalu CMOH dan ASW untuk bertahan saat oklusi. Skor akhir untuk sepasang deteksi-tracklet adalah kombinasi skor TBSS dan IoU: C = 1 dikurangi (w kali s) ditambah ((1 dikurangi w) kali IoU), dengan w bobot oklusi dari ASW.
+
+Resep training mengikuti paper: data MOT17-train plus MOT20-train, loss gabungan triplet dan BCE, Adam dengan learning rate 0,001, 20 epoch, crop 224x224, augmentasi flip, crop padding, dan color jitter, maksimal 50 pasangan per frame. Estimasi waktu 2,5 sampai 5 jam per 20 epoch di RTX 4090.
+
+Protokol evaluasi kita anti-overclaim: leave-one-out pada MOT20-train empat fold, DanceTrack-val sebagai pengujian zero-shot, deteksi YOLO26 identik dengan OC-SORT dan DiffMOT, dan hasil dilaporkan relatif terhadap OC-SORT (36,51 HOTA) dan DiffMOT (44,37 HOTA) di MOT20. Tidak membandingkan angka dengan tabel paper karena protokolnya beda.
+
+## 6. Hasil Training Fase 3 (v1) dan Perbaikan v2
+
+Training pertama kali diuji dengan mini-run: satu sekuens, 60 frame, satu epoch. Hasilnya bagus secara visual, skor kemiripan benar 0,908 dan margin cosine melebar, tapi ini sampel validasi 10 frame yang kecil, bukan bukti final.
+
+Full run fold-1 (20 epoch, MOT17 plus MOT20) hasilnya campuran. Loss total turun mulus dari 0,139 ke 0,054, loss triplet dari 0,070 ke 0,021, dan cosine antar potongan orang yang sama stabil di 0,93 sampai 0,98. Artinya LAE berhasil belajar memisahkan penampilan. Tapi skor kemiripan TBSS di validasi tidak menunjukkan pembelajaran sama sekali: BCEacc datar di 0,494 sampai 0,505 sepanjang 20 epoch, tidak jauh dari lempar koin.
+
+Kenapa bisa gagal. Ada satu kejanggalan yang menarik. Kalau benar semua skor TBSS di sekitar 0,5, loss BCE-nya harusnya sekitar 0,69. Kenyataannya loss BCE total hanya sekitar 0,03. Artinya di data latih TBSS justru yakin benar, kemungkinan memakai jalan pintas geometri antar kotak, tapi kalah telak di data validasi. Dengan kata lain rangkaian training dan validasi berjalan benar secara kode, tapi ada ketidakcocokan antara perilaku TBSS di data latih dan validasi. Ini yang sedang dibedah lewat histogram distribusi skor pasangan sama-id dan beda-id; butuh GPU, dan tinggal dijalankan begitu GPU kampus aktif.
+
+Perbaikan yang sudah dikerjakan (v2). TBSS diganti dari transformer berdimensi 73 yang attention-nya tidak efektif menjadi MLP ringan dengan input 6 angka (IoU, cosine, selisih box yang dinormalisasi), optimizer untuk TBSS dipisah dari LAE, loss BCE diberi bobot per kelas, dan checkpoint disimpan ala YOLO (last.pt dan best.pt). Status terakhir: GPU kampus sedang tidak bisa dipakai, training v2 belum tuntas.
+
+Satu hal yang harus ditegaskan jujur di presentasi: angka evaluasi dari tracker usulan (HOTA, IDF1) belum ada. Yang sudah terbukti baru sampai encoder penampilan berfungsi baik; komponen penilai kemiripan masih dalam perbaikan.
+
+## 7. Kesimpulan dan Langkah Berikutnya
+
+Tiga kesimpulan dari kemajuan ini. Asosiasi, bukan deteksi, yang membatasi kualitas counting, terlihat dari 14.293 ID switch OC-SORT di MOT20. DiffMOT membuktikan ReID plus memori memang diperlukan, ID switch turun 52 sampai 58 persen, tapi kecepatannya sekitar 20 sampai 25 FPS di RTX 4090, black box, dan fragile, sehingga tidak layak menjadi tracker utama. Maka arahnya ke tracker ringan terinspirasi LightTrack-ReID yang sedang dibangun dan dilatih.
+
+Langkah berikutnya: jalankan histogram skor TBSS begitu GPU kampus aktif untuk memastikan akar masalahnya, lanjutkan training v2 sampai tuntas, lalu evaluasi dengan TrackEval pada protokol yang sama dan masukkan ke tabel pembanding.
 
 ---
 
-## 7. Kesimpulan
-
-1. **Asosiasi, bukan deteksi, yang menjadi pembatas counting** — OC-SORT: 14.293 IDSW di MOT20, IDF1 26,63 di DanceTrack.
-2. **DiffMOT membuktikan ReID + memory diperlukan**: IDSW −52% (MOT20) dan −58% (DanceTrack), HOTA naik 8–11 poin — tetapi ±20–25 FPS di RTX 4090, black-box, dan fragile membuatnya **bukan kandidat deployment**.
-3. **Pivot terarah ke LightTrack-ReID (S014)**: peer-reviewed, asosiasi ~0,6 GFLOPs, trainable, ~30 FPS GTX 1080, pattern ablasi (LAE = sinyal terbesar; CMOH = pemangkas ID switch) selaras dengan kelemahan yang diukur pada baseline kita.
-4. **Tracker usulan sedang dibangun menurut resep paper**; status jujur: LAE terlatih, TBSS dalam perbaikan (v2), evaluasi penuh menunggu GPU kampus.
-
----
-
-## Lampiran — Materi Pendukung Presentasi
+## Lampiran. Materi Pendukung
 
 | Materi | Lokasi |
 |---|---|
-| Tabel hasil lengkap | `experiments/s2_tracker/eval_results.csv` |
-| Video demo klip padat (OC-SORT vs DiffMOT vs GT) | `experiments/s2_tracker/demo/MOT20-02_f1-450_tracked.mp4`, `..._tracked_diffmot.mp4`, `..._gt.mp4` |
-| Laporan detail Skenario B | `docs/reports/laporan-skenario-b-tracker.md` |
-| Catatan implementasi paper S014 | `docs/research/fulltext-notes/S014-lighttrack-reid.md` |
-| Rencana Phase 11 (tracker usulan) | `docs/plans/2026-08-05-phase11-skenario-b-tracker-lighttrack.md` |
+| Tabel hasil lengkap | experiments/s2_tracker/eval_results.csv |
+| Video demo klip padat, OC-SORT vs DiffMOT vs GT | experiments/s2_tracker/demo/MOT20-02_f1-450_tracked.mp4, ..._tracked_diffmot.mp4, ..._gt.mp4 |
+| Laporan detail Skenario B | docs/reports/laporan-skenario-b-tracker.md |
+| Catatan implementasi paper S014 | docs/research/fulltext-notes/S014-lighttrack-reid.md |
+| Rencana fase 11, tracker usulan | docs/plans/2026-08-05-phase11-skenario-b-tracker-lighttrack.md |
 
 ## Daftar Pustaka
 
-1. Lv, W., Huang, Y., Zhang, N., Lin, R.-S., Han, M., & Zeng, D. (2024 – S021). *DiffMOT: A Real-time Diffusion-based Multiple Object Tracker with Non-linear Prediction.* CVPR 2024, pp. 19321–19330. arXiv:2403.02075.
-2. Khan, S. B. J., Zhang, P., Kamal, M. M., Saudagar, A. K. J., et al. (2026 – S014). *LightTrack-ReID: A lightweight and occlusion-robust framework for multi-object tracking.* PLOS ONE 21(3), e0342246. DOI 10.1371/journal.pone.0342246.
-3. Cao, J., Pang, J., Weng, X., Khirodkar, R., & Kitani, K. (2023). *Observation-Centric SORT* (OC-SORT). CVPR 2023. arXiv:2203.14360.
-4. Luiten, J., Ošep, A., Dendorfer, P., et al. (2021 – S025). *HOTA: A Higher Order Metric for Evaluating Multi-Object Tracking.* IJCV 129(2), 548–578.
-5. Dendorfer, P., et al. (2020 – S036). *MOT20: A benchmark for multi object tracking in crowded scenes.* ECCV 2020 Workshops. arXiv:2003.09003.
-6. Sun, P., et al. (2022 – S037). *DanceTrack: Multi-Object Tracking in Uniform Appearance and Diverse Motion.* CVPR 2022. arXiv:2111.14690.
+1. Lv, W., Huang, Y., Zhang, N., Lin, R.-S., Han, M., & Zeng, D. (2024, S021). DiffMOT: A Real-time Diffusion-based Multiple Object Tracker with Non-linear Prediction. CVPR 2024, 19321-19330. arXiv:2403.02075.
+2. Khan, S. B. J., Zhang, P., Kamal, M. M., Saudagar, A. K. J., dkk. (2026, S014). LightTrack-ReID: A lightweight and occlusion-robust framework for multi-object tracking. PLOS ONE 21(3), e0342246. DOI 10.1371/journal.pone.0342246.
+3. Cao, J., Pang, J., Weng, X., Khirodkar, R., & Kitani, K. (2023). Observation-Centric SORT (OC-SORT). CVPR 2023. arXiv:2203.14360.
+4. Luiten, J., Ošep, A., Dendorfer, P., dkk. (2021, S025). HOTA: A Higher Order Metric for Evaluating Multi-Object Tracking. IJCV 129(2), 548-578.
+5. Dendorfer, P., dkk. (2020, S036). MOT20: A benchmark for multi object tracking in crowded scenes. ECCV 2020 Workshops. arXiv:2003.09003.
+6. Sun, P., dkk. (2022, S037). DanceTrack: Multi-Object Tracking in Uniform Appearance and Diverse Motion. CVPR 2022. arXiv:2111.14690.
