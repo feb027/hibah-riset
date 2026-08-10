@@ -12,7 +12,7 @@ Deteksi cuma memberi kotak per frame. Tanpa tracker, orang yang tertutup sebenta
 
 Pertanyaan skenario B: tracker mana yang mampu menjaga identitas cukup lama untuk counting yang akurat?
 
-Dua pembanding diuji pada deteksi YOLO26 yang sama persis (hasil Skenario A), memakai TrackEval di MOT20-train (4 sekuens, 8.931 frame, kerumunan sangat padat) dan DanceTrack-val (25 sekuens, 25.508 frame, gerak non-linear, penampilan seragam). Karena deteksi bukan deteksi resmi MOTChallenge, angka tidak dibandingkan 1:1 ke leaderboard; perbandingan yang sah antar tracker pada deteksi yang sama.
+Dua pembanding diuji pada deteksi YOLO26 yang sama persis (hasil Skenario A, fine-tune CrowdHuman, mAP@0.5:0.95 = 0,4974), memakai TrackEval di MOT20-train (4 sekuens, 8.931 frame, kerumunan sangat padat) dan DanceTrack-val (25 sekuens, 25.508 frame, gerak non-linear, penampilan seragam). Karena deteksi bukan deteksi resmi MOTChallenge, angka tidak dibandingkan 1:1 ke leaderboard; perbandingan yang sah antar tracker pada deteksi yang sama.
 
 ## 2. Data Hasil: OC-SORT vs DiffMOT
 
@@ -98,7 +98,19 @@ Resep training persis paper: MOT17 + MOT20, loss triplet + BCE, Adam lr 0,001, 2
 
 Protokol evaluasi anti-overclaim: leave-one-out MOT20 4 fold + DanceTrack zero-shot, deteksi YOLO26 identik, hasil dibandingkan relatif ke OC-SORT (36,51) dan DiffMOT (44,37), bukan ke angka paper.
 
+Status implementasi tracker usulan:
+
+| Fase | Komponen | Status | Hasil |
+|---|---|---|---|
+| Phase 1 | Skeleton asosiasi (Kalman + IoU + Hungarian + EMA) | selesai | 3.211 frame smoke-test, 614 FPS di CPU |
+| Phase 2 | LAE encoder (MobileNetV3-Small, 32-d) | selesai, diverifikasi GPU kampus | cosine orang yang sama 0,772 vs orang beda 0,746 (sebelum dilatih, margin kecil +0,027; justru alasan training) |
+| Phase 3 v1 | Training fold-1 (LAE + TBSS) | selesai | LAE bagus, TBSS gagal, lihat bagian 7 |
+| Phase 3 v2 | Perbaikan TBSS (MLP 6-d, optimizer pisah, BCE berbobot) | sedang jalan | GPU kampus belum tersedia |
+| Evaluasi TrackEval | HOTA/IDF1 tracker usulan | belum | menunggu training selesai |
+
 ## 7. Hasil Training Fold-1 (v1) dan Perbaikan v2
+
+Sebelum full run, ada mini-run (1 sekuens, 60 frame, 1 epoch): BCEacc 0,908 dan margin cosine +0,775, bukti pipeline training jalan dan sinyal penampilan mulai terpisah. Catatan: sampel validasinya hanya 10 frame, bukan bukti final.
 
 Data run asli (20 epoch, MOT17 + MOT20, 4090):
 
