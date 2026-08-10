@@ -47,10 +47,23 @@ test inference-only di Colab (bukan training, bukan fine-tuning).
 **Aturan keras**:
 
 - Jangan klaim hasil sebelum run aktual.
-- Jangan commit artefak besar (`*.pt`, `*.mp4`, `*.csv` eksperimen) —
-  lihat `.gitignore`.
+- Jangan commit artefak besar (`*.pt`, `*.csv` eksperimen) — lihat `.gitignore`.
+  Klip demo mp4 di `experiments/s2_tracker/demo/` adalah pengecualian, sudah
+  di-track dengan `git add -f` untuk diputar langsung di README.
 - Detector utama eksperimen = `yolov10s` (S003 NeurIPS 2024). YOLO26
   (S001/S002) berstatus caution di source-ledger.
+
+## Demo Video (Skenario B)
+
+Perbandingan langsung pada klip kerumunan padat MOT20-02 (450 frame): hasil tracking OC-SORT, DiffMOT, dan ground truth. Perhatikan ID switch saat oklusi, jauh lebih jarang pada DiffMOT.
+
+<video src="experiments/s2_tracker/demo/MOT20-02_f1-450_tracked.mp4" controls width="640"></video>
+
+<video src="experiments/s2_tracker/demo/MOT20-02_f1-450_tracked_diffmot.mp4" controls width="640"></video>
+
+<video src="experiments/s2_tracker/demo/MOT20-02_f1-450_gt.mp4" controls width="640"></video>
+
+Laporan lengkap: [laporan presentasi Skenario B](docs/reports/laporan-presentasi-skenario-b-tracker.md) dan [laporan detail](docs/reports/laporan-skenario-b-tracker.md).
 
 ## Repo layout
 
