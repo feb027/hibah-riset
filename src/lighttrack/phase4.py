@@ -42,35 +42,48 @@ def _iou_mn(ba, bd):
 
 
 class TbssAppearance:
-    """LAE (embedding) + TBSS v2 (input 6-d: IoU, cosine, bbox-diff) untuk tracker."""
+    """LAE (embedding) + TBSS v2 (input 6-d: IoU, cosine, bbox-diff) untuk tracker.
 
-    def __init__(self, ckpt, device=None):
+    use_tbss=False = mode LAE-only (ablasi "+LAE" paper): sim = cosine murni,
+    tidak memuat/memakai TBSS — dipakai untuk ckpt yang TBSS-nya tidak relevan
+    (mis. v1 yang scorer-nya gagal) atau untuk titik ablas.
+    """
+
+    def __init__(self, ckpt, device=None, use_tbss=True):
         # GPU COMPUTE EXCLUSIVE kampus: probe aman via subprocess (sama seperti train.py)
         self.device = torch.device(device or ("cuda" if _cuda_available() else "cpu"))
         self.emb = EmbeddingComputer(device=self.device)
-        self.tbss = SimilarityModel().to(self.device).eval()
         ck = torch.load(ckpt, map_location=self.device, weights_only=False)
         self.emb.model.load_state_dict(ck["lae"])
-        self.tbss.load_state_dict(ck["tbss"])
-        print(f"[phase4] ckpt={ckpt} epoch={ck.get('epoch')} best_acc={ck.get('best_acc')} "
-              f"device={self.device}", flush=True)
+        self.tbss = None
+        if use_tbss:
+            self.tbss = SimilarityModel().to(self.device).eval()
+            self.tbss.load_state_dict(ck["tbss"])
+            mode = "LAE+TBSS"
+        else:
+            mode = "LAE-only"
+        print(f"[phase4] ckpt={ckpt} cmode={mode} epoch={ck.get('epoch')} "
+              f"best_acc={ck.get('best_acc')} device={self.device}", flush=True)
 
     def embed(self, frame_bgr, dets_tlwh):
         return self.emb.embed_frame(frame_bgr, np.asarray(dets_tlwh, dtype=float))
 
     def score(self, W, H, track_tlwh, det_tlwh, e_track, e_det):
-        """(M,N) skor TBSS [0,1] — fitur identik dgn _tbss_x train: [IoU, cos, b_a - b_p]."""
+        """(M,N) skor [0,1]. TBSS: fitur identik _tbss_x train [IoU, cos, b_a-b_p].
+        LAE-only: cosine murni (clipped [0,1])."""
         M, N = len(track_tlwh), len(det_tlwh)
         if M == 0 or N == 0:
             return np.zeros((M, N), dtype=np.float32)
+        ea = torch.tensor(e_track, dtype=torch.float32, device=self.device)
+        ed_ = torch.tensor(e_det, dtype=torch.float32, device=self.device)
+        cos = (ea[:, None, :] * ed_[None, :, :]).sum(-1)     # (M,N) cosine embedding L2-unit
+        if self.tbss is None:
+            return np.clip(cos.cpu().numpy(), 0.0, 1.0).astype(np.float32)
         b_t = torch.tensor(np.asarray(track_tlwh, dtype=np.float64)).float().to(self.device)
         b_d = torch.tensor(np.asarray(det_tlwh, dtype=np.float64)).float().to(self.device)
         ba = _to_xyxy(b_t, W, H)                       # tracklet -> "anchor" (b_a)
         bp = _to_xyxy(b_d, W, H)                       # deteksi -> "positive" (b_p)
         iou = _iou_mn(ba, bp)                          # (M,N)
-        ea = torch.tensor(e_track, dtype=torch.float32, device=self.device)
-        ed_ = torch.tensor(e_det, dtype=torch.float32, device=self.device)
-        cos = (ea[:, None, :] * ed_[None, :, :]).sum(-1)     # (M,N) cosine embedding L2-unit
         diff = ba[:, None, :4] - bp[None, :, :4]             # (M,N,4) bbox-diff, [-1,1]
         x = torch.cat([iou.unsqueeze(-1), cos.unsqueeze(-1), diff], dim=-1).reshape(M * N, 6)
         with torch.inference_mode():

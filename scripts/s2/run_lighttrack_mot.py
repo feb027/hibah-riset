@@ -50,6 +50,9 @@ def parse_args() -> argparse.Namespace:
                    help="bobot skor penampilan vs IoU saat --ckpt (1 = murni penampilan)")
     p.add_argument("--score-min", type=float, default=0.3,
                    help="ambang skor gabungan untuk match saat --ckpt")
+    p.add_argument("--lae-only", action="store_true",
+                   help="pakai LAE murni (sim=cosine, tanpa TBSS) — ablasi '+LAE' paper; "
+                        "cocok utk ckpt v1 (TBSS-nya gagal). Padukan --appearance-w 1.0")
     return p.parse_args()
 
 
@@ -63,7 +66,7 @@ def main() -> None:
         if not os.path.isdir(args.img_dir):
             sys.exit(f"--img-dir tidak ada: {args.img_dir}")
         from src.lighttrack.phase4 import TbssAppearance
-        appearance = TbssAppearance(args.ckpt)
+        appearance = TbssAppearance(args.ckpt, use_tbss=not args.lae_only)
 
     seq_files = sorted(f for f in os.listdir(args.det_dir) if f.endswith(".txt"))
 
