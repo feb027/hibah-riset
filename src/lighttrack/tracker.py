@@ -69,7 +69,10 @@ class _KalmanBox:
 
 
 def _xyah_to_tlwh(xyah):
-    x, y, a, h = xyah
+    # filterpy kf.x berbentuk KOLOM (8,1); float() meratakan supaya output (4,).
+    # Tanpa ini box jadi (4,1) -> pred_tlwh (M,4,1) -> _to_xyxy (jalur TBSS Phase 4)
+    # gagal: "not enough values to unpack (expected 4, got 1)".
+    x, y, a, h = (float(v) for v in xyah)
     w = a * h
     return np.array([x - w / 2, y - h / 2, w, h])
 
@@ -230,6 +233,9 @@ def _demo():
     assert id_at(out2a, 290, 10) == id_at(out1a, 10, 10), out2a
     # tanpa appearance: A kehilangan ID saat papasan (tertukar/buat track baru)
     assert id_at(out2i, 290, 10) != id_at(out1i, 10, 10), out2i
+    # semua box output harus 1-D (4,) — regresi bentuk (4,1)/(M,4,1) dari filterpy
+    for box, tid in list(out1a) + list(out2a) + list(out1i) + list(out2i):
+        assert box.shape == (4,), f"box shape {box.shape}"
     print("demo OK (ioU-only + appearance)")
 
 
