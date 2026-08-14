@@ -104,7 +104,7 @@ Status implementasi tracker usulan:
 |---|---|---|---|
 | Phase 1 | Skeleton asosiasi (Kalman + IoU + Hungarian + EMA) | selesai | 3.211 frame smoke-test, 614 FPS di CPU |
 | Phase 2 | LAE encoder (MobileNetV3-Small, 32-d) | selesai, diverifikasi GPU kampus | cosine orang yang sama 0,772 vs orang beda 0,746 (sebelum dilatih, margin kecil +0,027; justru alasan training) |
-| Phase 3 v1 | Training fold-1 (LAE + TBSS) | selesai | LAE bagus, TBSS gagal, lihat bagian 7 |
+| Phase 3 v1 | Training fold-1 (LAE + TBSS) | selesai | LAE bagus; TBSS tak terukur (bug validasi, bagian 7) |
 | Phase 3 v2 | Perbaikan TBSS (MLP 6-d, optimizer pisah, BCE berbobot) | sedang jalan | GPU kampus belum tersedia |
 | Evaluasi TrackEval | HOTA/IDF1 tracker usulan | belum | menunggu training selesai |
 
@@ -121,9 +121,9 @@ Data run asli (20 epoch, MOT17 + MOT20, 4090):
 | cos_same | 0,93 | 0,98 | potongan orang yang sama makin mirip |
 | BCEacc (TBSS) | sekitar 0,50 | 0,494 sampai 0,505 | tidak belajar, lempar koin |
 
-Bacaannya: LAE berhasil, TBSS tidak. Loss BCE hanya sekitar 0,03, padahal kalau skor benar-benar semua 0,5 loss-nya harusnya sekitar 0,69. Artinya TBSS yakin benar di data latih (kemungkinan jalan pintas geometri), tapi kalah telak di validasi. Ini yang sedang dibedah lewat histogram distribusi skor, begitu GPU kampus aktif.
+Bacaannya: LAE berhasil. Untuk TBSS, ada temuan penting 14 Agustus 2026: angka BCEacc validasi yang datar 0,5 selama ini TIDAK valid karena bug konstruksi fitur di validasi. Pasangan negatif di validasi salah memberi input: kotak yang dibandingkan sama dengan kotaknya sendiri sehingga IoU selalu 1,0, padahal di data latih IoU-nya dihitung dengan kotak anchor yang benar. Akibatnya pasangan negatif di validasi tampak seperti pasangan positif sempurna dan akurasi validasi macet di 0,5 apa pun yang dipelajari model. Artinya TBSS sebenarnya tidak pernah terukur dengan benar, dan skor validasi lama tidak bisa dipakai sebagai bukti TBSS gagal. Bug sudah diperbaiki (sisi kotak anchor dipakai konsisten di training, validasi, dan histogram) dan training dilanjutkan dari checkpoint yang ada.
 
-Perbaikan v2 yang sudah dikerjakan: TBSS diganti transformer 73 dimensi (attention-nya tidak efektif) menjadi MLP ringan input 6 angka (IoU, cosine, selisih box), optimizer TBSS dipisah, BCE diberi bobot, checkpoint ala YOLO (last/best.pt). Status: GPU kampus sedang tidak bisa dipakai, training v2 belum tuntas.
+Perbaikan v2 yang sudah dikerjakan sebelumnya juga tetap: TBSS diganti transformer 73 dimensi (attention-nya tidak efektif) menjadi MLP ringan input 6 angka (IoU, cosine, selisih box), optimizer TBSS dipisah, BCE diberi bobot, checkpoint ala YOLO (last/best.pt). Status: training v2 sedang berjalan; setelah fix ini, BCEacc validasi berikutnya adalah angka yang pertama kali valid.
 
 Catatan jujur untuk presentasi: angka HOTA/IDF1 tracker usulan belum ada. Yang terbukti baru encoder penampilan berfungsi baik.
 
