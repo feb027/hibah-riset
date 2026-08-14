@@ -433,7 +433,9 @@ for ep in range(start_ep + 1, EPOCHS + 1):
         ax[1].set_title("BCE acc/epoch"); ax[1].grid(alpha=0.3)
         ax[2].plot(hist["ep"], hist["margin"], "-o")
         ax[2].set_title("cos margin/epoch"); ax[2].grid(alpha=0.3)
-        plt.tight_layout(); plt.show()
+        plt.tight_layout()
+        fig.savefig(os.path.join(OUT, "training_curves.png"), dpi=120, bbox_inches="tight")
+        plt.show()
         print(line)
 
 logf.close(); stats_jsonl.close()
@@ -453,7 +455,10 @@ ax[0].set_title("Loss"); ax[0].grid(alpha=0.3)
 ax[1].plot(hist["ep"], hist["bce_acc"], "-o", label="BCEacc")
 ax[1].plot(hist["ep"], hist["margin"], "-o", label="margin")
 ax[1].set_title("Val"); ax[1].legend(); ax[1].grid(alpha=0.3)
-plt.tight_layout(); plt.show()
+plt.tight_layout()
+fig.savefig(os.path.join(OUT, "training_curves.png"), dpi=120, bbox_inches="tight")
+print("kurva tersimpan:", os.path.join(OUT, "training_curves.png"))
+plt.show()
 """))
 
 nb = {
