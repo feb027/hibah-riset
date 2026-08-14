@@ -94,11 +94,14 @@ def main():
             bp = torch.tensor([u["p"][1] for u in use], device=device).float()
             bn = torch.tensor([u["n"][1] for u in use], device=device).float()
             ea, ep_, en_ = lae(a), lae(p), lae(n)
-            b_ap = _to_xyxy(ba, W, H); b_an = _to_xyxy(bn, W, H)
-            iou_ap = _iou(b_ap, _to_xyxy(bp, W, H)).reshape(-1, 1)
-            iou_an = _iou(b_an, _to_xyxy(bn, W, H)).reshape(-1, 1)
-            s_ap.extend(tbss(_tbss_x(b_ap, _to_xyxy(bp, W, H), iou_ap, ea, ep_))[:, 0].tolist())
-            s_an.extend(tbss(_tbss_x(b_an, _to_xyxy(bn, W, H), iou_an, ea, en_))[:, 0].tolist())
+            # FIX 2026-08-14: sisi box "a" TBSS HARUS box ANCHOR utk kedua pasangan.
+            # Sebelumnya b_an = to_xyxy(bn) -> iou_an = IoU(bn,bn) = 1.0 & bd = 0
+            # (pasangan negatif tampak seperti positif sempurna) -> BCEacc val flat 0.5.
+            b_a_ = _to_xyxy(ba, W, H); b_p_ = _to_xyxy(bp, W, H); b_n_ = _to_xyxy(bn, W, H)
+            iou_ap = _iou(b_a_, b_p_).reshape(-1, 1)
+            iou_an = _iou(b_a_, b_n_).reshape(-1, 1)
+            s_ap.extend(tbss(_tbss_x(b_a_, b_p_, iou_ap, ea, ep_))[:, 0].tolist())
+            s_an.extend(tbss(_tbss_x(b_a_, b_n_, iou_an, ea, en_))[:, 0].tolist())
             c_ap.extend((ea * ep_).sum(1).tolist())
             c_an.extend((ea * en_).sum(1).tolist())
             v_n += len(use)

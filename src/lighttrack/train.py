@@ -268,9 +268,12 @@ def train(args):
             L_triplet = torch.clamp(dpos - dneg + m_triplet, min=0.0).mean()
             # BCE (a,p)->1 ; (a,n)->0  -- box TERNORMALISASI [0,1] (skala & IoU & embedding
             #                          sebanding; lihat _to_xyxy doc). WAJIB sama di val & Phase 4.
-            b_ap = _to_xyxy(ba, W, H); b_an = _to_xyxy(bn, W, H)
-            x_ap = _tbss_x(b_ap, _to_xyxy(bp, W, H), iou_ap, ea, ep_)
-            x_an = _tbss_x(b_an, _to_xyxy(bn, W, H), iou_an, ea, en_)
+            # FIX 2026-08-14: sisi box "a" TBSS HARUS box ANCHOR utk kedua pasangan.
+            # Sebelumnya b_an = to_xyxy(bn) -> di val iou_an = IoU(bn,bn) = 1.0 & bd = 0
+            # (pasangan negatif tampak seperti positif sempurna) -> BCEacc val flat 0.5.
+            b_a_ = _to_xyxy(ba, W, H); b_p_ = _to_xyxy(bp, W, H); b_n_ = _to_xyxy(bn, W, H)
+            x_ap = _tbss_x(b_a_, b_p_, iou_ap, ea, ep_)
+            x_an = _tbss_x(b_a_, b_n_, iou_an, ea, en_)
             y = torch.cat([torch.ones(len(use), 1, device=device),
                            torch.zeros(len(use), 1, device=device)])
             # opsi 2 — BCE berbobot: kelas negatif (y=0) lebih penting utk
@@ -320,11 +323,14 @@ def train(args):
                     ba = torch.tensor([u["a"][1]], device=device).float()
                     bp = torch.tensor([u["p"][1]], device=device).float()
                     bn = torch.tensor([u["n"][1]], device=device).float()
-                    b_ap = _to_xyxy(ba, W, H); b_an = _to_xyxy(bn, W, H)
-                    iou_ap = _iou(b_ap, _to_xyxy(bp, W, H)).reshape(1, 1)
-                    iou_an = _iou(b_an, _to_xyxy(bn, W, H)).reshape(1, 1)
-                    s_ap = float(tbss(_tbss_x(b_ap, _to_xyxy(bp, W, H), iou_ap, ea, ep_))[0, 0])
-                    s_an = float(tbss(_tbss_x(b_an, _to_xyxy(bn, W, H), iou_an, ea, en_))[0, 0])
+                    # FIX 2026-08-14: sisi box "a" TBSS HARUS box ANCHOR utk kedua pasangan.
+                    # Sebelumnya b_an = to_xyxy(bn) -> iou_an = IoU(bn,bn) = 1.0 & bd = 0
+                    # (pasangan negatif tampak seperti positif sempurna) -> BCEacc val flat 0.5.
+                    b_a_ = _to_xyxy(ba, W, H); b_p_ = _to_xyxy(bp, W, H); b_n_ = _to_xyxy(bn, W, H)
+                    iou_ap = _iou(b_a_, b_p_).reshape(1, 1)
+                    iou_an = _iou(b_a_, b_n_).reshape(1, 1)
+                    s_ap = float(tbss(_tbss_x(b_a_, b_p_, iou_ap, ea, ep_))[0, 0])
+                    s_an = float(tbss(_tbss_x(b_a_, b_n_, iou_an, ea, en_))[0, 0])
                     acc_t += int(s_ap > 0.5); acc_d += int(s_an < 0.5)
                 # val realtime (1 baris, sama pola dgn train)
                 now = time.time()

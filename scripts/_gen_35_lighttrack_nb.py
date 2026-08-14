@@ -81,8 +81,8 @@ else:
     # JANGAN langsung start MPS di notebook: JupyterHub multi-user biasa
     # `nvidia-cuda-mps-control -d` butuh grup/permission sendiri. Kalau angka
     # device=cpu, jalankan dari terminal Jupyter: nvidia-cuda-mps-control -d
-    print("PERINGATAN: CUDA tak tersedia (probe timeout). Kalau GPU kampus\n"
-          "  COMPUTE EXCLUSIVE, start MPS server dulu di terminal,\n"
+    print("PERINGATAN: CUDA tak tersedia (probe timeout). Kalau GPU kampus\\n"
+          "  COMPUTE EXCLUSIVE, start MPS server dulu di terminal,\\n"
           "  lalu Restart Kernel & Run All: nvidia-cuda-mps-control -d")
 """))
 
@@ -313,9 +313,12 @@ for ep in range(start_ep + 1, EPOCHS + 1):
         dneg = ((ea - en_) ** 2).sum(1)
         L_triplet = torch.clamp(dpos - dneg + MARGIN, min=0.0).mean()
 
-        b_ap = _to_xyxy(ba, W, H); b_an = _to_xyxy(bn, W, H)
-        x_ap = _tbss_x(b_ap, _to_xyxy(bp, W, H), iou_ap, ea, ep_)
-        x_an = _tbss_x(b_an, _to_xyxy(bn, W, H), iou_an, ea, en_)
+        # FIX 2026-08-14: sisi box "a" TBSS HARUS box ANCHOR utk kedua pasangan.
+        # Sebelumnya b_an = to_xyxy(bn) -> di val iou_an = IoU(bn,bn) = 1.0 & bd = 0
+        # (pasangan negatif tampak seperti positif sempurna) -> BCEacc val flat 0.5.
+        b_a_ = _to_xyxy(ba, W, H); b_p_ = _to_xyxy(bp, W, H); b_n_ = _to_xyxy(bn, W, H)
+        x_ap = _tbss_x(b_a_, b_p_, iou_ap, ea, ep_)
+        x_an = _tbss_x(b_a_, b_n_, iou_an, ea, en_)
         y = torch.cat([torch.ones(len(use), 1, device=device),
                        torch.zeros(len(use), 1, device=device)])
         bce_w = torch.where(y > 0, torch.ones_like(y) * BCE_POS_W,
@@ -369,11 +372,14 @@ for ep in range(start_ep + 1, EPOCHS + 1):
             ea, ep_, en_ = lae(a), lae(p), lae(n)
             cos_same += float((ea * ep_).sum()); n_s += len(use)
             cos_diff += float((ea * en_).sum()); n_d += len(use)
-            b_ap = _to_xyxy(ba, W, H); b_an = _to_xyxy(bn, W, H)
-            iou_ap = _iou(b_ap, _to_xyxy(bp, W, H)).reshape(-1, 1)
-            iou_an = _iou(b_an, _to_xyxy(bn, W, H)).reshape(-1, 1)
-            s_ap = tbss(_tbss_x(b_ap, _to_xyxy(bp, W, H), iou_ap, ea, ep_))
-            s_an = tbss(_tbss_x(b_an, _to_xyxy(bn, W, H), iou_an, ea, en_))
+            # FIX 2026-08-14: sisi box "a" TBSS HARUS box ANCHOR utk kedua pasangan.
+            # Sebelumnya b_an = to_xyxy(bn) -> iou_an = IoU(bn,bn) = 1.0 & bd = 0
+            # (pasangan negatif tampak seperti positif sempurna) -> BCEacc val flat 0.5.
+            b_a_ = _to_xyxy(ba, W, H); b_p_ = _to_xyxy(bp, W, H); b_n_ = _to_xyxy(bn, W, H)
+            iou_ap = _iou(b_a_, b_p_).reshape(-1, 1)
+            iou_an = _iou(b_a_, b_n_).reshape(-1, 1)
+            s_ap = tbss(_tbss_x(b_a_, b_p_, iou_ap, ea, ep_))
+            s_an = tbss(_tbss_x(b_a_, b_n_, iou_an, ea, en_))
             acc_t += int((s_ap[:, 0] > 0.5).sum()); acc_d += int((s_an[:, 0] < 0.5).sum())
             v_n += len(use)
             _prog["t"] = time.time()  # heartbeat utk watchdog
