@@ -9,6 +9,7 @@ Output: format MOT [frame,id,x,y,w,h,conf,-1,-1,-1].
 from __future__ import annotations
 
 import numpy as np
+from collections import deque
 from filterpy.kalman import KalmanFilter
 from scipy.optimize import linear_sum_assignment
 
@@ -84,10 +85,15 @@ class LightTrackTracker:
         embed(frame_bgr, dets_tlwh) -> (N,32) embedding L2-normalized numpy
         score(W, H, track_tlwh, det_tlwh, e_track, e_det) -> (M,N) skor [0,1]
     Tanpa appearance tracker murni IoU (Phase 1/Phase 2 behavior identik).
+
+    CMOH (paper Eq 7-9): tiap tracklet simpan buffer K=10 embedding TERAKHIR.
+    Saat tracklet tidak mendapat match (age > 0, kemungkinan oklusi), embedding
+    yang dikirim ke TBSS = RATA-RATA buffer (a_ctx). Dot(a_ctx, e_det) = rata-rata
+    cosine K pasangan terakhir, jadi sinyal tetap di [-1,1] tanpa normalisasi ulang.
     """
 
     def __init__(self, min_conf=0.3, iou_thresh=0.3, min_hits=3, max_age=30, ema_alpha=0.9,
-                 appearance=None, appearance_w=0.5, score_min=0.3):
+                 appearance=None, appearance_w=0.5, score_min=0.3, cmoh_k=10):
         self.min_conf = min_conf
         self.iou_thresh = iou_thresh
         self.min_hits = min_hits
@@ -95,11 +101,20 @@ class LightTrackTracker:
         self.ema_alpha = ema_alpha
         self.appearance = appearance
         # ponytail: w statis 0.5 (blend IoU & skor), ASW adaptif fase berikutnya.
-        # Fase berikutnya juga: emb track = mean buffer K (CMOH), sekarang = embedding terakhir.
         self.appearance_w = appearance_w
         self.score_min = score_min
+        self.cmoh_k = cmoh_k
         self.next_id = 1
-        self.tracks = {}  # id -> dict(kf, age, hits, ema_box(1x4 tlwh), emb(32,)|None)
+        self.tracks = {}  # id -> dict(kf, age, hits, ema_box(1x4 tlwh), emb_buf(deque[K]))
+
+    def _track_emb(self, tr):
+        """Embedding tracklet utk TBSS: CMOH a_ctx (mean buffer) saat age>0, else embedding terakhir."""
+        buf = tr["emb_buf"]
+        if len(buf) == 0:
+            return None
+        if tr["age"] > 0 and len(buf) > 1:
+            return np.mean(np.stack(buf), axis=0)
+        return buf[-1]
 
     def update(self, dets_tlwh, scores, frame_bgr=None):
         """dets_tlwh: (N,4) tlwh; scores: (N,). frame_bgr wajib bila appearance aktif.
@@ -113,6 +128,7 @@ class LightTrackTracker:
             tr["kf"].predict()
             preds[tid] = tr["kf"].xyah
         e_det = np.zeros((0, 32), dtype=np.float32)  # hanya dipakai bila appearance aktif
+        H = W = 0  # diisi bila appearance aktif (dipakai score() di blok matching)
         # cost matrix: 1 - (w*sim + (1-w)*IoU)  atau  1 - IoU (appearance=None)
         pred_tlwh = np.array([_xyah_to_tlwh(p) for p in preds.values()]) if preds else np.zeros((0, 4))
         pred_xyxy = np.column_stack([pred_tlwh[:, 0], pred_tlwh[:, 1],
@@ -131,8 +147,11 @@ class LightTrackTracker:
         matched = set()
         if ious.size:
             if self.appearance is not None:
-                e_track = np.stack([self.tracks[tid]["emb"] for tid in preds]) if preds \
-                    else np.zeros((0, 32), dtype=np.float32)
+                embs = [self._track_emb(self.tracks[tid]) for tid in preds]
+                clean = [e for e in embs if e is not None]
+                if len(clean) != len(embs):
+                    raise RuntimeError("tracklet tanpa emb_buf saat appearance aktif")
+                e_track = np.stack(clean)
                 sims = self.appearance.score(W, H, pred_tlwh, dets_tlwh, e_track, e_det)
                 gate_mat = self.appearance_w * sims + (1 - self.appearance_w) * ious
                 cost = 1.0 - gate_mat
@@ -156,8 +175,7 @@ class LightTrackTracker:
                 else:
                     tr["ema_box"] = self.ema_alpha * dets_tlwh[j] + (1 - self.ema_alpha) * ema
                 if self.appearance is not None:
-                    # ponytail: simpan embedding TERAKHIR; CMOH (mean buffer K) fase berikutnya
-                    tr["emb"] = e_det[j]
+                    tr["emb_buf"].append(e_det[j])   # CMOH: simpan K embedding terakhir (deque auto-evict)
                 matched.add(j)
         # deteksi baru
         for j in range(n_dets):
@@ -167,7 +185,8 @@ class LightTrackTracker:
             self.next_id += 1
             self.tracks[tid] = dict(kf=_KalmanBox(dets_tlwh[j]), age=0, hits=1,
                                     ema_box=None,
-                                    emb=(e_det[j] if self.appearance is not None else None))
+                                    emb_buf=deque([e_det[j]], maxlen=self.cmoh_k)
+                                    if self.appearance is not None else deque(maxlen=self.cmoh_k))
         # keluarkan track mati
         dead = [tid for tid, tr in self.tracks.items() if tr["age"] > self.max_age]
         for tid in dead:
@@ -236,7 +255,20 @@ def _demo():
     # semua box output harus 1-D (4,) — regresi bentuk (4,1)/(M,4,1) dari filterpy
     for box, tid in list(out1a) + list(out2a) + list(out1i) + list(out2i):
         assert box.shape == (4,), f"box shape {box.shape}"
-    print("demo OK (ioU-only + appearance)")
+
+    # ---- CMOH: B tertutup 1 frame (oklusi), muncul lagi — ID harus tetap ----
+    cmoh_tr = LightTrackTracker(min_hits=1, appearance=FakeAppearance())
+    o1 = cmoh_tr.update(np.array([[10., 10., 20., 50.], [300., 10., 20., 50.]]),
+                        np.array([0.9, 0.9]), frame_bgr=zero)
+    cmoh_tr.update(np.array([[11., 10., 20., 50.], [301., 10., 20., 50.]]),
+                   np.array([0.9, 0.9]), frame_bgr=zero)
+    cmoh_tr.update(np.array([[12., 10., 20., 50.]]), np.array([0.9]), frame_bgr=zero)  # B tertutup
+    o4 = cmoh_tr.update(np.array([[13., 10., 20., 50.], [302., 10., 20., 50.]]),
+                        np.array([0.9, 0.9]), frame_bgr=zero)
+    assert id_at(o4, 302, 10) == id_at(o1, 300, 10), "CMOH: ID B harus bertahan setelah oklusi 1 frame"
+    for tid, tr in cmoh_tr.tracks.items():
+        assert len(tr["emb_buf"]) <= cmoh_tr.cmoh_k, f"buffer melebihi K={cmoh_tr.cmoh_k}"
+    print("demo OK (ioU-only + appearance + CMOH)")
 
 
 if __name__ == "__main__":
