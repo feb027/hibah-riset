@@ -27,6 +27,19 @@ import numpy as np
 CROP = 224
 
 
+def _bbox_iou(a, b):
+    """IoU dua box tlwh (x,y,w,h) — buat hard-negative mining APS."""
+    ax1, ay1 = a[0], a[1]
+    ax2, ay2 = a[0] + a[2], a[1] + a[3]
+    bx1, by1 = b[0], b[1]
+    bx2, by2 = b[0] + b[2], b[1] + b[3]
+    ix1, iy1 = max(ax1, bx1), max(ay1, by1)
+    ix2, iy2 = min(ax2, bx2), min(ay2, by2)
+    inter = max(0.0, ix2 - ix1) * max(0.0, iy2 - iy1)
+    ua = (ax2 - ax1) * (ay2 - ay1) + (bx2 - bx1) * (by2 - by1) - inter
+    return inter / ua if ua > 0 else 0.0
+
+
 def _entry_bytes(items):
     """Memori (byte) crop uint8 utk satu entri frame cache."""
     return sum(int(r["crop"].nbytes) for r in items)
@@ -191,11 +204,16 @@ class APSSampler:
             pos_d = next((r for r in pos_frm if r["id"] == d["id"]), None)
             if pos_d is None:
                 continue
-            # negatif: id beda dalam frame yang sama
+            # negatif: id beda dalam frame yang sama — HARD NEGATIVE: pilih yang
+            # IoU-nya TERTINGGI terhadap anchor (kasus papasan/overlap, bbox hampir
+            # sama -> TBSS/LAE dipaksa bedain via penampilan, bukan geometri).
+            # Sebelumnya: random — mayoritas IoU~0 (orang berjauhan), TBSS belajar
+            # shortcut "bbox jauh = negatif". ponytail: single hardest neg, tambah
+            # multi-neg kalau frag belum turun.
             negs = [r for r in dets if r["id"] != d["id"]]
             if not negs:
                 continue
-            neg = negs[self.rng.randint(len(negs))]
+            neg = max(negs, key=lambda r: _bbox_iou(d["box"], r["box"]))
             out.append(dict(a=(d["crop"], d["box"]), p=(pos_d["crop"], pos_d["box"]),
                             n=(neg["crop"], neg["box"])))
         return out

@@ -159,7 +159,7 @@ SEQ_DIRS = (
     "data/s2/mot20_hf/train/MOT20-03:"
     "data/s2/mot20_hf/train/MOT20-05"
 )
-OUT     = "out/phase3_fold1_v2"  # cekpt v2 (keep out/phase3_fold1/* as baseline): {OUT}/{last,best}.pt
+OUT     = "out/phase3_fold1_v3"  # cekpt v3 (hard-negative; keep {v1,v2}/ as baseline): {OUT}/{last,best}.pt
 EPOCHS  = 20
 BATCH   = 64
 LR      = 1e-3
