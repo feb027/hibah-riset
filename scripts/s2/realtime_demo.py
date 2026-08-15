@@ -11,6 +11,8 @@ Bobot: default data/s2/weights/best.onnx (ONNX Runtime, CPU). Bisa juga .pt
 Contoh:
     python scripts/s2/realtime_demo.py --source 0
     python scripts/s2/realtime_demo.py --source video.mp4 --line 0.33 --save out.mp4
+    python scripts/s2/realtime_demo.py --source video.mp4 --tracker lighttrack \
+        --ckpt out/phase3_fold1_v2/best.pt --save out_lighttrack.mp4
 
 Tombol: ESC keluar, SPACE pause, C reset hitungan.
 
@@ -61,6 +63,15 @@ def parse_args():
     p.add_argument("--inertia", type=float, default=0.2)
     p.add_argument("--max-w", type=int, default=960, help="lebar tampilan maksimum")
     p.add_argument("--save", default=None, help="simpan hasil ke file mp4 (opsional)")
+    p.add_argument("--tracker", default="ocsort", choices=["ocsort", "lighttrack"],
+                   help="ocsort (default) atau lighttrack (usulan kita: LAE+TBSS+OCM)")
+    p.add_argument("--ckpt", default=None,
+                   help="wajib saat --tracker lighttrack: ckpt LAE+TBSS "
+                        "(mis. out/phase3_fold1_v2/best.pt)")
+    p.add_argument("--appearance-w", type=float, default=0.5)
+    p.add_argument("--score-min", type=float, default=0.3)
+    p.add_argument("--emit-age", type=int, default=5)
+    p.add_argument("--cmoh-k", type=int, default=10)
     return p.parse_args()
 
 
@@ -92,15 +103,31 @@ def main():
         sys.exit("Gagal membaca frame pertama dari sumber: %s" % args.source)
     frame_h, frame_w = first_frame.shape[:2]
 
-    tracker = OCSort(
-        args.track_thresh,
-        max_age=args.max_age,
-        min_hits=args.min_hits,
-        iou_threshold=args.iou_thresh,
-        delta_t=args.delta_t,
-        asso_func=args.asso,
-        inertia=args.inertia,
-    )
+    if args.tracker == "lighttrack":
+        if not args.ckpt:
+            sys.exit("--tracker lighttrack butuh --ckpt (mis. out/phase3_fold1_v2/best.pt)")
+        if not os.path.exists(args.ckpt):
+            sys.exit("CKPT tidak ditemukan: %s" % args.ckpt)
+        sys.path.insert(0, ROOT)
+        from src.lighttrack.tracker import LightTrackTracker        # noqa: E402
+        from src.lighttrack.phase4 import TbssAppearance            # noqa: E402
+        appearance = TbssAppearance(args.ckpt)
+        tracker = LightTrackTracker(min_conf=args.track_thresh, iou_thresh=args.iou_thresh,
+                                    min_hits=args.min_hits, max_age=args.max_age,
+                                    ema_alpha=args.ema_alpha, emit_age=args.emit_age,
+                                    appearance=appearance,
+                                    appearance_w=args.appearance_w,
+                                    score_min=args.score_min, cmoh_k=args.cmoh_k)
+    else:
+        tracker = OCSort(
+            args.track_thresh,
+            max_age=args.max_age,
+            min_hits=args.min_hits,
+            iou_threshold=args.iou_thresh,
+            delta_t=args.delta_t,
+            asso_func=args.asso,
+            inertia=args.inertia,
+        )
 
     counter = None
     line_pos = None
@@ -150,14 +177,27 @@ def main():
             scores = np.array(scores, dtype=np.float64).reshape(-1)
 
             cates = np.zeros(dets_xyxy.shape[0])
-            online = tracker.update_public(dets_xyxy, cates, scores)
+            if args.tracker == "lighttrack":
+                # LightTrack: butuh tlwh + frame asli untuk embedding LAE
+                tlwh = np.zeros_like(dets_xyxy)
+                tlwh[:, 0] = dets_xyxy[:, 0]
+                tlwh[:, 1] = dets_xyxy[:, 1]
+                tlwh[:, 2] = dets_xyxy[:, 2] - dets_xyxy[:, 0]
+                tlwh[:, 3] = dets_xyxy[:, 3] - dets_xyxy[:, 1]
+                online = [(b, i) for b, i in tracker.update(tlwh, scores, frame_bgr=frame)]
+            else:
+                online = tracker.update_public(dets_xyxy, cates, scores)
 
             # overlay
             display = frame.copy()
             h, w = display.shape[:2]
             active = {}
             for trk in online:
-                x1, y1, x2, y2, tid = trk[0], trk[1], trk[2], trk[3], int(trk[4])
+                if args.tracker == "lighttrack":
+                    bx, by, bw, bh = trk[0]
+                    x1, y1, x2, y2, tid = bx, by, bx + bw, by + bh, int(trk[1])
+                else:
+                    x1, y1, x2, y2, tid = trk[0], trk[1], trk[2], trk[3], int(trk[4])
                 color = box_color(tid)
                 cv2.rectangle(display, (int(x1), int(y1)), (int(x2), int(y2)), color, 2)
                 cv2.putText(display, "ID %d" % tid, (int(x1), max(int(y1) - 6, 14)),
