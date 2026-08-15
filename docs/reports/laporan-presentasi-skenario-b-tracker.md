@@ -105,8 +105,8 @@ Status implementasi tracker usulan:
 | Phase 1 | Skeleton asosiasi (Kalman + IoU + Hungarian + EMA) | selesai | 3.211 frame smoke-test, 614 FPS di CPU |
 | Phase 2 | LAE encoder (MobileNetV3-Small, 32-d) | selesai, diverifikasi GPU kampus | cosine orang yang sama 0,772 vs orang beda 0,746 (sebelum dilatih, margin kecil +0,027; justru alasan training) |
 | Phase 3 v1 | Training fold-1 (LAE + TBSS) | selesai | LAE bagus; TBSS tak terukur (bug validasi, bagian 7) |
-| Phase 3 v2 | Perbaikan TBSS (MLP 6-d, optimizer pisah, BCE berbobot) | sedang jalan | GPU kampus belum tersedia |
-| Evaluasi TrackEval | HOTA/IDF1 tracker usulan | belum | menunggu training selesai |
+| Phase 3 v2 | Perbaikan TBSS (MLP 6-d, optimizer pisah, BCE berbobot) | ✅ selesai (14 Agustus) | BCEacc val 0,92-0,98 (best.pt 0,978 di ep15), TBSS terukur valid pertama kali |
+| Evaluasi TrackEval | HOTA/IDF1 tracker usulan | ✅ evaluasi pertama selesai (14 Agustus) | MOT20 HOTA 32,92 / IDF1 34,69; DanceTrack HOTA 22,53 / IDF1 18,91 — masih di bawah OC-SORT, tuning lanjut |
 
 ## 7. Hasil Training Fold-1 (v1) dan Perbaikan v2
 
@@ -129,8 +129,19 @@ Catatan jujur untuk presentasi: angka HOTA/IDF1 tracker usulan belum ada. Yang t
 
 ## 8. Status dan Langkah Berikutnya
 
-- Baseline OC-SORT: selesai. DiffMOT: selesai. Tracker usulan: dalam implementasi.
-- Begitu GPU kampus aktif: jalankan histogram skor TBSS (5 menit) untuk memastikan akar masalah, lanjutkan training v2, lalu evaluasi TrackEval dan masuk ke tabel pembanding.
+- Baseline OC-SORT: selesai. DiffMOT: selesai. Tracker usulan: integrasi pertama selesai, tuning berjalan.
+- Evaluasi pertama tracker usulan (LAE+TBSS, ckpt best.pt BCEacc 0,978, 14 Agustus 2026), protokol sama:
+
+| Tracker | MOT20 HOTA | MOT20 IDF1 | DanceTrack HOTA | DanceTrack IDF1 |
+|---|---|---|---|---|
+| OC-SORT (baseline) | 36,51 | 42,88 | 28,39 | 26,63 |
+| DiffMOT | 44,37 | 53,86 | 39,05 | 43,39 |
+| Tracker usulan (LAE+TBSS) | 32,92 | 34,69 | 22,53 | 18,91 |
+| Ablasi LAE-only | 12,01 | 10,17 | 19,61 | 18,69 |
+
+Bacaannya: pipeline end-to-end sudah bekerja tetapi belum melampaui baseline; fragmentasi tinggi (9.317 ID baru vs 2.215 GT di MOT20) dan w bobot penampilan masih tebakan. Tahap berikutnya: CMOH memory (pemangkas ID switch sesuai pola paper), sweep bobot penampilan, lalu target evaluasi berikutnya >36,51 HOTA (OC-SORT). Ablasi LAE-only menunjukkan penampilan tanpa geometri justru merusak asosiasi, konsisten dengan pelajaran paper (LAE menambah di atas baseline IoU, bukan menggantikan).
+
+- Langkah berikutnya di kampus: sweep bobot penampilan (appearance-w) dan implementasi CMOH memory, lalu evaluasi ulang menuju target >36,51 HOTA MOT20.
 
 ---
 
