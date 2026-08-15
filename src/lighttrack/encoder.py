@@ -63,34 +63,48 @@ class EmbeddingComputer:
         self.model = model or LAE()
         self.model.to(self.device).eval()
         self.size = size
+        self._mean = torch.tensor(_IMAGENET_MEAN, dtype=torch.float32)
+        self._std = torch.tensor(_IMAGENET_STD, dtype=torch.float32)
 
     def embed_frame(self, frame_bgr, boxes_tlwh):
-        """frame_bgr: numpy (H,W,3) uint8 BGR; boxes_tlwh: iterable (x,y,w,h). -> (N,32) numpy."""
+        """frame_bgr: numpy (H,W,3) uint8 BGR; boxes_tlwh: iterable (x,y,w,h). -> (N,32) numpy.
+
+        Crop+resize+normalize di-GPU sekaligus (batch). Resize BOX (= area averaging,
+        setara cv2 INTER_AREA yang dipakai train) supaya numerik konsisten train↔inference.
+        """
         if len(boxes_tlwh) == 0:
             return np.zeros((0, EMBEDED_DIM), dtype=np.float32)
-        crops = self._crop(frame_bgr, boxes_tlwh)
-        x = self._normalize(crops)
+        x = self._crop_batch_torch(frame_bgr, np.asarray(boxes_tlwh, dtype=float))
         with torch.inference_mode():
             e = self.model(x).cpu().numpy()
         return e.astype(np.float32)
 
-    def _crop(self, frame_bgr, boxes_tlwh):
-        import cv2
+    def _crop_batch_torch(self, frame_bgr, boxes_tlwh):
+        """Semua crop diresize ke (size,size) di GPU.
+
+        Frame dikonversi sekali ke float RGB dinormalisasi (H,W,3) di device; tiap box
+        di-slice view lalu resize via F.interpolate(mode='area') = area averaging,
+        setara cv2 INTER_AREA yang dipakai train. Border behavior sama persis dgn
+        jalur cv2 (clamp ke frame, tanpa pad). Opsional: nggak ada.
+        """
+        rgb = torch.from_numpy(frame_bgr[..., ::-1].astype(np.float32) / np.float32(255.0))
+        rgb = (rgb - self._mean) / self._std    # (H,W,3) float32, masih di CPU
+        # pindah ke device; slicing per box = view, tidak menyalin frame
+        rgb = rgb.to(self.device)
         hh, ww = frame_bgr.shape[:2]
         outs = []
         for x, y, w, h in boxes_tlwh:
-            x = max(0, int(round(x))); y = max(0, int(round(y)))
-            rx = min(hh, y + max(1, int(round(h)))); ry = min(ww, x + max(1, int(round(w))))
-            c = frame_bgr[y:rx, x:ry]
-            # pool: border-terkecil diisi dengan warna tepi, bukan pad hitam
-            outs.append(cv2.resize(c, (self.size, self.size), interpolation=cv2.INTER_AREA))
-        return outs
-
-    def _normalize(self, crops):
-        import numpy as np
-        rgb = np.stack([c[..., ::-1] for c in crops]).astype(np.float32) / np.float32(255.0)  # (N,H,W,3) RGB
-        rgb = (rgb - np.array(_IMAGENET_MEAN, dtype=np.float32)) / np.array(_IMAGENET_STD, dtype=np.float32)
-        return torch.from_numpy(rgb.transpose(0, 3, 1, 2)).to(dtype=torch.float32, device=self.device)
+            x0 = int(round(x)); y0 = int(round(y))
+            x1 = min(ww, x0 + max(1, int(round(w)))); y1 = min(hh, y0 + max(1, int(round(h))))
+            x0 = max(0, x0); y0 = max(0, y0)
+            if x1 <= x0 or y1 <= y0:
+                continue
+            c = rgb[y0:y1, x0:x1].permute(2, 0, 1).unsqueeze(0)   # (1,3,h,w) [H,W] urut benar
+            c = c.contiguous()
+            outs.append(F.interpolate(c, size=(self.size, self.size), mode="area"))
+        if not outs:
+            return torch.zeros((0, 3, self.size, self.size), device=self.device)
+        return torch.cat(outs, dim=0)
 
 
 def _demo():
