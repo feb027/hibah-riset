@@ -29,6 +29,23 @@ def _iou(a_xyxy, b_xyxy):
     return np.where(union > 0, inter / np.maximum(union, 1e-9), 0.0)
 
 
+def _asw_weight(det_xyxy):
+    """ASW (paper Eq 10): w_t = sigmoid(N_occ/N_t), GLOBAL per frame.
+
+    det_xyxy: (N,4) deteksi setelah conf-filter. N_occ = jumlah deteksi yang
+    IoU > 0.5 dgn deteksi lain (potensi oklusi); N_t = total. Frame ramai ->
+    w_t tinggi -> asosiasi lebih percaya penampilan daripada geometri.
+    N=0/1 -> w_t = sigmoid(0) = 0.5 (netral, sama dgn appearance_w default).
+    """
+    n = len(det_xyxy)
+    if n < 2:
+        return 0.5
+    iou_mat = _iou(det_xyxy, det_xyxy)
+    np.fill_diagonal(iou_mat, 0.0)  # jangan hitung diri sendiri
+    n_occ = int(np.sum(np.any(iou_mat > 0.5, axis=1)))
+    return float(1.0 / (1.0 + np.exp(-n_occ / max(1, n))))
+
+
 class _KalmanBox:
     """Constant-velocity XYAH Kalman, pola SORT/OC_SORT (filterpy)."""
 
@@ -93,7 +110,8 @@ class LightTrackTracker:
     """
 
     def __init__(self, min_conf=0.3, iou_thresh=0.3, min_hits=3, max_age=30, ema_alpha=0.9,
-                 appearance=None, appearance_w=0.5, score_min=0.3, cmoh_k=10, emit_age=5):
+                 appearance=None, appearance_w=0.5, score_min=0.3, cmoh_k=10, emit_age=5,
+                 asw=False):
         self.min_conf = min_conf
         self.iou_thresh = iou_thresh
         self.min_hits = min_hits
@@ -104,6 +122,10 @@ class LightTrackTracker:
         self.appearance_w = appearance_w
         self.score_min = score_min
         self.cmoh_k = cmoh_k
+        # ASW (paper Eq 10): w_t = sigmoid(N_occ/N_t) — GLOBAL per frame.
+        # N_occ = deteksi yang overlap IoU > 0.5 dgn deteksi lain; N_t = total det.
+        # Frame ramai (banyak overlap) -> w_t tinggi -> lebih percaya penampilan.
+        self.asw = asw
         # emit_age: track gap DI-SEMBUNYIKAN (tidak di-emit) setelah usia ini,
         # tapi tetap hidup untuk matching (OCM). max_age=umur match, emit_age=umur
         # output — memisahkan keduanya mencegah box hantu = FP (MOTA). 
@@ -154,6 +176,9 @@ class LightTrackTracker:
             assert frame_bgr is not None  # sudah di-raise di atas
             H, W = frame_bgr.shape[:2]
             e_det = self.appearance.embed(frame_bgr, dets_tlwh) if n_dets else np.zeros((0, 32), dtype=np.float32)
+        # ASW: bobot blend per-frame dari tingkat overlap deteksi (paper Eq 10).
+        # w_t = sigmoid(N_occ/N_t); N_occ = deteksi dgn IoU > 0.5 thd deteksi lain.
+        w_t = self.appearance_w if not self.asw else _asw_weight(det_xyxy)
         matched = set()
         if ious.size:
             if self.appearance is not None:
@@ -163,7 +188,7 @@ class LightTrackTracker:
                     raise RuntimeError("tracklet tanpa emb_buf saat appearance aktif")
                 e_track = np.stack(clean)
                 sims = self.appearance.score(W, H, pred_tlwh, dets_tlwh, e_track, e_det)
-                gate_mat = self.appearance_w * sims + (1 - self.appearance_w) * ious
+                gate_mat = w_t * sims + (1 - w_t) * ious
                 cost = 1.0 - gate_mat
             else:
                 gate_mat = ious
@@ -296,7 +321,14 @@ def _demo():
     oc6 = occ_tr.update(np.array([[10., 10., 20., 50.], [302., 10., 20., 50.]]),
                         np.array([0.9, 0.9]), frame_bgr=zero)
     assert id_at(oc6, 302, 10) == id_at(oc1, 300, 10), "OCM: ID B harus bertahan setelah oklusi 4 frame"
-    print("demo OK (ioU-only + appearance + CMOH + OCM-light)")
+    # ---- ASW: w_t naik saat frame penuh overlap, netral saat sepi ----
+    assert abs(_asw_weight(np.zeros((0, 4))) - 0.5) < 1e-9
+    sep = np.array([[10., 10., 40., 100.], [300., 10., 40., 100.], [600., 10., 40., 100.]])
+    occ = np.array([[10., 10., 40., 100.], [15., 15., 40., 100.], [20., 20., 40., 100.]])
+    w_sep = _asw_weight(sep)
+    w_occ = _asw_weight(occ)
+    assert w_occ > w_sep > 0.5 - 1e-9, f"ASW salah: w_sep={w_sep:.3f} w_occ={w_occ:.3f}"
+    print("demo OK (ioU-only + appearance + CMOH + OCM-light + ASW)")
 
 
 if __name__ == "__main__":

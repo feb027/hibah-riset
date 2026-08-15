@@ -55,6 +55,8 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--lae-only", action="store_true",
                    help="pakai LAE murni (sim=cosine, tanpa TBSS) — ablasi '+LAE' paper; "
                         "cocok utk ckpt v1 (TBSS-nya gagal). Padukan --appearance-w 1.0")
+    p.add_argument("--asw", action="store_true",
+                   help="ASW (paper Eq 10): bobot blend adaptif w_t=sigmoid(N_occ/N_t) per frame")
     return p.parse_args()
 
 
@@ -91,7 +93,8 @@ def main() -> None:
                                     ema_alpha=args.ema_alpha, emit_age=args.emit_age,
                                     appearance=appearance,
                                     appearance_w=args.appearance_w,
-                                    score_min=args.score_min)
+                                    score_min=args.score_min,
+                                    asw=args.asw)
         min_frame, max_frame = int(seq_trks[:, 0].min()), int(seq_trks[:, 0].max())
         with open(os.path.join(args.out_dir, f"{seq_name}"), "w") as out_file:
             for frame_ind in range(min_frame, max_frame + 1):
