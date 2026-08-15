@@ -9,13 +9,13 @@ class LineCrossDetector:
         return (C.y - A.y) * (B.x - A.x) > (B.y - A.y) * (C.x - A.x)
 
     @staticmethod
-    def check_crossing(virtual_line: Line, trajectory: Line) -> tuple[bool, str | None]:
+    def check_crossing(virtual_line: Line, trajectory: Line):
         """Check if the trajectory intersects the virtual line and determine direction.
-        
+
         Args:
             virtual_line: The predefined boundary line.
             trajectory: The movement vector of the object from previous to current frame.
-            
+
         Returns:
             Tuple of (intersects: bool, direction: str | None).
             Direction is "IN" or "OUT".
