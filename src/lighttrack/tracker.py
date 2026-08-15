@@ -125,7 +125,13 @@ class LightTrackTracker:
         preds = {}
         for tid, tr in self.tracks.items():
             tr["age"] += 1
-            tr["kf"].predict()
+            if tr["age"] <= 1:
+                # OCM-light: Kalman predict HANYA utk track yang aktif (baru match
+                # frame lalu, atau 1 frame masuk gap). Track gap lebih lama DI-FREEZE
+                # di posisi terakhir yang ke-match — tanpa freeze, prediksi drift
+                # terus dan max_age panjang malah nyasar ke deteksi orang lain
+                # (sweep max_age=90/150 → MOTA negatif, IDSW naik).
+                tr["kf"].predict()
             preds[tid] = tr["kf"].xyah
         e_det = np.zeros((0, 32), dtype=np.float32)  # hanya dipakai bila appearance aktif
         H = W = 0  # diisi bila appearance aktif (dipakai score() di blok matching)
@@ -268,7 +274,21 @@ def _demo():
     assert id_at(o4, 302, 10) == id_at(o1, 300, 10), "CMOH: ID B harus bertahan setelah oklusi 1 frame"
     for tid, tr in cmoh_tr.tracks.items():
         assert len(tr["emb_buf"]) <= cmoh_tr.cmoh_k, f"buffer melebihi K={cmoh_tr.cmoh_k}"
-    print("demo OK (ioU-only + appearance + CMOH)")
+
+    # ---- OCM-light: oklusi 4 frame -> posisi track DI-FREEZE (no drift), ID tetap ----
+    occ_tr = LightTrackTracker(min_hits=1, appearance=FakeAppearance(), max_age=10)
+    oc1 = occ_tr.update(np.array([[10., 10., 20., 50.], [300., 10., 20., 50.]]),
+                        np.array([0.9, 0.9]), frame_bgr=zero)
+    for t in range(4):  # B hilang 4 frame, A jalan sendiri; tidak ada deteksi B
+        occ_tr.update(np.array([[10. + t, 10., 20., 50.]]), np.array([0.9]), frame_bgr=zero)
+    # cek B DI-FREEZE: posisi prediksi tidak melebar drastis dari posisi oklusi
+    tb = occ_tr.tracks[id_at(oc1, 300, 10)]
+    frozen = _xyah_to_tlwh(tb["kf"].xyah)
+    assert abs(frozen[0] - 301.0) < 30.0, f"OCM-freeze gagal: B drift ke x={frozen[0]:.1f}"
+    oc6 = occ_tr.update(np.array([[10., 10., 20., 50.], [302., 10., 20., 50.]]),
+                        np.array([0.9, 0.9]), frame_bgr=zero)
+    assert id_at(oc6, 302, 10) == id_at(oc1, 300, 10), "OCM: ID B harus bertahan setelah oklusi 4 frame"
+    print("demo OK (ioU-only + appearance + CMOH + OCM-light)")
 
 
 if __name__ == "__main__":
