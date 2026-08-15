@@ -71,6 +71,8 @@ def parse_args():
     p.add_argument("--appearance-w", type=float, default=0.5)
     p.add_argument("--score-min", type=float, default=0.3)
     p.add_argument("--emit-age", type=int, default=5)
+    p.add_argument("--ema-alpha", type=float, default=0.9,
+                   help="EMA embedding tracklet (LightTrack); default 0.9 = sama dgn eval final")
     p.add_argument("--cmoh-k", type=int, default=10)
     return p.parse_args()
 
