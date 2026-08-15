@@ -106,7 +106,7 @@ Status implementasi tracker usulan:
 | Phase 2 | LAE encoder (MobileNetV3-Small, 32-d) | selesai, diverifikasi GPU kampus | cosine orang yang sama 0,772 vs orang beda 0,746 (sebelum dilatih, margin kecil +0,027; justru alasan training) |
 | Phase 3 v1 | Training fold-1 (LAE + TBSS) | selesai | LAE bagus; TBSS tak terukur (bug validasi, bagian 7) |
 | Phase 3 v2 | Perbaikan TBSS (MLP 6-d, optimizer pisah, BCE berbobot) | ✅ selesai (14 Agustus) | BCEacc val 0,92-0,98 (best.pt 0,978 di ep15), TBSS terukur valid pertama kali |
-| Evaluasi TrackEval | HOTA/IDF1 tracker usulan | ✅ evaluasi pertama selesai (14 Agustus) | MOT20 HOTA 32,92 / IDF1 34,69; DanceTrack HOTA 22,53 / IDF1 18,91 — masih di bawah OC-SORT, tuning lanjut |
+| Evaluasi TrackEval | HOTA/IDF1 tracker usulan | ✅ evaluasi pertama selesai (14 Agustus) | MOT20 HOTA 32,92 / IDF1 34,69; DanceTrack HOTA 22,53 / IDF1 18,91; masih di bawah OC-SORT, tuning lanjut |
 
 ## 7. Hasil Training Fold-1 (v1) dan Perbaikan v2
 
