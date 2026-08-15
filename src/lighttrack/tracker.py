@@ -93,7 +93,7 @@ class LightTrackTracker:
     """
 
     def __init__(self, min_conf=0.3, iou_thresh=0.3, min_hits=3, max_age=30, ema_alpha=0.9,
-                 appearance=None, appearance_w=0.5, score_min=0.3, cmoh_k=10):
+                 appearance=None, appearance_w=0.5, score_min=0.3, cmoh_k=10, emit_age=5):
         self.min_conf = min_conf
         self.iou_thresh = iou_thresh
         self.min_hits = min_hits
@@ -104,6 +104,10 @@ class LightTrackTracker:
         self.appearance_w = appearance_w
         self.score_min = score_min
         self.cmoh_k = cmoh_k
+        # emit_age: track gap DI-SEMBUNYIKAN (tidak di-emit) setelah usia ini,
+        # tapi tetap hidup untuk matching (OCM). max_age=umur match, emit_age=umur
+        # output — memisahkan keduanya mencegah box hantu = FP (MOTA). 
+        self.emit_age = emit_age
         self.next_id = 1
         self.tracks = {}  # id -> dict(kf, age, hits, ema_box(1x4 tlwh), emb_buf(deque[K]))
 
@@ -200,6 +204,10 @@ class LightTrackTracker:
         out = []
         for tid, tr in self.tracks.items():
             if tr["hits"] < self.min_hits:
+                continue
+            if tr["age"] > self.emit_age:
+                # OCM + emit-gap: track tetep dipakai untuk matching, tapi box
+                # hantu (gap > emit_age) tidak di-emit -> bukan FP di TrackEval.
                 continue
             box = tr["ema_box"] if tr["ema_box"] is not None else _xyah_to_tlwh(tr["kf"].xyah)
             out.append((box, tid))

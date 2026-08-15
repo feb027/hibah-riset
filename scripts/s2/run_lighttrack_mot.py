@@ -41,6 +41,8 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--iou-thresh", type=float, default=0.3)
     p.add_argument("--min-hits", type=int, default=3)
     p.add_argument("--max-age", type=int, default=30)
+    p.add_argument("--emit-age", type=int, default=5,
+                   help="umur output box (gap > ini tidak di-emit; tetap dipakai matching; OCM)")
     p.add_argument("--ema-alpha", type=float, default=0.9)
     p.add_argument("--ckpt", default=None,
                    help="ckpt .pt (best.pt/last.pt) utk LAE+TBSS — tanpa ini tracker IoU-only")
@@ -86,7 +88,7 @@ def main() -> None:
             print("  (kosong, dilewati)"); continue
         tracker = LightTrackTracker(min_conf=args.min_conf, iou_thresh=args.iou_thresh,
                                     min_hits=args.min_hits, max_age=args.max_age,
-                                    ema_alpha=args.ema_alpha,
+                                    ema_alpha=args.ema_alpha, emit_age=args.emit_age,
                                     appearance=appearance,
                                     appearance_w=args.appearance_w,
                                     score_min=args.score_min)
