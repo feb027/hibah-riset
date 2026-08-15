@@ -245,12 +245,17 @@ t_epoch0 = time.time()
 TICK_EVER = 5.0  # update status 1 baris tiap 5s (progress + fps + ETA)
 
 # ---- watchdog: kalau training hang (tidak ada iter > HANG_S), dump diagnostik ----
+# FIX 2026-08-15: loop SELALU berhenti saat _prog["stop"] diset di akhir training —
+# sebelum ini daemon thread hidup terus setelah training selesai dan menulis
+# hang_*.log tiap 120s (user bangun pagi nemu puluhan file HANG).
 import threading, traceback, sys, subprocess
 HANG_S = 120
-_prog = {"t": time.time()}
+_prog = {"t": time.time(), "stop": False}
 def _watchdog():
     while True:
         time.sleep(HANG_S)
+        if _prog["stop"]:
+            return
         idle = time.time() - _prog["t"]
         if idle < HANG_S - 2:
             continue
@@ -439,6 +444,7 @@ for ep in range(start_ep + 1, EPOCHS + 1):
         print(line)
 
 logf.close(); stats_jsonl.close()
+_prog["stop"] = True  # training selesai — matikan watchdog, jangan sempat nulis hang_*.log palsu
 print(f"DONE — best {OUT}/best.pt (BCEacc={best_acc:.3f}), last {OUT}/last.pt")
 """))
 
