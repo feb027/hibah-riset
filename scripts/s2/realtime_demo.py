@@ -63,6 +63,9 @@ def parse_args():
     p.add_argument("--inertia", type=float, default=0.2)
     p.add_argument("--max-w", type=int, default=960, help="lebar tampilan maksimum")
     p.add_argument("--save", default=None, help="simpan hasil ke file mp4 (opsional)")
+    p.add_argument("--no-show", action="store_true",
+                   help="headless: tanpa window (buat mesin tanpa display spt JupyterHub); "
+                        "video berjalan sampai habis, tombol keyboard nonaktif")
     p.add_argument("--tracker", default="ocsort", choices=["ocsort", "lighttrack"],
                    help="ocsort (default) atau lighttrack (usulan kita: LAE+TBSS+OCM)")
     p.add_argument("--ckpt", default=None,
@@ -234,7 +237,8 @@ def main():
             if display.shape[1] > args.max_w:
                 scale = args.max_w / float(display.shape[1])
                 display = cv2.resize(display, (args.max_w, int(display.shape[0] * scale)))
-            cv2.imshow("YOLO26 + OC-SORT (realtime)", display)
+            if not args.no_show:
+                cv2.imshow("YOLO26 + OC-SORT (realtime)", display)
             if writer is not None:
                 writer.write(display)
 
@@ -244,6 +248,8 @@ def main():
                 print("Sumber selesai/putus.")
                 break
 
+        if args.no_show:
+            continue
         key = cv2.waitKey(1) & 0xFF
         if key == 27:  # ESC
             break
@@ -256,7 +262,8 @@ def main():
     cap.release()
     if writer is not None:
         writer.release()
-    cv2.destroyAllWindows()
+    if not args.no_show:
+        cv2.destroyAllWindows()
     if counter is not None:
         print("Selesai. TOTAL=%d IN=%d OUT=%d (FPS rata-rata %.1f)"
               % (counter.count_in + counter.count_out, counter.count_in,
