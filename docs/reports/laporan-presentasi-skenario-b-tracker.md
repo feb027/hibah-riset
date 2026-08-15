@@ -136,12 +136,27 @@ Catatan jujur untuk presentasi: angka HOTA/IDF1 tracker usulan belum ada. Yang t
 |---|---|---|---|---|
 | OC-SORT (baseline) | 36,51 | 42,88 | 28,39 | 26,63 |
 | DiffMOT | 44,37 | 53,86 | 39,05 | 43,39 |
-| Tracker usulan (LAE+TBSS) | 32,92 | 34,69 | 22,53 | 18,91 |
+| Tracker usulan (LAE+TBSS, OCM, ma90_ea5, sm0.3_aw0.5) | **37,67** | 43,54 | 28,43 | 28,71 |
 | Ablasi LAE-only | 12,01 | 10,17 | 19,61 | 18,69 |
 
-Bacaannya: pipeline end-to-end sudah bekerja tetapi belum melampaui baseline; fragmentasi tinggi (9.317 ID baru vs 2.215 GT di MOT20) dan w bobot penampilan masih tebakan. Tahap berikutnya: CMOH memory (pemangkas ID switch sesuai pola paper), sweep bobot penampilan, lalu target evaluasi berikutnya >36,51 HOTA (OC-SORT). Ablasi LAE-only menunjukkan penampilan tanpa geometri justru merusak asosiasi, konsisten dengan pelajaran paper (LAE menambah di atas baseline IoU, bukan menggantikan).
+Bacaannya: pipeline end-to-end sudah bekerja, dengan OCM + tuning gate berhasil menembus baseline OC-SORT (37,67 vs 36,51 HOTA MOT20, +1,16) sambil IDF1 naik (43,54 vs 42,88). DiffMOT tetap unggul jauh (44,37), posisi jujur untuk presentasi: tracker usulan menang tipis atas OC-SORT, kalah telak dari DiffMOT — alasan pivot ke LightTrack-ReID (S014). Ablasi LAE-only menunjukkan penampilan tanpa geometri justru merusak asosiasi, konsisten dengan pelajaran paper (LAE menambah di atas baseline IoU, bukan menggantikan).
 
-- Langkah berikutnya di kampus: sweep bobot penampilan (appearance-w) dan implementasi CMOH memory, lalu evaluasi ulang menuju target >36,51 HOTA MOT20.
+### 8.1 Hasil akhir (16 Agustus 2026) — gate sweep + ASW
+
+Sweep terakhir di atas OCM `ma90_ea5` dengan ckpt v2 `best.pt` (BCEacc 0,978):
+
+| Konfigurasi | MOT20 HOTA | MOT20 MOTA | MOT20 IDF1 | DanceTrack HOTA | Bacaannya |
+|---|---|---|---|---|---|
+| sm0.3 aw0.5 (default, best) | **37,67** | 54,94 | **43,54** | 28,43 | tetap terbaik MOT20 |
+| sm0.2 aw0.5 | 37,15 | 54,99 | 43,02 | **29,31** | DT terbaik, MOT20 turun |
+| sm0.3 aw0.7 | 37,19 | 54,93 | 42,99 | 27,64 | tidak mengungguli |
+| + ASW (Eq 10 paper) | 37,59 | 54,96 | 43,51 | 27,65 | negatif: tidak ada gain |
+
+Keputusan: konfigurasi final = **sm0.3, appearance-w 0.5, ma90, ea5** — angka 37,67 HOTA MOT20 / 28,43 DanceTrack. ASW (bobot adaptif paper Eq 10) **tidak terbukti** di protokol kita (37,59 < 37,67; selisih ±0,1 di bawah noise run), dicatat sebagai hasil ablasi negatif — tidak dipakai. Gate `sm0.2` menarik untuk DanceTrack (29,31) tapi mengorbankan 0,52 HOTA MOT20, tidak diambil karena prioritas laporan adalah MOT20 (domain people counting padat).
+
+- Hasil lengkap per-sekuens: `experiments/s2_final/{sm0.3_aw0.5,asw,sm0.2_aw0.5,sm0.3_aw0.7}/eval_results.csv`
+
+- Status tuning tracker usulan: **selesai** (sweep gate + ASW dieksekusi 16 Agustus 2026, hasil di 8.1). Selanjutnya di kampus hanya bila ada GPU luang: konfirmasi per-sekuens (MOT17 test) atau uji cepat pada video real people-counting.
 
 ---
 
