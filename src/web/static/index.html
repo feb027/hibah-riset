@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Real-Time People Counting Dashboard</title>
+  <meta name="description" content="Dashboard Analitik People Counting Real-Time berbasis Deep Learning YOLO26 dan Deep-OC-SORT">
+  
+  <link rel="stylesheet" href="/css/tokens.css">
+  <link rel="stylesheet" href="/css/layout.css">
+  <link rel="stylesheet" href="/css/components.css">
+</head>
+<body>
+  <div class="app-container">
+    <!-- Header Bar -->
+    <header class="app-header">
+      <div class="brand-section">
+        <h1 class="brand-title">PEOPLE COUNTING SYSTEM</h1>
+        <div class="status-badge">
+          <span id="status-dot" class="status-dot"></span>
+          <span id="status-text">TERHUBUNG</span>
+        </div>
+      </div>
+
+      <div class="header-telemetry">
+        <div class="telemetry-item">
+          <span>Sumber:</span>
+          <span id="header-source" class="telemetry-val">Webcam 0</span>
+        </div>
+        <div class="telemetry-item">
+          <span>Model:</span>
+          <span id="header-model" class="telemetry-val">YOLO26-S + Deep-OC-SORT</span>
+        </div>
+        <div class="telemetry-item">
+          <span>Throughput:</span>
+          <span id="header-fps" class="telemetry-val">0.0 FPS</span>
+        </div>
+        <div class="telemetry-item">
+          <span>Latensi:</span>
+          <span id="header-latency" class="telemetry-val">0.0 ms</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Content Grid -->
+    <main class="main-grid">
+      <!-- Left: Video Canvas & Toolbar -->
+      <section class="canvas-panel">
+        <div class="canvas-wrapper">
+          <img id="video-player-img" class="video-player-img" src="/api/stream/video_feed" alt="Aliran Video Real-Time">
+          <canvas id="canvas-overlay" class="canvas-overlay"></canvas>
+        </div>
+
+        <!-- Interactive Toolbar -->
+        <nav class="canvas-toolbar" aria-label="Kontrol Garis dan Zona">
+          <div class="toolbar-group">
+            <button id="btn-draw-line" class="btn" title="Tarik garis virtual perlintasan">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="19" x2="19" y2="5"></line><circle cx="5" cy="19" r="2"></circle><circle cx="19" cy="5" r="2"></circle></svg>
+              Tarik Garis
+            </button>
+            <button id="btn-draw-roi" class="btn" title="Gambar batas poligon zona aktif">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 22 8.5 22 15.5 12 22 2 15.5 2 8.5 12 2"></polygon></svg>
+              Gambar RoI
+            </button>
+            <button id="btn-finish-roi" class="btn" style="display: none; background-color: var(--accent-emerald-subtle); color: var(--accent-emerald); border-color: var(--accent-emerald);" title="Kunci poligon RoI">
+              Selesai RoI
+            </button>
+            <button id="btn-clear-roi" class="btn" title="Hapus RoI dan kembali ke area penuh">
+              Hapus RoI
+            </button>
+            <button id="btn-flip-direction" class="btn" title="Tukar arah masuk dan keluar">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="17 1 21 5 17 9"></polyline><path d="M3 11V9a4 4 0 0 1 4-4h14"></path><polyline points="7 23 3 19 7 15"></polyline><path d="M21 13v2a4 4 0 0 1-4 4H3"></path></svg>
+              Balik Arah
+            </button>
+          </div>
+
+          <div class="toolbar-group">
+            <button id="btn-change-source" class="btn" title="Ubah sumber input video">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 7l-7 5 7 5V7z"></path><rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect></svg>
+              Ganti Sumber
+            </button>
+            <button id="btn-reset" class="btn btn-danger" title="Reset hitungan ke nol">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 2v6h6"></path><path d="M21 12A9 9 0 0 0 6 5.3L3 8"></path><path d="M21 22v-6h-6"></path><path d="M3 12a9 9 0 0 0 15 6.7l3-2.7"></path></svg>
+              Reset Hitungan
+            </button>
+          </div>
+        </nav>
+      </section>
+
+      <!-- Right: Real-Time Metrics & Charts -->
+      <aside class="sidebar-panel">
+        <!-- Metric Cards -->
+        <section class="metrics-grid" aria-label="Ringkasan Hitungan">
+          <div class="metric-card total">
+            <span class="metric-label">Total Melintas</span>
+            <span id="metric-total" class="metric-value">0</span>
+          </div>
+          <div class="metric-card occupancy">
+            <span class="metric-label">Dalam Zona RoI</span>
+            <span id="metric-occupancy" class="metric-value">0</span>
+          </div>
+          <div class="metric-card in">
+            <span class="metric-label">Arah Masuk (IN)</span>
+            <span id="metric-in" class="metric-value">0</span>
+          </div>
+          <div class="metric-card out">
+            <span class="metric-label">Arah Keluar (OUT)</span>
+            <span id="metric-out" class="metric-value">0</span>
+          </div>
+        </section>
+
+        <!-- Real-Time Traffic Flow Chart -->
+        <section class="card-box">
+          <div class="modal-header">
+            <h2 class="card-title">Tren Arus Melintas (Real-Time)</h2>
+            <div style="display: flex; gap: 12px; font-size: 11px; font-family: var(--font-mono);">
+              <span style="color: var(--accent-emerald);">● IN</span>
+              <span style="color: var(--accent-amber);">● OUT</span>
+            </div>
+          </div>
+          <div class="chart-wrapper">
+            <svg id="traffic-chart-svg" class="chart-svg" viewBox="0 0 400 100" preserveAspectRatio="none">
+              <!-- Grid lines -->
+              <line x1="10" y1="20" x2="390" y2="20" class="chart-grid-line"></line>
+              <line x1="10" y1="50" x2="390" y2="50" class="chart-grid-line"></line>
+              <line x1="10" y1="80" x2="390" y2="80" class="chart-grid-line"></line>
+              <!-- Traffic paths -->
+              <path class="chart-line-in" d="M 10,90 L 390,90"></path>
+              <path class="chart-line-out" d="M 10,90 L 390,90"></path>
+            </svg>
+          </div>
+        </section>
+
+        <!-- System Architecture Specification Card -->
+        <section class="card-box">
+          <h2 class="card-title">Spesifikasi Arsitektur Sistem</h2>
+          <div style="display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: var(--text-secondary);">
+            <div style="display: flex; justify-content: space-between;">
+              <span>Model Detektor:</span>
+              <span style="color: var(--text-primary); font-family: var(--font-mono);">YOLO26-S (640x640)</span>
+            </div>
+            <div style="display: flex; justify-content: space-between;">
+              <span>Pelacak (Tracker):</span>
+              <span style="color: var(--text-primary); font-family: var(--font-mono);">Deep-OC-SORT (ACM+VDC)</span>
+            </div>
+            <div style="display: flex; justify-content: space-between;">
+              <span>Logika Hitung:</span>
+              <span style="color: var(--text-primary); font-family: var(--font-mono);">State Machine (Debounce CD=30)</span>
+            </div>
+            <div style="display: flex; justify-content: space-between;">
+              <span>Filter Zona:</span>
+              <span style="color: var(--text-primary); font-family: var(--font-mono);">Ray-Casting RoI Polygon</span>
+            </div>
+          </div>
+        </section>
+      </aside>
+    </main>
+  </div>
+
+  <!-- Modal Ubah Sumber Video -->
+  <div id="modal-source" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 id="modal-title" class="modal-title">Pilih Sumber Video</h2>
+        <button id="btn-close-modal" class="btn" style="padding: 2px 8px;" aria-label="Tutup modal">✕</button>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 12px;">
+        <label style="display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: var(--text-muted);">
+          Tipe Sumber
+          <select id="select-source-type" class="input-field">
+            <option value="webcam">Webcam Lokal (Index 0, 1, ...)</option>
+            <option value="rtsp">Aliran Jaringan RTSP / Kamera HP (HTTP Stream)</option>
+            <option value="file">Berkas Video (MP4 / AVI / Direktori Sekuens)</option>
+          </select>
+        </label>
+
+        <label style="display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: var(--text-muted);">
+          URI / Path / URL
+          <input id="input-source-uri" type="text" class="input-field" placeholder="0 atau http://100.x.x.x:8080/video atau data/video.mp4">
+        </label>
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 8px;">
+        <button id="btn-apply-source" class="btn" style="background-color: var(--text-primary); color: var(--bg-root); font-weight: 600;">
+          Terapkan Sumber
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- JavaScript Entry Point -->
+  <script type="module" src="/js/app.js"></script>
+</body>
+</html>
