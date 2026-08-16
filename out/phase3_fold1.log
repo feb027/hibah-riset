@@ -1,0 +1,15 @@
+[train] device=cuda
+Traceback (most recent call last):
+  File "src/lighttrack/train.py", line 325, in <module>
+    main()
+  File "src/lighttrack/train.py", line 321, in main
+    train(args)
+  File "src/lighttrack/train.py", line 157, in train
+    caches = [FLTCCache(d) for d in args.seq_dirs.split(":")]
+  File "src/lighttrack/train.py", line 157, in <listcomp>
+    caches = [FLTCCache(d) for d in args.seq_dirs.split(":")]
+  File "/opt/shared_data/hibah-riset/src/lighttrack/dataset.py", line 36, in __init__
+    self._gt = self._load_gt()
+  File "/opt/shared_data/hibah-riset/src/lighttrack/dataset.py", line 47, in _load_gt
+    with open(gt_path) as fh:
+FileNotFoundError: [Errno 2] No such file or directory: 'data/s2/mot17_hf/train/MOT17-02/gt/gt.txt'

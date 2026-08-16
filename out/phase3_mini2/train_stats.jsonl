@@ -1,0 +1,2 @@
+{"event":"start","time":"2026-08-05 19:02:43","device":"cuda","epochs":1,"seq":1}
+{"event": "epoch", "ep": 1, "loss": 0.36498310789465904, "lt": 0.10195935625582933, "lb": 0.263023749217391, "bce_acc": 0.48324022346368717, "cos_same": 0.9031031463066292, "cos_diff": 0.18126610296585874, "dt_s": 17.3, "eta_s": 0.0, "cpu_percent": 0.9, "ram_avail_gb": 22.52, "gpu_util_percent": 36.0, "gpu_vram_alloc_gb": 0.06}

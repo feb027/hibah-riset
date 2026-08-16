@@ -1,0 +1,3 @@
+dataset,tracker,cls,HOTA,MOTA,IDF1,IDSW,Frag,benchmark
+MotChallenge2DBox,lighttrack,pedestrian,37.1473,54.9949,43.0209,11397,12168,MOT20
+MotChallenge2DBox,lighttrack,pedestrian,29.3082,57.9019,29.6508,6081,4441,DanceTrack
