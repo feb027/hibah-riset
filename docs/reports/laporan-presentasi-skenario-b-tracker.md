@@ -154,6 +154,26 @@ Sweep terakhir di atas OCM `ma90_ea5` dengan ckpt v2 `best.pt` (BCEacc 0,978):
 
 Keputusan: konfigurasi final = **sm0.3, appearance-w 0.5, ma90, ea5** — angka 37,67 HOTA MOT20 / 28,43 DanceTrack. ASW (bobot adaptif paper Eq 10) **tidak terbukti** di protokol kita (37,59 < 37,67; selisih ±0,1 di bawah noise run), dicatat sebagai hasil ablasi negatif — tidak dipakai. Gate `sm0.2` menarik untuk DanceTrack (29,31) tapi mengorbankan 0,52 HOTA MOT20, tidak diambil karena prioritas laporan adalah MOT20 (domain people counting padat).
 
+### 8.2 Validasi optimasi crop GPU (16 Agustus 2026) + kecepatan realtime
+
+Bottleneck realtime bukan detektor (YOLO26 di RTX 4090 hanya 3-5 ms per frame), melainkan loop crop+resize embedding per deteksi yang jalan serial di CPU (sekitar 25 ms per frame di adegan padat — itu sebabnya FPS 4090 nyaris sama dengan GTX 1080 di paper S014). Fix: crop+resize dipindah ke GPU dengan area averaging (`F.interpolate mode='area'`, setara `INTER_AREA` yang dipakai training sehingga konsisten train→inference). Konfigurasi final dijalankan ulang dengan protokol sama untuk memastikan tidak ada regresi akurasi:
+
+| Konfigurasi | MOT20 HOTA | MOT20 MOTA | MOT20 IDF1 | DanceTrack HOTA | Bacaannya |
+|---|---|---|---|---|---|
+| sm0.3 aw0.5 (baseline, cv2 crop) | 37,67 | 54,94 | 43,54 | 28,43 | angka final sebelumnya |
+| sm0.3 aw0.5 (batch crop GPU) | **37,72** | 54,98 | 43,51 | 28,12 | dalam noise ±0,5; IDSW MOT20 turun 11.637→11.497 |
+
+Akurasi tidak turun (selisih MOT20 +0,05; DanceTrack -0,31, keduanya di bawah noise run). Hasil validasi: `experiments/s2_final_recheck/batchcrop/eval_results.csv`.
+
+Kecepatan realtime demo (`realtime_demo.py`, MOT20-02 padat, RTX 4090 + i9 14900K):
+
+| Versi | FPS rata-rata | Anggaran 33-40 ms/frame |
+|---|---|---|
+| Sebelum (cv2 crop CPU) | 31,9 FPS (31 ms/frame) | lolos tipis |
+| Setelah (batch crop GPU) | **49,3 FPS (20 ms/frame)** | lolos lebar |
+
+Temuan yang relevan untuk presentasi: FPS yang nyaris sama antara RTX 4090 kita dan GTX 1080 paper (sekitar 30 FPS) bukan tanda butuh GPU mahal, melainkan bottleneck implementasi di sisi CPU; setelah crop dipindah ke GPU, 4090 baru terpakai penuh.
+
 - Hasil lengkap per-sekuens: `experiments/s2_final/{sm0.3_aw0.5,asw,sm0.2_aw0.5,sm0.3_aw0.7}/eval_results.csv`
 
 - Status tuning tracker usulan: **selesai** (sweep gate + ASW dieksekusi 16 Agustus 2026, hasil di 8.1). Selanjutnya di kampus hanya bila ada GPU luang: konfirmasi per-sekuens (MOT17 test) atau uji cepat pada video real people-counting.
