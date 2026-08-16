@@ -220,12 +220,57 @@ def main():
         writer = cv2.VideoWriter(args.save, cv2.VideoWriter_fourcc(*"mp4v"), 30,
                                  (min(frame_w, args.max_w), int(frame_h * min(1.0, args.max_w / float(frame_w)))))
 
+    # Interactive line setup state
+    line_start_pt = Point(vx, 0) if line_ori == "v" else Point(0, vy)
+    line_end_pt = Point(vx, frame_h) if line_ori == "v" else Point(frame_w, vy)
+    mouse_state = {"drawing": False, "p1": None, "p2": None}
+
+    def on_mouse(event, mx, my, flags, param):
+        nonlocal line_start_pt, line_end_pt, counter, line_ori, line_pos
+        # Skalakan koordinat mouse kembali ke ukuran frame asli
+        scale = float(frame_w) / float(min(frame_w, args.max_w))
+        orig_x = int(mx * scale)
+        orig_y = int(my * scale)
+
+        if event == cv2.EVENT_LBUTTONDOWN:
+            mouse_state["drawing"] = True
+            mouse_state["p1"] = (orig_x, orig_y)
+            mouse_state["p2"] = (orig_x, orig_y)
+        elif event == cv2.EVENT_MOUSEMOVE:
+            if mouse_state["drawing"]:
+                mouse_state["p2"] = (orig_x, orig_y)
+        elif event == cv2.EVENT_LBUTTONUP:
+            if mouse_state["drawing"]:
+                mouse_state["drawing"] = False
+                p1 = mouse_state["p1"]
+                p2 = (orig_x, orig_y)
+                # Jika drag lebih dari 20 piksel, buat garis kustom
+                if (p1[0] - p2[0]) ** 2 + (p1[1] - p2[1]) ** 2 > 400:
+                    line_start_pt = Point(p1[0], p1[1])
+                    line_end_pt = Point(p2[0], p2[1])
+                    line_ori = "custom"
+                    counter = PeopleCounter(Line(line_start_pt, line_end_pt), cooldown_threshold=args.cooldown)
+                    print(f"\n[GUI] Garis Kustom dibuat: ({p1[0]},{p1[1]}) -> ({p2[0]},{p2[1]})")
+                else:
+                    # Klik sekali: Geser garis vertikal ke posisi klik
+                    line_ori = "v"
+                    line_pos = orig_x / float(frame_w)
+                    line_start_pt = Point(orig_x, 0)
+                    line_end_pt = Point(orig_x, frame_h)
+                    counter = PeopleCounter(Line(line_start_pt, line_end_pt), cooldown_threshold=args.cooldown)
+                    print(f"\n[GUI] Garis Vertikal dipindah ke x = {orig_x} ({line_pos:.2f} frame)")
+
+    win_name = "Realtime People Counting (YOLO26 + Deep-OC-SORT)"
+    if not args.no_show:
+        cv2.namedWindow(win_name, cv2.WINDOW_AUTOSIZE)
+        cv2.setMouseCallback(win_name, on_mouse)
+
     fps = 0.0
     paused = False
     frame = first_frame
     print("Jalan! ESC = keluar, SPACE = pause, C = reset hitungan.")
-    print("(counting %s, garis %s=%.2f)" % ("AKTIF" if counter else "nonaktif",
-                                            line_ori, line_pos if line_pos is not None else -1))
+    print("TIPS GUI: Klik & Drag mouse di layar video untuk menarik garis virtual baru kapan saja!")
+    print("(counting %s, garis %s)" % ("AKTIF" if counter else "nonaktif", line_ori))
 
     while True:
         if not paused:
@@ -276,35 +321,39 @@ def main():
                 active[tid] = ((x1 + x2) / 2.0, (y1 + y2) / 2.0)
 
             if counter is not None:
-                if line_ori == "h":
-                    vy = int(h * line_pos)
-                    cv2.line(display, (0, vy), (w, vy), (255, 255, 0), 2)
-                    cv2.putText(display, "IN (atas->bawah)", (8, max(vy - 8, 14)),
-                                cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 0), 1, cv2.LINE_AA)
-                else:
-                    vx = int(w * line_pos)
-                    cv2.line(display, (vx, 0), (vx, h), (255, 255, 0), 2)
-                    cv2.putText(display, "IN (kiri->kanan)", (vx + 8, 24),
-                                cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 0), 1, cv2.LINE_AA)
+                p1_draw = (int(line_start_pt.x), int(line_start_pt.y))
+                p2_draw = (int(line_end_pt.x), int(line_end_pt.y))
+                cv2.line(display, p1_draw, p2_draw, (0, 255, 255), 3)
+                cv2.circle(display, p1_draw, 5, (0, 255, 255), -1)
+                cv2.circle(display, p2_draw, 5, (0, 255, 255), -1)
+                cv2.putText(display, "COUNTING LINE", (min(p1_draw[0], p2_draw[0]) + 8, max(min(p1_draw[1], p2_draw[1]) - 8, 20)),
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 255), 1, cv2.LINE_AA)
+
                 for tid, (cx, cy) in active.items():
                     counter.update(tid, Point(cx, cy))
                 total = counter.count_in + counter.count_out
-                cv2.putText(display, "TOTAL %d  IN %d  OUT %d" % (total, counter.count_in, counter.count_out),
-                            (10, 34), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 255), 2, cv2.LINE_AA)
+                cv2.putText(display, "TOTAL: %d | IN: %d | OUT: %d" % (total, counter.count_in, counter.count_out),
+                            (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 255), 2, cv2.LINE_AA)
             else:
-                cv2.putText(display, "TRACK %d" % len(active), (10, 34),
+                cv2.putText(display, "TRACK: %d" % len(active), (10, 30),
                             cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 255), 2, cv2.LINE_AA)
+
+            # Jika sedang klik-tarik mouse, gambar garis bantu preview putih putus-putus
+            if mouse_state["drawing"] and mouse_state["p1"] and mouse_state["p2"]:
+                cv2.line(display, mouse_state["p1"], mouse_state["p2"], (255, 255, 255), 2)
+                cv2.circle(display, mouse_state["p1"], 4, (0, 255, 0), -1)
+                cv2.circle(display, mouse_state["p2"], 4, (0, 0, 255), -1)
 
             dt = time.perf_counter() - t0
             fps = 0.9 * fps + 0.1 * (1.0 / max(dt, 1e-6))
-            cv2.putText(display, "FPS %.1f | deteksi %.1f ms" % (fps, dt * 1000),
-                        (10, 20), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2, cv2.LINE_AA)
+            cv2.putText(display, "FPS: %.1f (%.1f ms)" % (fps, dt * 1000),
+                        (w - 180, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2, cv2.LINE_AA)
 
             if display.shape[1] > args.max_w:
                 scale = args.max_w / float(display.shape[1])
                 display = cv2.resize(display, (args.max_w, int(display.shape[0] * scale)))
             if not args.no_show:
-                cv2.imshow("YOLO26 + OC-SORT (realtime)", display)
+                cv2.imshow(win_name, display)
             if writer is not None:
                 writer.write(display)
 
