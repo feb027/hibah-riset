@@ -6,6 +6,7 @@ import time
 from typing import AsyncGenerator
 
 import cv2
+import numpy as np
 from fastapi import APIRouter, Request
 from fastapi.responses import StreamingResponse
 
