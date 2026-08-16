@@ -32,9 +32,10 @@ class StreamManager:
         self._latest_frame: Optional[np.ndarray] = None
         self._frame_w = 640
         self._frame_h = 480
-        self._fps = 30.0
         self._source_name = str(source)
         self._is_sequence = False
+        self._is_client_feed = False
+        self._frame_id = 0
 
     @property
     def dimensions(self) -> Tuple[int, int]:
