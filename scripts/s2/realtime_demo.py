@@ -339,6 +339,10 @@ def main():
             else:
                 online = tracker.update_public(dets_xyxy, cates, scores)
 
+            # Inisialisasi canvas display
+            display = frame.copy()
+            h, w = display.shape[:2]
+
             # 1. Gambar Area RoI jika aktif
             if roi_polygon is not None and len(roi_polygon.points) >= 3:
                 roi_pts_arr = np.array([[p.x, p.y] for p in roi_polygon.points], dtype=np.int32)
