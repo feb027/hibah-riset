@@ -125,17 +125,19 @@ def associate_deep_ocsort(detections, trackers, det_embs, trk_embs, iou_threshol
         if t not in matched_indices[:, 1]:
             unmatched_trackers.append(t)
 
-    # Filter out matches below IoU threshold
+    # Filter out matched with low IoU
     matches = []
     for m in matched_indices:
-        if iou_matrix[m[0], m[1]] < iou_threshold and (emb_cost[m[0], m[1]] < 0.2):
+        if iou_matrix[m[0], m[1]] < iou_threshold:
             unmatched_detections.append(m[0])
             unmatched_trackers.append(m[1])
         else:
             matches.append(m.reshape(1, 2))
 
     matches_arr = np.concatenate(matches, axis=0) if len(matches) > 0 else np.empty((0, 2), dtype=int)
-    return matches_arr, np.array(unmatched_detections, dtype=int), np.array(unmatched_trackers, dtype=int)
+    unmatched_dets_arr = np.unique(unmatched_detections).astype(int) if len(unmatched_detections) > 0 else np.empty(0, dtype=int)
+    unmatched_trks_arr = np.unique(unmatched_trackers).astype(int) if len(unmatched_trackers) > 0 else np.empty(0, dtype=int)
+    return matches_arr, unmatched_dets_arr, unmatched_trks_arr
 
 
 class KalmanBoxTracker(object):
@@ -317,21 +319,19 @@ class DeepOCSortTracker(object):
         dets_alpha = af + (1.0 - af) * (1.0 - trust) if n_dets > 0 else np.array([])
 
         # 2. Kalman Predict
-        trks = np.zeros((len(self.trackers), 4), dtype=float)
-        trk_embs = []
-        to_del = []
-        for t, trk in enumerate(self.trackers):
+        valid_trackers = []
+        valid_trks = []
+        valid_embs = []
+        for trk in self.trackers:
             pos = trk.predict()
-            if np.any(np.isnan(pos)):
-                to_del.append(t)
-            else:
-                trks[t] = pos
-                trk_embs.append(trk.emb if trk.emb is not None else np.zeros(32, dtype=np.float32))
+            if not np.any(np.isnan(pos)):
+                valid_trackers.append(trk)
+                valid_trks.append(pos)
+                valid_embs.append(trk.emb if trk.emb is not None else np.zeros(32, dtype=np.float32))
 
-        for t in reversed(to_del):
-            self.trackers.pop(t)
-
-        trk_embs = np.array(trk_embs, dtype=np.float32) if len(trk_embs) > 0 else np.empty((0, 32), dtype=np.float32)
+        self.trackers = valid_trackers
+        trks = np.array(valid_trks, dtype=float) if len(valid_trks) > 0 else np.empty((0, 4), dtype=float)
+        trk_embs = np.array(valid_embs, dtype=np.float32) if len(valid_embs) > 0 else np.empty((0, 32), dtype=np.float32)
         velocities = np.array([trk.velocity for trk in self.trackers], dtype=float) if len(self.trackers) > 0 else np.empty((0, 2))
         last_boxes = np.array([trk.last_observation for trk in self.trackers], dtype=float) if len(self.trackers) > 0 else np.empty((0, 5))
 
