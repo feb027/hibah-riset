@@ -27,6 +27,8 @@ class TrafficPointDTO(BaseModel):
 
 
 class TelemetryPayload(BaseModel):
+    model_config = {"protected_namespaces": ()}
+
     timestamp: float
     status: str = Field(default="active", description="active, paused, disconnected, error")
     fps: float

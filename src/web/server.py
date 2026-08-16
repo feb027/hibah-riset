@@ -32,14 +32,21 @@ def create_app(source: str = "0", tracker: str = "deepocsort", weights: str = No
         stream_mgr = StreamManager(source=src_val)
         stream_mgr.start()
 
+        # Prioritaskan bobot PyTorch GPU .pt jika ada, atau fallback ke .onnx
+        actual_weights = weights
+        if not actual_weights:
+            pt_path = ROOT / "data" / "s2" / "weights" / "best.pt"
+            onnx_path = ROOT / "data" / "s2" / "weights" / "best.onnx"
+            actual_weights = str(pt_path) if pt_path.is_file() else str(onnx_path)
+
         pipeline = EnginePipeline(
-            weights_path=weights or str(ROOT / "data" / "s2" / "weights" / "best.onnx"),
+            weights_path=actual_weights,
             tracker_name=tracker,
         )
 
         app.state.stream_mgr = stream_mgr
         app.state.pipeline = pipeline
-        print("[Server] Layanan People Counting Web Dashboard siap!")
+        print(f"[Server] Layanan People Counting Web Dashboard siap (Model: {Path(actual_weights).name})!")
         yield
         # Shutdown
         stream_mgr.stop()

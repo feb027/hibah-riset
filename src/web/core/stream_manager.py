@@ -84,8 +84,18 @@ class StreamManager:
                 # Fallback ke backend default
                 self.cap = cv2.VideoCapture(src_val)
                 if not self.cap.isOpened():
-                    print(f"[StreamManager] Gagal membuka sumber video: {self.source}")
-                    return False
+                    print(f"[StreamManager] Tidak ada webcam fisik ({self.source}). Otomatis masuk Mode Standby (Siap terima stream Kamera HP/Browser).")
+                    self._is_client_feed = True
+                    self._source_name = "Kamera Browser / HP (Standby)"
+                    # Buat frame placeholder standby
+                    blank = np.zeros((480, 640, 3), dtype=np.uint8)
+                    cv2.putText(blank, "MENUNGGU ALIRAN KAMERA HP / WEBCAM", (60, 240),
+                                cv2.FONT_HERSHEY_SIMPLEX, 0.65, (160, 160, 160), 2, cv2.LINE_AA)
+                    cv2.putText(blank, "Buka di HP / Laptop dan klik 'Ganti Sumber' -> Kamera Perangkat", (60, 275),
+                                cv2.FONT_HERSHEY_SIMPLEX, 0.45, (100, 100, 100), 1, cv2.LINE_AA)
+                    self._latest_frame = blank
+                    self._running = True
+                    return True
 
             # Set buffer size = 1 untuk mencegah delay RTSP/Webcam
             try:
@@ -98,8 +108,15 @@ class StreamManager:
                 self._frame_h, self._frame_w = f0.shape[:2]
                 self._latest_frame = f0
             else:
-                print(f"[StreamManager] Gagal membaca frame pertama dari {self.source}")
-                return False
+                print(f"[StreamManager] Kamera tidak merespon frame. Masuk Mode Standby.")
+                self._is_client_feed = True
+                self._source_name = "Kamera Browser / HP (Standby)"
+                blank = np.zeros((480, 640, 3), dtype=np.uint8)
+                cv2.putText(blank, "MENUNGGU ALIRAN KAMERA HP / WEBCAM", (60, 240),
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.65, (160, 160, 160), 2, cv2.LINE_AA)
+                self._latest_frame = blank
+                self._running = True
+                return True
 
             if isinstance(src_val, int):
                 self._source_name = f"Webcam {src_val}"
