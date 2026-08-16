@@ -5,3 +5,5 @@ MotChallenge2DBox,diffmot,pedestrian,44.3732,60.9131,53.8568,6905,15005,MOT20
 MotChallenge2DBox,diffmot,pedestrian,39.0531,70.7215,43.3861,2784,6765,DanceTrack
 MotChallenge2DBox,lighttrack,pedestrian,32.9167,37.9986,34.693,13121,8863,MOT20
 MotChallenge2DBox,lighttrack,pedestrian,22.5311,32.7185,18.9115,6697,4405,DanceTrack
+MotChallenge2DBox,deepocsort,pedestrian,36.1227,54.7,42.1585,11751,29729,MOT20
+MotChallenge2DBox,deepocsort,pedestrian,28.9082,70.0468,27.3765,5948,8053,DanceTrack
