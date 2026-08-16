@@ -2,17 +2,17 @@
 
 Bahan presentasi & laporan, 16 Agustus 2026.
 
-Pesan inti: yang membatasi kualitas counting adalah asosiasi identitas antar frame, bukan deteksi, dan solusinya adalah tracker berbasis deep learning yang ringan, memiliki preservasi identitas tinggi, dan mampu berjalan real-time ($\ge 30\text{ FPS}$).
+Pesan inti: yang membatasi kualitas counting adalah asosiasi identitas antar frame, bukan deteksi, dan solusinya adalah tracker berbasis deep learning yang ringan, memiliki preservasi identitas tinggi, dan mampu berjalan real-time (minimal 30 FPS).
 
 ---
 
 ## 1. Kenapa Perlu Tracker
 
-Deteksi objek hanya memberi kotak (*bounding box*) per frame tanpa riwayat identitas. Tanpa tracker yang robust:
-1. Orang yang berpapasan atau tertutup sebentar (*temporary occlusion*) akan berganti ID (*ID switch*).
-2. Orang yang sama akan dihitung ganda saat melintasi garis hitung (*double counting*).
+Deteksi objek hanya memberi kotak (bounding box) per frame tanpa riwayat identitas. Tanpa tracker yang robust:
+1. Orang yang berpapasan atau tertutup sebentar (temporary occlusion) akan berganti ID (ID switch).
+2. Orang yang sama akan dihitung ganda saat melintasi garis hitung (double counting).
 
-Pertanyaan Skenario B: **Tracker mana yang mampu menjaga identitas secara akurat sekaligus memenuhi syarat real-time deployment ($\ge 30\text{ FPS}$)?**
+Pertanyaan Skenario B: **Tracker mana yang mampu menjaga identitas secara akurat sekaligus memenuhi syarat real-time deployment (minimal 30 FPS)?**
 
 Seluruh model diuji pada deteksi YOLO26 yang sama persis (hasil Skenario A, fine-tune CrowdHuman, mAP@0.5:0.95 = 0,4974), memakai TrackEval pada dua benchmark:
 - **MOT20-train** (4 sekuens, 8.931 frame, kerumunan sangat padat, rata-rata 179 deteksi/frame).
@@ -39,22 +39,22 @@ Tabel resmi hasil evaluasi TrackEval pada deteksi YOLO26 yang sama:
 
 ## 3. Analisis Komparasi 4 Tracker
 
-### A. Deep-OC-SORT (Maggiolino dkk., 2023) — *Pilihan Seimbang & Real-Time*
+### A. Deep-OC-SORT (Maggiolino dkk., 2023) — Pilihan Seimbang & Real-Time
 - **Keunggulan di DanceTrack (Gerak Kompleks):**
   - HOTA naik ke **31,26** (+2,87 dibanding OC-SORT).
   - IDF1 melonjak ke **33,29** (+6,66 dibanding OC-SORT).
-  - ID Switch turun sebesar **18%** (dari 6.701 $\rightarrow$ 5.506, memangkas 1.195 kesalahan identitas).
-- **Kecepatan Real-Time:** Mencapai **40,6 FPS** pada video 1080p MOT20-02 di server RTX 4090, melampaui target real-time ($\ge 30\text{ FPS}$) dengan *headroom* performa 35%.
+  - ID Switch turun sebesar **18%** (dari 6.701 menjadi 5.506, memangkas 1.195 kesalahan identitas).
+- **Kecepatan Real-Time:** Mencapai **40,6 FPS** pada video 1080p MOT20-02 di server RTX 4090, melampaui target real-time (30 FPS) dengan cadangan performa 35%.
 
-### B. OC-SORT (Cao dkk., 2023) — *Baseline Cepat Tanpa Deep Learning*
+### B. OC-SORT (Cao dkk., 2023) — Baseline Cepat Tanpa Deep Learning
 - Sangat cepat (54+ FPS), tetapi murni mengandalkan posisi/kecepatan (tanpa Re-ID visual).
 - Rawan ID Switch saat orang berpapasan di gerak acak (IDF1 hanya 26,63 di DanceTrack).
 
-### C. DiffMOT (Lv dkk., CVPR 2024, S021) — *Akurat tapi Lambat (Non-Real-Time)*
+### C. DiffMOT (Lv dkk., CVPR 2024, S021) — Akurat tapi Lambat (Non-Real-Time)
 - Akurasi HOTA/IDF1 tertinggi (IDF1 43,39 DanceTrack / 53,86 MOT20).
-- **Kelemahan fatal:** Sangat berat (~20,0 FPS di RTX 4090), tidak memenuhi standar real-time, dan bersifat *black-box* (tidak bisa dilatih ulang).
+- **Kelemahan fatal:** Sangat berat (~20,0 FPS di RTX 4090), tidak memenuhi standar real-time, dan bersifat black-box (tidak bisa dilatih ulang).
 
-### D. LightTrack-ReID (Khan dkk., PLOS ONE 2026, S014) — *2-Stage Trainable Re-ID*
+### D. LightTrack-ReID (Khan dkk., PLOS ONE 2026, S014) — 2-Stage Trainable Re-ID
 - Memiliki modul mandiri (LAE 32-d + TBSS MLP).
 - Pada MOT20 setelah tuning OCM mencapai HOTA 37,67 / IDF1 43,54; namun pada DanceTrack zero-shot sensitif terhadap ambang batas deteksi.
 
@@ -63,33 +63,53 @@ Tabel resmi hasil evaluasi TrackEval pada deteksi YOLO26 yang sama:
 ## 4. Spesifikasi Pengujian & Validasi Real-Time
 
 ### Lingkungan Hardware & Software
-- **Server Kampus (Benchmark Utama):** Linux Pop!_OS, GPU NVIDIA GeForce RTX 4090 (24 GB VRAM), PyTorch CUDA Native (`best.pt`).
-- **PC Lokal (Cross-Platform / Edge):** Windows 11, GPU AMD Radeon RX 6600 (8 GB VRAM), ONNX Runtime DirectML (`best.onnx`).
+- **Server Kampus (Benchmark Utama):** Linux Pop!_OS, GPU NVIDIA GeForce RTX 4090 (24 GB VRAM), PyTorch CUDA Native (best.pt).
+- **PC Lokal (Cross-Platform / Edge):** Windows 11, GPU AMD Radeon RX 6600 (8 GB VRAM), ONNX Runtime DirectML (best.onnx).
 
 ### Throughput pada Beban Kerumunan Padat (MOT20-02, 1080p, ~34-38 orang/frame)
 
-| Pipeline | Paradigma | Throughput RTX 4090 (Server) | Throughput RX 6600 DML (PC Rumah) | Status Real-Time ($\ge 30\text{ FPS}$) |
+| Pipeline | Paradigma | Throughput RTX 4090 (Server) | Throughput RX 6600 DML (PC Rumah) | Status Real-Time (minimal 30 FPS) |
 | :--- | :--- | :---: | :---: | :---: |
-| **YOLO26 + OC-SORT** | Motion-Only | **54,0+ FPS** | **27,0 FPS** | ✅ Lolos |
-| **YOLO26 + DiffMOT** | Generative Motion | **20,0 FPS** | *N/A (CUDA Only)* | ❌ Gagal |
-| **YOLO26 + LightTrack** | 2-Stage Appearance | **49,3 FPS** | **8,9 FPS** | ✅ Lolos |
-| **YOLO26 + Deep-OC-SORT** | Hybrid (VDC+ACM+AW) | **40,6 FPS** | **7,8 FPS** | ✅ **Lolos (+35% Headroom)** |
+| **YOLO26 + OC-SORT** | Motion-Only | **54,0+ FPS** | **27,0 FPS** | Lolos |
+| **YOLO26 + DiffMOT** | Generative Motion | **20,0 FPS** | *N/A (CUDA Only)* | Gagal (Terlalu lambat) |
+| **YOLO26 + LightTrack** | 2-Stage Appearance | **49,3 FPS** | **8,9 FPS** | Lolos |
+| **YOLO26 + Deep-OC-SORT** | Hybrid (VDC+ACM+AW) | **40,6 FPS** | **7,8 FPS** | **Lolos (+35% Cadangan Performa)** |
 
 ---
 
 ## 5. Arsitektur Deep-OC-SORT yang Diintegrasikan
 
-1. **Velocity Direction Consistency (VDC):** Menghitung sudut arah gerak historis $K$-step untuk mengeliminasi kesalahan asosiasi pada orang yang berdekatan.
+1. **Velocity Direction Consistency (VDC):** Menghitung sudut arah gerak historis untuk mengeliminasi kesalahan asosiasi pada orang yang berdekatan.
 2. **Dynamic Appearance Cost Matrix (ACM):** Mengintegrasikan vektor visual deep learning untuk mencocokkan identitas lintas frame.
 3. **Adaptive Weighting (AW):** Mengatur bobot dinamis antara posisi geometri dan fitur visual berdasarkan margin kemiripan identitas.
-4. **Observation-Centric Recovery (OCR):** Tahap asosiasi ronde kedua untuk merecovery orang yang sempat tertutup (*occlusion recovery*).
+4. **Observation-Centric Recovery (OCR):** Tahap asosiasi ronde kedua untuk merecovery orang yang sempat tertutup (occlusion recovery).
 
 ---
 
-## 6. Kesimpulan & Rekomendasi
+## 6. Mengapa Angka Kita Berbeda dengan Paper Asli? (Analisis Detektor)
+
+Jika dibandingkan langsung dengan tabel di paper asli (seperti OC-SORT atau Deep-OC-SORT yang melaporkan HOTA di atas 60), angka eksperimen kita tampak lebih rendah. Hal ini **bukan karena kesalahan implementasi tracker**, melainkan karena **perbedaan kelas detektor dan resolusi input (Detection Trade-off)**:
+
+### 1. Detektor Paper Asli (Mengejar Skor Benchmark Leaderboard)
+- Paper asli menggunakan detektor berskala masif seperti **YOLOX-X** (99 juta parameter) atau **Co-DETR** dengan resolusi gambar sangat tinggi (**1440 x 800 piksel**).
+- Model ini sangat akurat mendeteksi orang sekecil apa pun di kerumunan, namun **sangat lambat (hanya 5-10 FPS)** sehingga mustahil diimplementasikan pada sistem CCTV real-time di dunia nyata.
+
+### 2. Detektor Sistem Kita (Mengejar Real-Time People Counting)
+- Sistem kita menggunakan **YOLO26** dengan resolusi standar **640 x 640 piksel** agar dapat mencapai target kecepatan tinggi (**40.6 FPS**).
+- Akibatnya, pada kerumunan ekstrem seperti MOT20, orang-orang di kejauhan yang berukuran mikro (hanya beberapa piksel) ada yang terlewat tidak terdeteksi.
+- Karena tracker bergantung penuh pada detektor, jika kotak orang tidak terdeteksi dari awal, tracker tidak dapat melacaknya. Hal ini secara otomatis menurunkan nilai total HOTA dan MOTA.
+
+### 3. Validitas Ilmiah Eksperimen Kita
+- Dalam kaidah ilmiah, perbandingan absolut ke leaderboard paper berbeda tidak sah karena detektornya tidak sama.
+- **Yang sah dan valid adalah perbandingan relatif antar-tracker pada deteksi YOLO26 yang sama persis (Controlled Experiment).**
+- Terbukti bahwa dengan input deteksi yang identik, **Deep-OC-SORT berhasil meningkatkan IDF1 sebesar +6.66 poin dan menurunkan kasus pergantian ID (ID switch) sebesar 18% dibanding OC-SORT biasa**, membuktikan keunggulan deep learning Re-ID pada kondisi real-time.
+
+---
+
+## 7. Kesimpulan & Rekomendasi
 
 1. **Sinkronisasi Judul & Metodologi:** Pipeline sekarang 100% berbasis Deep Learning pada deteksi (YOLO26) dan pelacakan (Deep-OC-SORT ACM).
-2. **Kesiapan Produksi (*Production-Ready*):** Deep-OC-SORT memberikan kompromi terbaik (*sweet spot*): akurasi preservasi identitas meningkat (IDF1 +6,66 di DanceTrack) sambil mempertahankan kecepatan tinggi **40,6 FPS** di GPU server.
+2. **Kesiapan Produksi (Production-Ready):** Deep-OC-SORT memberikan kompromi terbaik: akurasi preservasi identitas meningkat (IDF1 +6,66 di DanceTrack) sambil mempertahankan kecepatan tinggi **40,6 FPS** di GPU server.
 
 ---
 

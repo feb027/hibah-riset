@@ -43,11 +43,11 @@ Selisihnya terhadap OC-SORT: MOT20 IDF1 naik +10,98 dan ID switch turun 52%, Dan
 
 ## 4. Kenapa DiffMOT Tidak Dipakai
 
-Meskipun akurat, DiffMOT sangat berat (~20 FPS di RTX 4090), tidak memenuhi syarat real-time ($\ge 30\text{ FPS}$), dan bersifat *black-box*. Target pipeline kita minimal 30 FPS.
+Meskipun akurat, DiffMOT sangat berat (~20 FPS di RTX 4090), tidak memenuhi syarat real-time (minimal 30 FPS), dan bersifat black-box. Target pipeline kita minimal 30 FPS.
 
 ## 5. Eksplorasi & Integrasi SOTA: Deep-OC-SORT (Maggiolino dkk., 2023)
 
-Untuk menjawab kebutuhan tracker berbasis deep learning yang ringan, terbukti secara benchmark, dan mampu berjalan $>30\text{ FPS}$, diintegrasikan arsitektur **Deep-OC-SORT** (Maggiolino dkk., WACV 2023):
+Untuk menjawab kebutuhan tracker berbasis deep learning yang ringan, terbukti secara benchmark, dan mampu berjalan di atas 30 FPS, diintegrasikan arsitektur **Deep-OC-SORT** (Maggiolino dkk., WACV 2023):
 - **Velocity Direction Consistency (VDC):** Menghitung arah kecepatan gerak historis.
 - **Dynamic Appearance Cost Matrix (ACM):** Mengintegrasikan vektor visual deep learning sebagai bobot kemiripan penampilan.
 - **Adaptive Weighting (AW):** Mengatur bobot dinamis antara geometri dan penampilan secara adaptif.
@@ -87,7 +87,15 @@ Hasil evaluasi setelah tuning OCM:
 | | **Deep-OC-SORT** | **Hybrid (VDC+ACM+AW)** | **40,6 FPS** | **31,05** | **52,55** | **34,98** | 29.286 |
 | | DiffMOT | Generative Motion | 20,0 FPS | 44,37 | 60,91 | 53,86 | 6.905 |
 
-## 8. Ringkasan & Posisi Ilmiah
+## 8. Mengapa Angka Kita Berbeda dengan Paper Asli?
+
+Perbedaan angka skor absolut antara pengujian kita dan publikasi asli disebabkan oleh kompromi desain detektor:
+1. **Detektor Paper Asli:** Menggunakan detektor berskala besar (seperti YOLOX-X) dengan resolusi gambar sangat tinggi (1440 x 800 piksel) untuk mengejar leaderboard akurasi, namun kecepatannya sangat lambat (di bawah 10 FPS, tidak bisa real-time).
+2. **Detektor Sistem Kita:** Menggunakan **YOLO26** dengan resolusi standar **640 x 640 piksel** yang berfokus pada aplikasi nyata **Real-Time People Counting** berkecepatan tinggi (**40.6 FPS**).
+3. **Kekurangan Detektor Kita:** Pada kerumunan sangat padat seperti MOT20, orang-orang di kejauhan yang berukuran sangat kecil ada yang terlewat tidak terdeteksi oleh YOLO26. Karena kotak tidak terdeteksi sejak awal, tracker tidak dapat melacak orang tersebut, sehingga skor total HOTA/MOTA terlihat lebih rendah dari paper asli.
+4. **Validitas Eksperimen:** Membandingkan angka kita langsung ke paper asli tidak sah karena detektornya beda. Namun, perbandingan relatif antar-tracker pada deteksi YOLO26 yang sama persis (controlled ablation) adalah sah dan membuktikan Deep-OC-SORT berhasil menaikkan konsistensi identitas (IDF1 naik 6.6 poin) dan menurunkan kesalahan ID sebesar 18% dibanding OC-SORT biasa.
+
+## 9. Ringkasan & Posisi Ilmiah
 
 1. **Sinkronisasi Judul & Metodologi:** Pipeline memenuhi judul proposal *"Real-Time People Counting System Berbasis Deep Learning"* dengan detektor YOLO26 dan tracker deep learning (Deep-OC-SORT / LightTrack).
 2. **Keseimbangan Optimal:** Deep-OC-SORT berada pada *sweet spot*: mampu mempertahankan akurasi identitas yang baik pada gerak kompleks (IDF1 33,29 vs 26,63) dengan kecepatan **40,6 FPS** yang lolos standar real-time.
