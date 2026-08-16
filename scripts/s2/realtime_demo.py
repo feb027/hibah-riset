@@ -27,6 +27,22 @@ import time
 import cv2
 import numpy as np
 
+# Cegah loop auto-update ultralytics untuk onnxruntime saat onnxruntime-directml terpasang di Windows
+try:
+    import ultralytics.utils.checks
+    import ultralytics.nn.autobackend
+    import ultralytics.engine.predictor
+    _orig_check = ultralytics.utils.checks.check_requirements
+    def _custom_check(reqs, *args, **kwargs):
+        if "onnxruntime" in str(reqs):
+            return True
+        return _orig_check(reqs, *args, **kwargs)
+    ultralytics.utils.checks.check_requirements = _custom_check
+    ultralytics.nn.autobackend.check_requirements = _custom_check
+    ultralytics.engine.predictor.check_requirements = _custom_check
+except Exception:
+    pass
+
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 sys.path.insert(0, ROOT)
 from core.counting.counter import PeopleCounter          # noqa: E402
@@ -66,20 +82,19 @@ def parse_args():
     p.add_argument("--no-show", action="store_true",
                    help="headless: tanpa window (buat mesin tanpa display spt JupyterHub); "
                         "video berjalan sampai habis, tombol keyboard nonaktif")
-    p.add_argument("--tracker", default="ocsort", choices=["ocsort", "lighttrack"],
-                   help="ocsort (default) atau lighttrack (usulan kita: LAE+TBSS+OCM)")
+    p.add_argument("--tracker", default="ocsort", choices=["ocsort", "lighttrack", "deepocsort"],
+                   help="ocsort (motion-only), lighttrack (LAE+TBSS+OCM), atau deepocsort (Deep-OC-SORT: ACM+VDC+AW)")
     p.add_argument("--ckpt", default=None,
-                   help="wajib saat --tracker lighttrack: ckpt LAE+TBSS "
+                   help="wajib saat --tracker lighttrack tanpa --onnx-dir: ckpt LAE+TBSS "
                         "(mis. out/phase3_fold1_v2/best.pt)")
     p.add_argument("--onnx-dir", default=None,
-                   help="jalan LightTrack tanpa torch: folder berisi lae.onnx + tbss.onnx "
-                        "(hasil scripts/s2/export_lighttrack_onnx.py). Untuk PC tanpa "
-                        "torch-GPU (mis. Windows + RX6600 via DirectML). ")
+                   help="folder berisi lae.onnx + tbss.onnx untuk LightTrack / Deep-OC-SORT "
+                        "(default: out/onnx)")
     p.add_argument("--appearance-w", type=float, default=0.5)
     p.add_argument("--score-min", type=float, default=0.3)
     p.add_argument("--emit-age", type=int, default=5)
     p.add_argument("--ema-alpha", type=float, default=0.9,
-                   help="EMA embedding tracklet (LightTrack); default 0.9 = sama dgn eval final")
+                   help="EMA embedding tracklet (LightTrack/Deep-OC-SORT); default 0.9 = sama dgn eval final")
     p.add_argument("--cmoh-k", type=int, default=10)
     return p.parse_args()
 
@@ -119,13 +134,17 @@ def main():
         import onnxruntime as ort
         if "DmlExecutionProvider" in ort.get_available_providers():
             print("DirectML tersedia — mengalihkan deteksi ke GPU (DML) ...")
-            # source=array: pemanasan, hasilnya tak dipakai; predictor jadi ada
             model.predict(source=first_frame, verbose=False)
+            so = ort.SessionOptions()
+            so.graph_optimization_level = ort.GraphOptimizationLevel.ORT_ENABLE_ALL
             sess = ort.InferenceSession(
                 str(args.weights),
+                so,
                 providers=["DmlExecutionProvider", "CPUExecutionProvider"])
             model.predictor.model.session = sess
-            print("Deteksi ONNX sekarang memakai DmlExecutionProvider.")
+            # Warmup satu pass inferensi
+            model.predict(source=first_frame, verbose=False)
+            print("Deteksi ONNX sekarang memakai DmlExecutionProvider (teroptimasi).")
         else:
             print("DirectML tidak tersedia — deteksi ONNX di CPU.")
 
@@ -146,11 +165,29 @@ def main():
             from src.lighttrack.phase4 import TbssAppearance            # noqa: E402
             appearance = TbssAppearance(args.ckpt)
         tracker = LightTrackTracker(min_conf=args.track_thresh, iou_thresh=args.iou_thresh,
-                                    min_hits=args.min_hits, max_age=args.max_age,
-                                    ema_alpha=args.ema_alpha, emit_age=args.emit_age,
-                                    appearance=appearance,
-                                    appearance_w=args.appearance_w,
-                                    score_min=args.score_min, cmoh_k=args.cmoh_k)
+                                     min_hits=args.min_hits, max_age=args.max_age,
+                                     ema_alpha=args.ema_alpha, emit_age=args.emit_age,
+                                     appearance=appearance,
+                                     appearance_w=args.appearance_w,
+                                     score_min=args.score_min, cmoh_k=args.cmoh_k)
+    elif args.tracker == "deepocsort":
+        sys.path.insert(0, ROOT)
+        from src.deepocsort.tracker import DeepOCSortTracker        # noqa: E402
+        from src.lighttrack.phase4_onnx import TbssAppearanceOnnx   # noqa: E402
+        onnx_dir = args.onnx_dir or os.path.join(ROOT, "out", "onnx")
+        appearance = TbssAppearanceOnnx(onnx_dir)
+        tracker = DeepOCSortTracker(
+            det_thresh=args.track_thresh,
+            max_age=args.max_age,
+            min_hits=args.min_hits,
+            iou_threshold=args.iou_thresh,
+            delta_t=args.delta_t,
+            inertia=args.inertia,
+            w_association_emb=args.appearance_w,
+            alpha_fixed_emb=args.ema_alpha,
+            appearance=appearance,
+        )
+        print("Tracker Deep-OC-SORT aktif (ACM + VDC + AW + ONNX Visual Embedder).")
     else:
         tracker = OCSort(
             args.track_thresh,
@@ -211,13 +248,14 @@ def main():
 
             cates = np.zeros(dets_xyxy.shape[0])
             if args.tracker == "lighttrack":
-                # LightTrack: butuh tlwh + frame asli untuk embedding LAE
                 tlwh = np.zeros_like(dets_xyxy)
                 tlwh[:, 0] = dets_xyxy[:, 0]
                 tlwh[:, 1] = dets_xyxy[:, 1]
                 tlwh[:, 2] = dets_xyxy[:, 2] - dets_xyxy[:, 0]
                 tlwh[:, 3] = dets_xyxy[:, 3] - dets_xyxy[:, 1]
                 online = [(b, i) for b, i in tracker.update(tlwh, scores, frame_bgr=frame)]
+            elif args.tracker == "deepocsort":
+                online = [(b, i) for b, i in tracker.update(dets_xyxy, scores, frame_bgr=frame)]
             else:
                 online = tracker.update_public(dets_xyxy, cates, scores)
 
@@ -226,7 +264,7 @@ def main():
             h, w = display.shape[:2]
             active = {}
             for trk in online:
-                if args.tracker == "lighttrack":
+                if args.tracker in ("lighttrack", "deepocsort"):
                     bx, by, bw, bh = trk[0]
                     x1, y1, x2, y2, tid = bx, by, bx + bw, by + bh, int(trk[1])
                 else:
