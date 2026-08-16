@@ -71,6 +71,10 @@ def parse_args():
     p.add_argument("--ckpt", default=None,
                    help="wajib saat --tracker lighttrack: ckpt LAE+TBSS "
                         "(mis. out/phase3_fold1_v2/best.pt)")
+    p.add_argument("--onnx-dir", default=None,
+                   help="jalan LightTrack tanpa torch: folder berisi lae.onnx + tbss.onnx "
+                        "(hasil scripts/s2/export_lighttrack_onnx.py). Untuk PC tanpa "
+                        "torch-GPU (mis. Windows + RX6600 via DirectML). ")
     p.add_argument("--appearance-w", type=float, default=0.5)
     p.add_argument("--score-min", type=float, default=0.3)
     p.add_argument("--emit-age", type=int, default=5)
@@ -109,14 +113,21 @@ def main():
     frame_h, frame_w = first_frame.shape[:2]
 
     if args.tracker == "lighttrack":
-        if not args.ckpt:
-            sys.exit("--tracker lighttrack butuh --ckpt (mis. out/phase3_fold1_v2/best.pt)")
-        if not os.path.exists(args.ckpt):
-            sys.exit("CKPT tidak ditemukan: %s" % args.ckpt)
-        sys.path.insert(0, ROOT)
-        from src.lighttrack.tracker import LightTrackTracker        # noqa: E402
-        from src.lighttrack.phase4 import TbssAppearance            # noqa: E402
-        appearance = TbssAppearance(args.ckpt)
+        if args.onnx_dir:
+            sys.path.insert(0, ROOT)
+            from src.lighttrack.tracker import LightTrackTracker        # noqa: E402
+            from src.lighttrack.phase4_onnx import TbssAppearanceOnnx   # noqa: E402
+            appearance = TbssAppearanceOnnx(args.onnx_dir)
+        else:
+            if not args.ckpt:
+                sys.exit("--tracker lighttrack butuh --ckpt (mis. out/phase3_fold1_v2/best.pt) "
+                         "atau --onnx-dir (folder lae.onnx + tbss.onnx)")
+            if not os.path.exists(args.ckpt):
+                sys.exit("CKPT tidak ditemukan: %s" % args.ckpt)
+            sys.path.insert(0, ROOT)
+            from src.lighttrack.tracker import LightTrackTracker        # noqa: E402
+            from src.lighttrack.phase4 import TbssAppearance            # noqa: E402
+            appearance = TbssAppearance(args.ckpt)
         tracker = LightTrackTracker(min_conf=args.track_thresh, iou_thresh=args.iou_thresh,
                                     min_hits=args.min_hits, max_age=args.max_age,
                                     ema_alpha=args.ema_alpha, emit_age=args.emit_age,
