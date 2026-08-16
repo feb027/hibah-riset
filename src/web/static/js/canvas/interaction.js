@@ -1,15 +1,15 @@
 /**
- * Interactive Drag-and-Drop & Polygon Drawing Handler.
+ * Interactive Drag-and-Drop & Polygon Drawing Handler (Adaptive Letterbox Aware).
  */
 import { store } from '../store.js';
 import { restClient } from '../network/rest_client.js';
+import { getVideoRenderBox } from './engine.js';
 
 export class CanvasInteraction {
   constructor(canvas) {
     this.canvas = canvas;
-    this.ctx = canvas.getContext('2d');
     this.isDragging = false;
-    this.dragTarget = null; // 'line_start' | 'line_end' | 'line_new'
+    this.dragTarget = null;
     this.tempStart = null;
     this.tempEnd = null;
 
@@ -20,8 +20,12 @@ export class CanvasInteraction {
     const rect = this.canvas.getBoundingClientRect();
     const clientX = e.touches ? e.touches[0].clientX : e.clientX;
     const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-    const x = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
-    const y = Math.max(0, Math.min(1, (clientY - rect.top) / rect.height));
+    const rawX = clientX - rect.left;
+    const rawY = clientY - rect.top;
+
+    const box = getVideoRenderBox(this.canvas);
+    const x = Math.max(0, Math.min(1, (rawX - box.x) / box.w));
+    const y = Math.max(0, Math.min(1, (rawY - box.y) / box.h));
     return { x: Number(x.toFixed(4)), y: Number(y.toFixed(4)) };
   }
 
@@ -42,10 +46,10 @@ export class CanvasInteraction {
         // Cek apakah mengklik handle garis yang sudah ada
         const dStart = Math.hypot(pos.x - line.start.x, pos.y - line.start.y);
         const dEnd = Math.hypot(pos.x - line.end.x, pos.y - line.end.y);
-        if (dStart < 0.05) {
+        if (dStart < 0.08) {
           this.isDragging = true;
           this.dragTarget = 'line_start';
-        } else if (dEnd < 0.05) {
+        } else if (dEnd < 0.08) {
           this.isDragging = true;
           this.dragTarget = 'line_end';
         }

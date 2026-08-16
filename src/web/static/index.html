@@ -4,144 +4,141 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>People Counting System — Real-Time Monitor</title>
-  <meta name="description" content="Sistem Real-Time People Counting Berbasis Deep Learning YOLO26 dan Deep-OC-SORT">
+  <meta name="description" content="Konsol Real-Time People Counting YOLO26 + Deep-OC-SORT">
   
   <link rel="stylesheet" href="/css/tokens.css">
   <link rel="stylesheet" href="/css/layout.css">
   <link rel="stylesheet" href="/css/components.css">
 </head>
 <body>
-  <div class="app-container">
-    <!-- Top Header Bar -->
+  <div class="viewport-app">
+    <!-- Top Compact Header -->
     <header class="app-header">
       <div class="brand-group">
-        <span class="brand-badge">CV-LAB</span>
-        <h1 class="brand-title">PEOPLE COUNTING MONITOR</h1>
-        <div class="status-indicator">
+        <span class="brand-pill">AI-ENGINE</span>
+        <h1 class="brand-title">PEOPLE COUNTING CONSOLE</h1>
+        <div class="live-tag">
           <span id="status-dot" class="status-dot"></span>
-          <span id="status-text" class="status-label">LIVE</span>
+          <span id="status-text" class="status-text">LIVE</span>
         </div>
       </div>
 
       <div class="header-meta">
-        <div class="meta-tag">
-          <span class="meta-label">SUMBER:</span>
-          <span id="header-source" class="meta-val">Webcam 0</span>
+        <div class="meta-item">
+          <span class="meta-key">SUMBER:</span>
+          <span id="header-source" class="meta-val">Menghubungkan...</span>
         </div>
-        <div class="meta-tag">
-          <span class="meta-label">MODEL:</span>
-          <span id="header-model" class="meta-val">YOLO26-S + Deep-OC-SORT</span>
+        <div class="meta-item">
+          <span class="meta-key">FPS:</span>
+          <span id="header-fps" class="meta-val highlight">0.0 FPS</span>
+        </div>
+        <div class="meta-item">
+          <span class="meta-key">LATENSI:</span>
+          <span id="header-latency" class="meta-val">0.0 ms</span>
         </div>
       </div>
     </header>
 
-    <!-- Main Workspace (Single Focused Console) -->
-    <main class="console-workspace">
-      <!-- 1. Video Monitor Section -->
-      <section class="monitor-frame">
-        <div class="canvas-wrapper">
-          <img id="video-player-img" class="video-player-img" src="/api/stream/video_feed" alt="Video Stream">
+    <!-- One-Screen Workspace -->
+    <main class="console-body">
+      <!-- Left / Main: Video Monitor & Toolbar -->
+      <section class="video-viewport-panel">
+        <div class="video-contain-box" id="video-container">
+          <img id="video-player-img" class="video-stream-img" src="/api/stream/video_feed" alt="Video Feed">
           <canvas id="canvas-overlay" class="canvas-overlay"></canvas>
         </div>
 
-        <!-- Integrated Action Controls (Thumb-Friendly on Mobile) -->
+        <!-- Integrated Action Toolbar -->
         <nav class="console-toolbar" aria-label="Kontrol Garis dan Zona">
-          <div class="toolbar-cluster">
-            <button id="btn-draw-line" class="btn btn-action" title="Tarik garis perlintasan virtual">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="19" x2="19" y2="5"></line><circle cx="5" cy="19" r="2"></circle><circle cx="19" cy="5" r="2"></circle></svg>
-              <span>Tarik Garis</span>
-            </button>
-            <button id="btn-draw-roi" class="btn btn-action" title="Gambar area deteksi RoI">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 22 8.5 22 15.5 12 22 2 15.5 2 8.5 12 2"></polygon></svg>
-              <span>Gambar RoI</span>
-            </button>
-            <button id="btn-finish-roi" class="btn btn-success" style="display: none;" title="Selesai gambar RoI">
-              <span>Selesai RoI</span>
-            </button>
-            <button id="btn-clear-roi" class="btn btn-subtle" title="Hapus RoI">
-              <span>Hapus RoI</span>
-            </button>
-            <button id="btn-flip-direction" class="btn btn-subtle" title="Tukar arah IN dan OUT">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="17 1 21 5 17 9"></polyline><path d="M3 11V9a4 4 0 0 1 4-4h14"></path><polyline points="7 23 3 19 7 15"></polyline><path d="M21 13v2a4 4 0 0 1-4 4H3"></path></svg>
-              <span>Balik Arah</span>
-            </button>
-          </div>
-
-          <div class="toolbar-cluster">
-            <button id="btn-toggle-stream" class="btn btn-subtle" title="Jeda atau lanjutkan video">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>
-              <span id="btn-toggle-stream-text">Jeda Video</span>
-            </button>
-            <button id="btn-change-source" class="btn btn-action" title="Ganti sumber kamera">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 7l-7 5 7 5V7z"></path><rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect></svg>
-              <span>Ganti Sumber</span>
-            </button>
-            <button id="btn-reset" class="btn btn-danger" title="Reset hitungan ke 0">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 2v6h6"></path><path d="M21 12A9 9 0 0 0 6 5.3L3 8"></path><path d="M21 22v-6h-6"></path><path d="M3 12a9 9 0 0 0 15 6.7l3-2.7"></path></svg>
-              <span>Reset</span>
-            </button>
-          </div>
+          <button id="btn-draw-line" class="btn btn-action" title="Tarik garis perlintasan">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="19" x2="19" y2="5"></line><circle cx="5" cy="19" r="2"></circle><circle cx="19" cy="5" r="2"></circle></svg>
+            <span>Tarik Garis</span>
+          </button>
+          <button id="btn-draw-roi" class="btn btn-action" title="Gambar area RoI">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 22 8.5 22 15.5 12 22 2 15.5 2 8.5 12 2"></polygon></svg>
+            <span>Gambar RoI</span>
+          </button>
+          <button id="btn-finish-roi" class="btn btn-success" style="display: none;" title="Kunci RoI">
+            <span>Selesai RoI</span>
+          </button>
+          <button id="btn-clear-roi" class="btn btn-subtle" title="Hapus RoI">
+            <span>Hapus RoI</span>
+          </button>
+          <button id="btn-flip-direction" class="btn btn-subtle" title="Tukar arah">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="17 1 21 5 17 9"></polyline><path d="M3 11V9a4 4 0 0 1 4-4h14"></path><polyline points="7 23 3 19 7 15"></polyline><path d="M21 13v2a4 4 0 0 1-4 4H3"></path></svg>
+            <span>Balik Arah</span>
+          </button>
+          <button id="btn-toggle-stream" class="btn btn-subtle" title="Jeda/Lanjutkan">
+            <span id="btn-toggle-stream-text">Jeda Video</span>
+          </button>
+          <button id="btn-change-source" class="btn btn-action" title="Ganti Sumber">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 7l-7 5 7 5V7z"></path><rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect></svg>
+            <span>Ganti Sumber</span>
+          </button>
+          <button id="btn-reset" class="btn btn-danger" title="Reset hitungan">
+            <span>Reset</span>
+          </button>
         </nav>
       </section>
 
-      <!-- 2. Integrated Metric Ribbon (Flat Technical Strip — No Card Slop) -->
-      <section class="metric-strip" aria-label="Telemetri Arus Orang">
-        <div class="metric-cell total-cell">
-          <span class="cell-label">TOTAL MELINTAS</span>
-          <span id="metric-total" class="cell-value">0</span>
-        </div>
-        <div class="metric-cell in-cell">
-          <span class="cell-label">ARAH MASUK (IN)</span>
-          <span id="metric-in" class="cell-value">0</span>
-        </div>
-        <div class="metric-cell out-cell">
-          <span class="cell-label">ARAH KELUAR (OUT)</span>
-          <span id="metric-out" class="cell-value">0</span>
-        </div>
-        <div class="metric-cell roi-cell">
-          <span class="cell-label">DALAM ZONA (ROI)</span>
-          <span id="metric-occupancy" class="cell-value">0</span>
-        </div>
-        <div class="metric-cell perf-cell">
-          <span class="cell-label">THROUGHPUT</span>
-          <span id="header-fps" class="cell-value perf-val">0.0 FPS</span>
-        </div>
-        <div class="metric-cell perf-cell">
-          <span class="cell-label">LATENSI</span>
-          <span id="header-latency" class="cell-value perf-val">0.0 ms</span>
-        </div>
-      </section>
-
-      <!-- 3. Integrated Traffic Flow Sparkline -->
-      <section class="traffic-section">
-        <div class="section-subbar">
-          <span class="section-title">DINAMIKA ARUS ORANG (60 DETIK TERAKHIR)</span>
-          <div class="legend-group">
-            <span class="legend-dot in-dot">● MASUK (IN)</span>
-            <span class="legend-dot out-dot">● KELUAR (OUT)</span>
+      <!-- Right / Bottom: Analytics & Telemetry Console Panel -->
+      <aside class="sidebar-analytics-panel">
+        <!-- 1. Real-Time Metric Strip -->
+        <div class="metric-ribbon">
+          <div class="metric-unit total-unit">
+            <span class="unit-label">TOTAL</span>
+            <span id="metric-total" class="unit-val">0</span>
+          </div>
+          <div class="metric-unit in-unit">
+            <span class="unit-label">MASUK (IN)</span>
+            <span id="metric-in" class="unit-val">0</span>
+          </div>
+          <div class="metric-unit out-unit">
+            <span class="unit-label">KELUAR (OUT)</span>
+            <span id="metric-out" class="unit-val">0</span>
+          </div>
+          <div class="metric-unit roi-unit">
+            <span class="unit-label">DI ZONA (ROI)</span>
+            <span id="metric-occupancy" class="unit-val">0</span>
           </div>
         </div>
-        <div class="chart-box">
-          <svg id="traffic-chart-svg" class="chart-svg" viewBox="0 0 400 80" preserveAspectRatio="none">
-            <line x1="0" y1="20" x2="400" y2="20" class="chart-grid"></line>
-            <line x1="0" y1="40" x2="400" y2="40" class="chart-grid"></line>
-            <line x1="0" y1="60" x2="400" y2="60" class="chart-grid"></line>
-            <path class="chart-line-in" d="M 0,75 L 400,75"></path>
-            <path class="chart-line-out" d="M 0,75 L 400,75"></path>
-          </svg>
-        </div>
-      </section>
 
-      <!-- 4. Architecture Blueprint Footer -->
-      <footer class="specs-ribbon">
-        <span class="spec-item"><strong>DETEKTOR:</strong> YOLO26-S (640x640)</span>
-        <span class="spec-sep">|</span>
-        <span class="spec-item"><strong>TRACKER:</strong> Deep-OC-SORT (ACM+VDC+AW)</span>
-        <span class="spec-sep">|</span>
-        <span class="spec-item"><strong>LOGIKA:</strong> State Machine (CD=30, Debounce)</span>
-        <span class="spec-sep">|</span>
-        <span class="spec-item"><strong>SPATIAL FILTER:</strong> Ray-Casting RoI Polygon</span>
-      </footer>
+        <!-- 2. Integrated Traffic Sparkline -->
+        <div class="traffic-box">
+          <div class="traffic-header">
+            <span class="traffic-title">DINAMIKA ARUS (60s)</span>
+            <div class="traffic-legend">
+              <span class="legend-in">● IN</span>
+              <span class="legend-out">● OUT</span>
+            </div>
+          </div>
+          <div class="sparkline-wrapper">
+            <svg id="traffic-chart-svg" class="sparkline-svg" viewBox="0 0 400 80" preserveAspectRatio="none">
+              <line x1="0" y1="20" x2="400" y2="20" class="spark-grid"></line>
+              <line x1="0" y1="40" x2="400" y2="40" class="spark-grid"></line>
+              <line x1="0" y1="60" x2="400" y2="60" class="spark-grid"></line>
+              <path class="spark-line-in" d="M 0,75 L 400,75"></path>
+              <path class="spark-line-out" d="M 0,75 L 400,75"></path>
+            </svg>
+          </div>
+        </div>
+
+        <!-- 3. System Spec Info -->
+        <div class="system-spec-card">
+          <div class="spec-row">
+            <span>MODEL:</span>
+            <span id="header-model" class="spec-highlight">YOLO26-S + Deep-OC-SORT</span>
+          </div>
+          <div class="spec-row">
+            <span>TRACKER LOGIC:</span>
+            <span>State Machine (CD=30, Debounce)</span>
+          </div>
+          <div class="spec-row">
+            <span>ZONA ROI:</span>
+            <span>Ray-Casting Polygon</span>
+          </div>
+        </div>
+      </aside>
     </main>
   </div>
 
@@ -158,9 +155,9 @@
           <span class="form-label">Tipe Sumber</span>
           <select id="select-source-type" class="input-field">
             <option value="client_camera">Kamera Perangkat Ini (Webcam Laptop / Kamera HP)</option>
+            <option value="rtsp">Aliran Jaringan RTSP / IP Camera (Aplikasi IP Webcam)</option>
             <option value="webcam">Webcam Server Fisik (Index 0, 1, ...)</option>
-            <option value="file">Berkas Video Server (data/video.mp4 atau MOT Sekuens)</option>
-            <option value="rtsp">Aliran Jaringan RTSP / IP Camera</option>
+            <option value="file">Berkas Video Server (MP4 / MOT Sekuens)</option>
           </select>
         </label>
 

@@ -1,5 +1,5 @@
 /**
- * Toolbar Actions & Modal Controllers.
+ * Toolbar Actions & Camera Stream Controller (Optimized Anti-Stutter & True Aspect Ratio).
  */
 import { store } from '../store.js';
 import { restClient } from '../network/rest_client.js';
@@ -30,7 +30,7 @@ export function initToolbar() {
     btnToggleStream.addEventListener('click', async () => {
       isStreamRunning = !isStreamRunning;
       if (!isStreamRunning) {
-        if (btnToggleStreamText) btnToggleStreamText.textContent = 'Nyalakan Video';
+        if (btnToggleStreamText) btnToggleStreamText.textContent = 'Nyalakan';
         btnToggleStream.classList.add('active');
         if (videoImg) videoImg.src = '';
         await restClient.triggerAction('pause');
@@ -113,19 +113,18 @@ export function initToolbar() {
     if (btnFinishRoi) btnFinishRoi.style.display = mode === 'draw_roi' ? 'inline-flex' : 'none';
   });
 
-  // 9. Streaming Kamera Browser / Kamera HP
+  // 9. Streaming Kamera Browser / HP Teroptimasi (Anti-Gepeng & Anti-Patah-Patah)
   let clientCameraStream = null;
-  let clientCameraInterval = null;
+  let isCameraActive = false;
 
   async function startClientCamera() {
     try {
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
         alert(
-          'Browser HP memblokir kamera jika dibuka via HTTP biasa (Aturan Keamanan Browser).\n\n' +
-          'SOLUSI SANGAT MUDAH:\n' +
-          '1. Jalankan server dengan HTTPS: tambahkan flag --ssl di server kampus, lalu buka https://...\n' +
-          '2. ATAU install aplikasi "IP Webcam" di HP, lalu masukkan URL streaming (http://100.x.x.x:8080/video) di menu Ganti Sumber -> RTSP / IP Camera.\n' +
-          '3. ATAU di Chrome Android, buka chrome://flags/#unsafely-treat-insecure-origin-as-secure dan masukkan alamat IP server ini.'
+          'Browser HP memblokir kamera jika dibuka via HTTP biasa.\n\n' +
+          'SOLUSI PILIHAN:\n' +
+          '1. Buka via HTTPS: https://100.108.28.69:8050\n' +
+          '2. ATAU gunakan aplikasi "IP Webcam" di HP, lalu masukkan URL streaming (http://100.x.x.x:8080/video) di menu RTSP / IP Camera.'
         );
         return false;
       }
@@ -133,15 +132,18 @@ export function initToolbar() {
       if (clientCameraStream) {
         clientCameraStream.getTracks().forEach(t => t.stop());
       }
-      if (clientCameraInterval) {
-        clearInterval(clientCameraInterval);
-      }
+      isCameraActive = false;
 
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { width: { ideal: 640 }, height: { ideal: 480 }, facingMode: { ideal: "environment" } },
+        video: {
+          width: { ideal: 640 },
+          height: { ideal: 480 },
+          facingMode: { ideal: 'environment' }
+        },
         audio: false
       });
       clientCameraStream = stream;
+      isCameraActive = true;
 
       const hiddenVideo = document.createElement('video');
       hiddenVideo.srcObject = stream;
@@ -150,41 +152,67 @@ export function initToolbar() {
       await hiddenVideo.play();
 
       const offscreenCanvas = document.createElement('canvas');
-      offscreenCanvas.width = 640;
-      offscreenCanvas.height = 480;
       const offCtx = offscreenCanvas.getContext('2d');
 
       await restClient.changeSource('client_upload', 'Kamera Browser / HP');
 
-      // Unggah frame kamera lokal ke server setiap 40 ms (~25 FPS)
+      // Loop adaptif berurutan (Sequential Async Loop) untuk mencegah penumpukan paket jaringan
       let isUploading = false;
-      clientCameraInterval = setInterval(() => {
+
+      async function uploadFrameLoop() {
+        if (!isCameraActive) return;
+
         if (hiddenVideo.readyState >= 2 && !isUploading) {
+          const naturalW = hiddenVideo.videoWidth || 640;
+          const naturalH = hiddenVideo.videoHeight || 480;
+
+          // Jaga rasio aspek alami tanpa distorsi gepeng (Max resolusi 640px)
+          const maxDim = 640;
+          let targetW = naturalW;
+          let targetH = naturalH;
+          if (naturalW > maxDim || naturalH > maxDim) {
+            if (naturalW >= naturalH) {
+              targetW = maxDim;
+              targetH = Math.round((naturalH * maxDim) / naturalW);
+            } else {
+              targetH = maxDim;
+              targetW = Math.round((naturalW * maxDim) / naturalH);
+            }
+          }
+
+          if (offscreenCanvas.width !== targetW || offscreenCanvas.height !== targetH) {
+            offscreenCanvas.width = targetW;
+            offscreenCanvas.height = targetH;
+          }
+
+          offCtx.drawImage(hiddenVideo, 0, 0, targetW, targetH);
           isUploading = true;
-          offCtx.drawImage(hiddenVideo, 0, 0, 640, 480);
+
           offscreenCanvas.toBlob(async (blob) => {
-            if (blob) {
+            if (blob && isCameraActive) {
               try {
                 await fetch('/api/stream/upload_frame', {
                   method: 'POST',
                   body: blob
                 });
-              } catch (e) {
-                // Abaikan jika network drop sesaat
-              }
+              } catch (e) {}
             }
             isUploading = false;
-          }, 'image/jpeg', 0.75);
+            if (isCameraActive) setTimeout(uploadFrameLoop, 25);
+          }, 'image/jpeg', 0.65);
+        } else {
+          if (isCameraActive) setTimeout(uploadFrameLoop, 30);
         }
-      }, 40);
+      }
 
-      const videoImg = document.getElementById('video-player-img');
+      uploadFrameLoop();
+
       if (videoImg) {
         videoImg.src = `/api/stream/video_feed?t=${Date.now()}`;
       }
       return true;
     } catch (err) {
-      console.error('Gagal mengakses kamera perangkat:', err);
+      console.error('Gagal membuka kamera:', err);
       alert('Gagal membuka kamera perangkat: ' + (err.message || err.name));
       return false;
     }
@@ -218,10 +246,7 @@ export function initToolbar() {
       if (clientCameraStream) {
         clientCameraStream.getTracks().forEach(t => t.stop());
         clientCameraStream = null;
-      }
-      if (clientCameraInterval) {
-        clearInterval(clientCameraInterval);
-        clientCameraInterval = null;
+        isCameraActive = false;
       }
 
       if (sType === 'webcam' && !sUri) sUri = '0';
@@ -229,7 +254,6 @@ export function initToolbar() {
       const res = await restClient.changeSource(sType, sUri);
       if (res && res.status === 'success') {
         modalSource.classList.add('hidden');
-        const videoImg = document.getElementById('video-player-img');
         if (videoImg) {
           videoImg.src = `/api/stream/video_feed?t=${Date.now()}`;
         }
