@@ -242,14 +242,6 @@ class EnginePipeline:
         live_occupancy = 0
         display = frame_bgr.copy()
 
-        # A. Gambar Area RoI jika aktif
-        if roi_px_polygon is not None and len(roi_px_polygon.points) >= 3:
-            roi_arr = np.array([[p.x, p.y] for p in roi_px_polygon.points], dtype=np.int32)
-            overlay = display.copy()
-            cv2.fillPoly(overlay, [roi_arr], (220, 140, 0))
-            cv2.addWeighted(overlay, 0.12, display, 0.88, 0, display)
-            cv2.polylines(display, [roi_arr], isClosed=True, color=(245, 160, 0), thickness=2)
-
         for x1, y1, x2, y2, tid in raw_tracks:
             cx, cy = (x1 + x2) / 2.0, (y1 + y2) / 2.0
             is_in_roi = True
@@ -284,11 +276,6 @@ class EnginePipeline:
                     color_hex=color_hex,
                 )
             )
-
-        # B. Gambar Garis Virtual & Panah Arah
-        cv2.line(display, (int(p1_px.x), int(p1_px.y)), (int(p2_px.x), int(p2_px.y)), (0, 215, 255), 2)
-        cv2.circle(display, (int(p1_px.x), int(p1_px.y)), 5, (0, 215, 255), -1)
-        cv2.circle(display, (int(p2_px.x), int(p2_px.y)), 5, (0, 215, 255), -1)
 
         # Hitung latensi & perbarui telemetri
         dt_ms = (time.perf_counter() - t0) * 1000.0

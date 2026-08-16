@@ -11,9 +11,30 @@ export function initToolbar() {
   const btnClearRoi = document.getElementById('btn-clear-roi');
   const btnFlipDirection = document.getElementById('btn-flip-direction');
   const btnReset = document.getElementById('btn-reset');
-  const btnChangeSource = document.getElementById('btn-change-source');
+  const btnToggleStream = document.getElementById('btn-toggle-stream');
+  const btnToggleStreamText = document.getElementById('btn-toggle-stream-text');
+  const videoImg = document.getElementById('video-player-img');
+  let isStreamRunning = true;
 
-  // Modal elements
+  // Jeda / Nyalakan Video Stream
+  if (btnToggleStream) {
+    btnToggleStream.addEventListener('click', async () => {
+      isStreamRunning = !isStreamRunning;
+      if (!isStreamRunning) {
+        if (btnToggleStreamText) btnToggleStreamText.textContent = 'Nyalakan Video';
+        btnToggleStream.classList.add('active');
+        if (videoImg) videoImg.src = '';
+        await restClient.triggerAction('pause');
+      } else {
+        if (btnToggleStreamText) btnToggleStreamText.textContent = 'Jeda Video';
+        btnToggleStream.classList.remove('active');
+        if (videoImg) videoImg.src = `/api/stream/video_feed?t=${Date.now()}`;
+        await restClient.triggerAction('resume');
+      }
+    });
+  }
+
+  // Mode: Tarik Garis
   const modalSource = document.getElementById('modal-source');
   const btnCloseModal = document.getElementById('btn-close-modal');
   const btnApplySource = document.getElementById('btn-apply-source');

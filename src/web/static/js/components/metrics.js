@@ -20,8 +20,10 @@ export function initMetrics() {
     if (elIn) elIn.textContent = telemetry.count_in;
     if (elOut) elOut.textContent = telemetry.count_out;
     if (elOccupancy) elOccupancy.textContent = telemetry.live_occupancy;
-    if (elFps) elFps.textContent = `${telemetry.fps} FPS`;
-    if (elLatency) elLatency.textContent = `${telemetry.latency_ms} ms`;
+    const fpsVal = typeof telemetry.fps === 'number' ? telemetry.fps.toFixed(1) : '0.0';
+    const latVal = typeof telemetry.latency_ms === 'number' ? telemetry.latency_ms.toFixed(1) : '0.0';
+    if (elFps) elFps.textContent = `${fpsVal} FPS`;
+    if (elLatency) elLatency.textContent = `${latVal} ms`;
     if (elSource) elSource.textContent = telemetry.source_name;
     if (elModel) elModel.textContent = telemetry.model_name;
   });
