@@ -139,9 +139,9 @@ Catatan jujur untuk presentasi: angka HOTA/IDF1 tracker usulan belum ada. Yang t
 | Tracker usulan (LAE+TBSS, OCM, ma90_ea5, sm0.3_aw0.5) | **37,67** | 43,54 | 28,43 | 28,71 |
 | Ablasi LAE-only | 12,01 | 10,17 | 19,61 | 18,69 |
 
-Bacaannya: pipeline end-to-end sudah bekerja, dengan OCM + tuning gate berhasil menembus baseline OC-SORT (37,67 vs 36,51 HOTA MOT20, +1,16) sambil IDF1 naik (43,54 vs 42,88). DiffMOT tetap unggul jauh (44,37), posisi jujur untuk presentasi: tracker usulan menang tipis atas OC-SORT, kalah telak dari DiffMOT — alasan pivot ke LightTrack-ReID (S014). Ablasi LAE-only menunjukkan penampilan tanpa geometri justru merusak asosiasi, konsisten dengan pelajaran paper (LAE menambah di atas baseline IoU, bukan menggantikan).
+Bacaannya: pipeline end-to-end sudah bekerja, dengan OCM + tuning gate berhasil menembus baseline OC-SORT (37,67 vs 36,51 HOTA MOT20, +1,16) sambil IDF1 naik (43,54 vs 42,88). DiffMOT tetap unggul jauh (44,37), posisi jujur untuk presentasi: tracker usulan menang tipis atas OC-SORT, kalah telak dari DiffMOT, alasan pivot ke LightTrack-ReID (S014). Ablasi LAE-only menunjukkan penampilan tanpa geometri justru merusak asosiasi, konsisten dengan pelajaran paper (LAE menambah di atas baseline IoU, bukan menggantikan).
 
-### 8.1 Hasil akhir (16 Agustus 2026) — gate sweep + ASW
+### 8.1 Hasil akhir (16 Agustus 2026), gate sweep + ASW
 
 Sweep terakhir di atas OCM `ma90_ea5` dengan ckpt v2 `best.pt` (BCEacc 0,978):
 
@@ -152,11 +152,11 @@ Sweep terakhir di atas OCM `ma90_ea5` dengan ckpt v2 `best.pt` (BCEacc 0,978):
 | sm0.3 aw0.7 | 37,19 | 54,93 | 42,99 | 27,64 | tidak mengungguli |
 | + ASW (Eq 10 paper) | 37,59 | 54,96 | 43,51 | 27,65 | negatif: tidak ada gain |
 
-Keputusan: konfigurasi final = **sm0.3, appearance-w 0.5, ma90, ea5** — angka 37,67 HOTA MOT20 / 28,43 DanceTrack. ASW (bobot adaptif paper Eq 10) **tidak terbukti** di protokol kita (37,59 < 37,67; selisih ±0,1 di bawah noise run), dicatat sebagai hasil ablasi negatif — tidak dipakai. Gate `sm0.2` menarik untuk DanceTrack (29,31) tapi mengorbankan 0,52 HOTA MOT20, tidak diambil karena prioritas laporan adalah MOT20 (domain people counting padat).
+Keputusan: konfigurasi final = **sm0.3, appearance-w 0.5, ma90, ea5** dengan angka 37,67 HOTA MOT20 / 28,43 DanceTrack. ASW (bobot adaptif paper Eq 10) **tidak terbukti** di protokol kita (37,59 < 37,67; selisih ±0,1 di bawah noise run), dicatat sebagai hasil ablasi negatif, tidak dipakai. Gate `sm0.2` menarik untuk DanceTrack (29,31) tapi mengorbankan 0,52 HOTA MOT20, tidak diambil karena prioritas laporan adalah MOT20 (domain people counting padat).
 
 ### 8.2 Validasi optimasi crop GPU (16 Agustus 2026) + kecepatan realtime
 
-Bottleneck realtime bukan detektor (YOLO26 di RTX 4090 hanya 3-5 ms per frame), melainkan loop crop+resize embedding per deteksi yang jalan serial di CPU (sekitar 25 ms per frame di adegan padat — itu sebabnya FPS 4090 nyaris sama dengan GTX 1080 di paper S014). Fix: crop+resize dipindah ke GPU dengan area averaging (`F.interpolate mode='area'`, setara `INTER_AREA` yang dipakai training sehingga konsisten train→inference). Konfigurasi final dijalankan ulang dengan protokol sama untuk memastikan tidak ada regresi akurasi:
+Bottleneck realtime bukan detektor (YOLO26 di RTX 4090 hanya 3-5 ms per frame), melainkan loop crop+resize embedding per deteksi yang jalan serial di CPU (sekitar 25 ms per frame di adegan padat, itu sebabnya FPS 4090 nyaris sama dengan GTX 1080 di paper S014). Fix: crop+resize dipindah ke GPU dengan area averaging (`F.interpolate mode='area'`, setara `INTER_AREA` yang dipakai training sehingga konsisten train→inference). Konfigurasi final dijalankan ulang dengan protokol sama untuk memastikan tidak ada regresi akurasi:
 
 | Konfigurasi | MOT20 HOTA | MOT20 MOTA | MOT20 IDF1 | DanceTrack HOTA | Bacaannya |
 |---|---|---|---|---|---|
