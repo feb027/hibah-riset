@@ -1,17 +1,121 @@
 seq,tracker,model,GT_IN,GT_OUT,GT_TOTAL,Pred_IN,Pred_OUT,Pred_TOTAL,MAE,MAE_IN,MAE_OUT,Error_Pct,RMSE_Interval,Over_Count,Under_Count
 MOT20-01,GroundTruth,Ideal (GT-Track),6,4,10,6,4,10,0.0,0.0,0.0,0.0,0.0,0,0
 MOT20-01,ocsort,State Machine (CD=30),6,4,10,6,3,9,1.0,0.0,1.0,10.0,0.0,0,1
+MOT20-01,deepocsort,State Machine (CD=30),6,4,10,9,4,13,3.0,3.0,0.0,30.0,2.0,3,0
 MOT20-01,diffmot,State Machine (CD=30),6,4,10,6,3,9,1.0,0.0,1.0,10.0,0.0,0,1
 MOT20-01,lighttrack,State Machine (CD=30),6,4,10,6,3,9,1.0,0.0,1.0,10.0,0.0,0,1
 MOT20-02,GroundTruth,Ideal (GT-Track),89,108,197,89,108,197,0.0,0.0,0.0,0.0,0.0,0,0
 MOT20-02,ocsort,State Machine (CD=30),89,108,197,90,75,165,32.0,1.0,33.0,16.24,19.42,0,32
+MOT20-02,deepocsort,State Machine (CD=30),89,108,197,268,117,385,188.0,179.0,9.0,95.43,112.98,188,0
 MOT20-02,diffmot,State Machine (CD=30),89,108,197,94,75,169,28.0,5.0,33.0,14.21,18.85,0,28
 MOT20-02,lighttrack,State Machine (CD=30),89,108,197,113,86,199,2.0,24.0,22.0,1.02,4.04,2,0
 MOT20-03,GroundTruth,Ideal (GT-Track),42,170,212,42,170,212,0.0,0.0,0.0,0.0,0.0,0,0
 MOT20-03,ocsort,State Machine (CD=30),42,170,212,37,143,180,32.0,5.0,27.0,15.09,13.52,0,32
+MOT20-03,deepocsort,State Machine (CD=30),42,170,212,590,461,1051,839.0,548.0,291.0,395.75,420.65,839,0
 MOT20-03,diffmot,State Machine (CD=30),42,170,212,47,145,192,20.0,5.0,25.0,9.43,7.74,0,20
 MOT20-03,lighttrack,State Machine (CD=30),42,170,212,47,171,218,6.0,5.0,1.0,2.83,9.74,6,0
 MOT20-05,GroundTruth,Ideal (GT-Track),147,190,337,147,190,337,0.0,0.0,0.0,0.0,0.0,0,0
 MOT20-05,ocsort,State Machine (CD=30),147,190,337,128,195,323,14.0,19.0,5.0,4.15,6.67,0,14
+MOT20-05,deepocsort,State Machine (CD=30),147,190,337,1855,1106,2961,2624.0,1708.0,916.0,778.64,1643.01,2624,0
 MOT20-05,diffmot,State Machine (CD=30),147,190,337,137,196,333,4.0,10.0,6.0,1.19,3.23,0,4
 MOT20-05,lighttrack,State Machine (CD=30),147,190,337,173,250,423,86.0,26.0,60.0,25.52,55.45,86,0
+dancetrack0004,GroundTruth,Ideal (GT-Track),8,6,14,8,6,14,0.0,0.0,0.0,0.0,0.0,0,0
+dancetrack0004,ocsort,State Machine (CD=30),8,6,14,9,4,13,1.0,1.0,2.0,7.14,1.58,0,1
+dancetrack0004,diffmot,State Machine (CD=30),8,6,14,6,6,12,2.0,2.0,0.0,14.29,2.0,0,2
+dancetrack0004,lighttrack,State Machine (CD=30),8,6,14,7,7,14,0.0,1.0,1.0,0.0,0.87,0,0
+dancetrack0005,GroundTruth,Ideal (GT-Track),13,8,21,13,8,21,0.0,0.0,0.0,0.0,0.0,0,0
+dancetrack0005,ocsort,State Machine (CD=30),13,8,21,16,8,24,3.0,3.0,0.0,14.29,1.73,3,0
+dancetrack0005,diffmot,State Machine (CD=30),13,8,21,12,7,19,2.0,1.0,1.0,9.52,2.06,0,2
+dancetrack0005,lighttrack,State Machine (CD=30),13,8,21,14,14,28,7.0,1.0,6.0,33.33,3.64,7,0
+dancetrack0007,GroundTruth,Ideal (GT-Track),8,11,19,8,11,19,0.0,0.0,0.0,0.0,0.0,0,0
+dancetrack0007,ocsort,State Machine (CD=30),8,11,19,10,14,24,5.0,2.0,3.0,26.32,4.33,5,0
+dancetrack0007,diffmot,State Machine (CD=30),8,11,19,10,9,19,0.0,2.0,2.0,0.0,0.5,0,0
+dancetrack0007,lighttrack,State Machine (CD=30),8,11,19,13,17,30,11.0,5.0,6.0,57.89,8.05,11,0
+dancetrack0010,GroundTruth,Ideal (GT-Track),12,7,19,12,7,19,0.0,0.0,0.0,0.0,0.0,0,0
+dancetrack0010,ocsort,State Machine (CD=30),12,7,19,15,7,22,3.0,3.0,0.0,15.79,3.28,3,0
+dancetrack0010,diffmot,State Machine (CD=30),12,7,19,14,6,20,1.0,2.0,1.0,5.26,1.58,1,0
+dancetrack0010,lighttrack,State Machine (CD=30),12,7,19,19,15,34,15.0,7.0,8.0,78.95,10.12,15,0
+dancetrack0014,GroundTruth,Ideal (GT-Track),15,14,29,15,14,29,0.0,0.0,0.0,0.0,0.0,0,0
+dancetrack0014,ocsort,State Machine (CD=30),15,14,29,22,13,35,6.0,7.0,1.0,20.69,3.12,6,0
+dancetrack0014,diffmot,State Machine (CD=30),15,14,29,11,17,28,1.0,4.0,3.0,3.45,1.58,0,1
+dancetrack0014,lighttrack,State Machine (CD=30),15,14,29,23,20,43,14.0,8.0,6.0,48.28,7.43,14,0
+dancetrack0018,GroundTruth,Ideal (GT-Track),5,2,7,5,2,7,0.0,0.0,0.0,0.0,0.0,0,0
+dancetrack0018,ocsort,State Machine (CD=30),5,2,7,5,4,9,2.0,0.0,2.0,28.57,2.0,2,0
+dancetrack0018,diffmot,State Machine (CD=30),5,2,7,4,2,6,1.0,1.0,0.0,14.29,0.0,0,1
+dancetrack0018,lighttrack,State Machine (CD=30),5,2,7,6,2,8,1.0,1.0,0.0,14.29,1.0,1,0
+dancetrack0019,GroundTruth,Ideal (GT-Track),27,20,47,27,20,47,0.0,0.0,0.0,0.0,0.0,0,0
+dancetrack0019,ocsort,State Machine (CD=30),27,20,47,32,27,59,12.0,5.0,7.0,25.53,6.22,12,0
+dancetrack0019,diffmot,State Machine (CD=30),27,20,47,25,22,47,0.0,2.0,2.0,0.0,1.66,0,0
+dancetrack0019,lighttrack,State Machine (CD=30),27,20,47,37,32,69,22.0,10.0,12.0,46.81,12.8,22,0
+dancetrack0025,GroundTruth,Ideal (GT-Track),6,3,9,6,3,9,0.0,0.0,0.0,0.0,0.0,0,0
+dancetrack0025,ocsort,State Machine (CD=30),6,3,9,8,6,14,5.0,2.0,3.0,55.56,5.15,5,0
+dancetrack0025,diffmot,State Machine (CD=30),6,3,9,1,8,9,0.0,5.0,5.0,0.0,1.41,0,0
+dancetrack0025,lighttrack,State Machine (CD=30),6,3,9,11,11,22,13.0,5.0,8.0,144.44,11.18,13,0
+dancetrack0026,GroundTruth,Ideal (GT-Track),14,9,23,14,9,23,0.0,0.0,0.0,0.0,0.0,0,0
+dancetrack0026,ocsort,State Machine (CD=30),14,9,23,24,4,28,5.0,10.0,5.0,21.74,5.0,5,0
+dancetrack0026,diffmot,State Machine (CD=30),14,9,23,9,3,12,11.0,5.0,6.0,47.83,11.0,0,11
+dancetrack0026,lighttrack,State Machine (CD=30),14,9,23,18,11,29,6.0,4.0,2.0,26.09,6.0,6,0
+dancetrack0030,GroundTruth,Ideal (GT-Track),6,4,10,6,4,10,0.0,0.0,0.0,0.0,0.0,0,0
+dancetrack0030,ocsort,State Machine (CD=30),6,4,10,9,5,14,4.0,3.0,1.0,40.0,2.29,4,0
+dancetrack0030,diffmot,State Machine (CD=30),6,4,10,6,5,11,1.0,0.0,1.0,10.0,0.87,1,0
+dancetrack0030,lighttrack,State Machine (CD=30),6,4,10,9,6,15,5.0,3.0,2.0,50.0,3.08,5,0
+dancetrack0034,GroundTruth,Ideal (GT-Track),12,13,25,12,13,25,0.0,0.0,0.0,0.0,0.0,0,0
+dancetrack0034,ocsort,State Machine (CD=30),12,13,25,15,12,27,2.0,3.0,1.0,8.0,2.16,2,0
+dancetrack0034,diffmot,State Machine (CD=30),12,13,25,12,14,26,1.0,0.0,1.0,4.0,1.63,1,0
+dancetrack0034,lighttrack,State Machine (CD=30),12,13,25,22,29,51,26.0,10.0,16.0,104.0,18.62,26,0
+dancetrack0035,GroundTruth,Ideal (GT-Track),9,8,17,9,8,17,0.0,0.0,0.0,0.0,0.0,0,0
+dancetrack0035,ocsort,State Machine (CD=30),9,8,17,11,9,20,3.0,2.0,1.0,17.65,2.55,3,0
+dancetrack0035,diffmot,State Machine (CD=30),9,8,17,10,8,18,1.0,1.0,0.0,5.88,0.71,1,0
+dancetrack0035,lighttrack,State Machine (CD=30),9,8,17,13,9,22,5.0,4.0,1.0,29.41,3.81,5,0
+dancetrack0041,GroundTruth,Ideal (GT-Track),20,18,38,20,18,38,0.0,0.0,0.0,0.0,0.0,0,0
+dancetrack0041,ocsort,State Machine (CD=30),20,18,38,18,17,35,3.0,2.0,1.0,7.89,2.94,0,3
+dancetrack0041,diffmot,State Machine (CD=30),20,18,38,15,13,28,10.0,5.0,5.0,26.32,8.81,0,10
+dancetrack0041,lighttrack,State Machine (CD=30),20,18,38,30,29,59,21.0,10.0,11.0,55.26,13.96,21,0
+dancetrack0043,GroundTruth,Ideal (GT-Track),4,0,4,4,0,4,0.0,0.0,0.0,0.0,0.0,0,0
+dancetrack0043,ocsort,State Machine (CD=30),4,0,4,4,0,4,0.0,0.0,0.0,0.0,0.0,0,0
+dancetrack0043,diffmot,State Machine (CD=30),4,0,4,3,0,3,1.0,1.0,0.0,25.0,1.0,0,1
+dancetrack0043,lighttrack,State Machine (CD=30),4,0,4,4,0,4,0.0,0.0,0.0,0.0,0.0,0,0
+dancetrack0047,GroundTruth,Ideal (GT-Track),12,11,23,12,11,23,0.0,0.0,0.0,0.0,0.0,0,0
+dancetrack0047,ocsort,State Machine (CD=30),12,11,23,16,15,31,8.0,4.0,4.0,34.78,5.61,8,0
+dancetrack0047,diffmot,State Machine (CD=30),12,11,23,13,7,20,3.0,1.0,4.0,13.04,1.94,0,3
+dancetrack0047,lighttrack,State Machine (CD=30),12,11,23,18,16,34,11.0,6.0,5.0,47.83,7.31,11,0
+dancetrack0058,GroundTruth,Ideal (GT-Track),13,14,27,13,14,27,0.0,0.0,0.0,0.0,0.0,0,0
+dancetrack0058,ocsort,State Machine (CD=30),13,14,27,16,15,31,4.0,3.0,1.0,14.81,3.38,4,0
+dancetrack0058,diffmot,State Machine (CD=30),13,14,27,13,14,27,0.0,0.0,0.0,0.0,0.77,0,0
+dancetrack0058,lighttrack,State Machine (CD=30),13,14,27,19,14,33,6.0,6.0,0.0,22.22,4.52,6,0
+dancetrack0063,GroundTruth,Ideal (GT-Track),8,6,14,8,6,14,0.0,0.0,0.0,0.0,0.0,0,0
+dancetrack0063,ocsort,State Machine (CD=30),8,6,14,18,10,28,14.0,10.0,4.0,100.0,10.1,14,0
+dancetrack0063,diffmot,State Machine (CD=30),8,6,14,13,6,19,5.0,5.0,0.0,35.71,2.45,5,0
+dancetrack0063,lighttrack,State Machine (CD=30),8,6,14,29,25,54,40.0,21.0,19.0,285.71,29.72,40,0
+dancetrack0065,GroundTruth,Ideal (GT-Track),9,8,17,9,8,17,0.0,0.0,0.0,0.0,0.0,0,0
+dancetrack0065,ocsort,State Machine (CD=30),9,8,17,9,11,20,3.0,0.0,3.0,17.65,2.55,3,0
+dancetrack0065,diffmot,State Machine (CD=30),9,8,17,6,9,15,2.0,3.0,1.0,11.76,2.24,0,2
+dancetrack0065,lighttrack,State Machine (CD=30),9,8,17,11,17,28,11.0,2.0,9.0,64.71,6.67,11,0
+dancetrack0073,GroundTruth,Ideal (GT-Track),19,12,31,19,12,31,0.0,0.0,0.0,0.0,0.0,0,0
+dancetrack0073,ocsort,State Machine (CD=30),19,12,31,20,18,38,7.0,1.0,6.0,22.58,5.52,7,0
+dancetrack0073,diffmot,State Machine (CD=30),19,12,31,15,8,23,8.0,4.0,4.0,25.81,6.04,0,8
+dancetrack0073,lighttrack,State Machine (CD=30),19,12,31,25,18,43,12.0,6.0,6.0,38.71,8.63,12,0
+dancetrack0077,GroundTruth,Ideal (GT-Track),7,6,13,7,6,13,0.0,0.0,0.0,0.0,0.0,0,0
+dancetrack0077,ocsort,State Machine (CD=30),7,6,13,7,13,20,7.0,0.0,7.0,53.85,4.72,7,0
+dancetrack0077,diffmot,State Machine (CD=30),7,6,13,7,8,15,2.0,0.0,2.0,15.38,1.22,2,0
+dancetrack0077,lighttrack,State Machine (CD=30),7,6,13,12,15,27,14.0,5.0,9.0,107.69,9.6,14,0
+dancetrack0079,GroundTruth,Ideal (GT-Track),16,14,30,16,14,30,0.0,0.0,0.0,0.0,0.0,0,0
+dancetrack0079,ocsort,State Machine (CD=30),16,14,30,20,13,33,3.0,4.0,1.0,10.0,1.73,3,0
+dancetrack0079,diffmot,State Machine (CD=30),16,14,30,15,12,27,3.0,1.0,2.0,10.0,2.35,0,3
+dancetrack0079,lighttrack,State Machine (CD=30),16,14,30,21,16,37,7.0,5.0,2.0,23.33,4.44,7,0
+dancetrack0081,GroundTruth,Ideal (GT-Track),20,23,43,20,23,43,0.0,0.0,0.0,0.0,0.0,0,0
+dancetrack0081,ocsort,State Machine (CD=30),20,23,43,16,19,35,8.0,4.0,4.0,18.6,4.8,0,8
+dancetrack0081,diffmot,State Machine (CD=30),20,23,43,14,17,31,12.0,6.0,6.0,27.91,6.22,0,12
+dancetrack0081,lighttrack,State Machine (CD=30),20,23,43,18,19,37,6.0,2.0,4.0,13.95,2.83,0,6
+dancetrack0090,GroundTruth,Ideal (GT-Track),13,14,27,13,14,27,0.0,0.0,0.0,0.0,0.0,0,0
+dancetrack0090,ocsort,State Machine (CD=30),13,14,27,17,12,29,2.0,4.0,2.0,7.41,1.73,2,0
+dancetrack0090,diffmot,State Machine (CD=30),13,14,27,15,8,23,4.0,2.0,6.0,14.81,3.11,0,4
+dancetrack0090,lighttrack,State Machine (CD=30),13,14,27,28,26,54,27.0,15.0,12.0,100.0,18.98,27,0
+dancetrack0094,GroundTruth,Ideal (GT-Track),13,8,21,13,8,21,0.0,0.0,0.0,0.0,0.0,0,0
+dancetrack0094,ocsort,State Machine (CD=30),13,8,21,15,7,22,1.0,2.0,1.0,4.76,0.71,1,0
+dancetrack0094,diffmot,State Machine (CD=30),13,8,21,11,7,18,3.0,2.0,1.0,14.29,2.55,0,3
+dancetrack0094,lighttrack,State Machine (CD=30),13,8,21,20,19,39,18.0,7.0,11.0,85.71,13.42,18,0
+dancetrack0097,GroundTruth,Ideal (GT-Track),7,3,10,7,3,10,0.0,0.0,0.0,0.0,0.0,0,0
+dancetrack0097,ocsort,State Machine (CD=30),7,3,10,8,5,13,3.0,1.0,2.0,30.0,2.06,3,0
+dancetrack0097,diffmot,State Machine (CD=30),7,3,10,7,4,11,1.0,0.0,1.0,10.0,0.87,1,0
+dancetrack0097,lighttrack,State Machine (CD=30),7,3,10,7,5,12,2.0,0.0,2.0,20.0,1.73,2,0
