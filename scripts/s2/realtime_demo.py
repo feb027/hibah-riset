@@ -46,7 +46,8 @@ except Exception:
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 sys.path.insert(0, ROOT)
 from core.counting.counter import PeopleCounter          # noqa: E402
-from core.counting.models import Line, Point             # noqa: E402
+from core.counting.models import Line, Point, Polygon    # noqa: E402
+from core.counting.detector import PolygonDetector       # noqa: E402
 
 OCSORT_ROOT = os.path.join(ROOT, "external", "OC_SORT")
 sys.path.insert(0, OCSORT_ROOT)
@@ -68,6 +69,8 @@ def parse_args():
     p.add_argument("--line-y", type=float, default=-1,
                    help="posisi garis HORIZONTAL sbg fraksi tinggi frame (0..1); dipakai bila >= 0 "
                         "(menggantikan --line). Cocok untuk video dengan gerak atas->bawah")
+    p.add_argument("--roi", default=None,
+                   help="koordinat RoI poligon 'x1,y1,x2,y2,...' atau 'default'; abaikan objek di luar RoI")
     p.add_argument("--cooldown", type=int, default=30, help="frame cooldown anti double-count")
     # parameter tracker — identik dengan run Skenario B
     p.add_argument("--track-thresh", type=float, default=0.3)
@@ -199,19 +202,42 @@ def main():
             inertia=args.inertia,
         )
 
+    # Setup RoI (Region of Interest) Polygon
+    roi_polygon = None
+    if args.roi:
+        if args.roi.lower() == "default":
+            # Default RoI: Area aktif tengah-ke-kiri koridor (10% s.d. 90% tinggi, 5% s.d. 85% lebar)
+            pts = [Point(int(frame_w * 0.05), int(frame_h * 0.1)),
+                   Point(int(frame_w * 0.85), int(frame_h * 0.1)),
+                   Point(int(frame_w * 0.85), int(frame_h * 0.95)),
+                   Point(int(frame_w * 0.05), int(frame_h * 0.95))]
+            roi_polygon = Polygon(points=pts)
+        else:
+            try:
+                coords = [float(v.strip()) for v in args.roi.split(",")]
+                pts = []
+                for i in range(0, len(coords), 2):
+                    px = int(coords[i] * frame_w) if coords[i] <= 1.0 else int(coords[i])
+                    py = int(coords[i + 1] * frame_h) if coords[i + 1] <= 1.0 else int(coords[i + 1])
+                    pts.append(Point(px, py))
+                if len(pts) >= 3:
+                    roi_polygon = Polygon(points=pts)
+            except Exception as e:
+                print("[WARN] Gagal parse --roi:", e)
+
     counter = None
     line_pos = None
     line_ori = "v"
     if args.line_y >= 0:
         vy = int(frame_h * args.line_y)
         counter = PeopleCounter(Line(Point(0, vy), Point(frame_w, vy)),
-                                cooldown_threshold=args.cooldown)
+                                cooldown_threshold=args.cooldown, roi=roi_polygon)
         line_pos = args.line_y
         line_ori = "h"
     elif args.line >= 0:
         vx = int(frame_w * args.line)
         counter = PeopleCounter(Line(Point(vx, 0), Point(vx, frame_h)),
-                                cooldown_threshold=args.cooldown)
+                                cooldown_threshold=args.cooldown, roi=roi_polygon)
         line_pos = args.line
         line_ori = "v"
 
@@ -220,18 +246,28 @@ def main():
         writer = cv2.VideoWriter(args.save, cv2.VideoWriter_fourcc(*"mp4v"), 30,
                                  (min(frame_w, args.max_w), int(frame_h * min(1.0, args.max_w / float(frame_w)))))
 
-    # Interactive line setup state
+    # Interactive line & RoI setup state
     line_start_pt = Point(vx, 0) if line_ori == "v" else Point(0, vy)
     line_end_pt = Point(vx, frame_h) if line_ori == "v" else Point(frame_w, vy)
-    mouse_state = {"drawing": False, "p1": None, "p2": None}
+    mouse_state = {"mode": "line", "drawing": False, "p1": None, "p2": None, "roi_pts": []}
 
     def on_mouse(event, mx, my, flags, param):
-        nonlocal line_start_pt, line_end_pt, counter, line_ori, line_pos
-        # Skalakan koordinat mouse kembali ke ukuran frame asli
+        nonlocal line_start_pt, line_end_pt, counter, line_ori, line_pos, roi_polygon
         scale = float(frame_w) / float(min(frame_w, args.max_w))
         orig_x = int(mx * scale)
         orig_y = int(my * scale)
 
+        if mouse_state["mode"] == "roi":
+            if event == cv2.EVENT_LBUTTONDOWN:
+                mouse_state["roi_pts"].append(Point(orig_x, orig_y))
+                print(f"[GUI-RoI] Titik #{len(mouse_state['roi_pts'])} ditambahkan: ({orig_x}, {orig_y})")
+                if len(mouse_state["roi_pts"]) >= 3:
+                    roi_polygon = Polygon(points=mouse_state["roi_pts"].copy())
+                    if counter:
+                        counter.roi = roi_polygon
+            return
+
+        # Mode Line: Click & Drag
         if event == cv2.EVENT_LBUTTONDOWN:
             mouse_state["drawing"] = True
             mouse_state["p1"] = (orig_x, orig_y)
@@ -244,20 +280,18 @@ def main():
                 mouse_state["drawing"] = False
                 p1 = mouse_state["p1"]
                 p2 = (orig_x, orig_y)
-                # Jika drag lebih dari 20 piksel, buat garis kustom
                 if (p1[0] - p2[0]) ** 2 + (p1[1] - p2[1]) ** 2 > 400:
                     line_start_pt = Point(p1[0], p1[1])
                     line_end_pt = Point(p2[0], p2[1])
                     line_ori = "custom"
-                    counter = PeopleCounter(Line(line_start_pt, line_end_pt), cooldown_threshold=args.cooldown)
+                    counter = PeopleCounter(Line(line_start_pt, line_end_pt), cooldown_threshold=args.cooldown, roi=roi_polygon)
                     print(f"\n[GUI] Garis Kustom dibuat: ({p1[0]},{p1[1]}) -> ({p2[0]},{p2[1]})")
                 else:
-                    # Klik sekali: Geser garis vertikal ke posisi klik
                     line_ori = "v"
                     line_pos = orig_x / float(frame_w)
                     line_start_pt = Point(orig_x, 0)
                     line_end_pt = Point(orig_x, frame_h)
-                    counter = PeopleCounter(Line(line_start_pt, line_end_pt), cooldown_threshold=args.cooldown)
+                    counter = PeopleCounter(Line(line_start_pt, line_end_pt), cooldown_threshold=args.cooldown, roi=roi_polygon)
                     print(f"\n[GUI] Garis Vertikal dipindah ke x = {orig_x} ({line_pos:.2f} frame)")
 
     win_name = "Realtime People Counting (YOLO26 + Deep-OC-SORT)"
@@ -269,8 +303,9 @@ def main():
     paused = False
     frame = first_frame
     print("Jalan! ESC = keluar, SPACE = pause, C = reset hitungan.")
-    print("TIPS GUI: Klik & Drag mouse di layar video untuk menarik garis virtual baru kapan saja!")
-    print("(counting %s, garis %s)" % ("AKTIF" if counter else "nonaktif", line_ori))
+    print("KONTROL GUI: Drag Mouse = Garis | R = Mode Gambar RoI | X = Hapus RoI | C = Reset")
+    print("(counting %s, RoI %s, garis %s)" % ("AKTIF" if counter else "nonaktif",
+                                              "AKTIF" if roi_polygon else "Full-Frame", line_ori))
 
     while True:
         if not paused:
@@ -304,9 +339,27 @@ def main():
             else:
                 online = tracker.update_public(dets_xyxy, cates, scores)
 
-            # overlay
-            display = frame.copy()
-            h, w = display.shape[:2]
+            # 1. Gambar Area RoI jika aktif
+            if roi_polygon is not None and len(roi_polygon.points) >= 3:
+                roi_pts_arr = np.array([[p.x, p.y] for p in roi_polygon.points], dtype=np.int32)
+                overlay = display.copy()
+                cv2.fillPoly(overlay, [roi_pts_arr], (255, 160, 0))
+                cv2.addWeighted(overlay, 0.15, display, 0.85, 0, display)
+                cv2.polylines(display, [roi_pts_arr], isClosed=True, color=(255, 200, 0), thickness=2)
+                cv2.putText(display, "ACTIVE RoI ZONE", (roi_pts_arr[0][0] + 10, max(25, roi_pts_arr[0][1] + 25)),
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.55, (255, 200, 0), 2, cv2.LINE_AA)
+
+            # Jika sedang menggambar RoI, tampilkan titik-titik panduan
+            if mouse_state["mode"] == "roi" and mouse_state["roi_pts"]:
+                for i, pt in enumerate(mouse_state["roi_pts"]):
+                    cv2.circle(display, (pt.x, pt.y), 5, (0, 255, 255), -1)
+                    cv2.putText(display, f"P{i+1}", (pt.x + 6, pt.y - 6),
+                                cv2.FONT_HERSHEY_SIMPLEX, 0.4, (0, 255, 255), 1)
+                if len(mouse_state["roi_pts"]) >= 2:
+                    temp_pts = np.array([[p.x, p.y] for p in mouse_state["roi_pts"]], dtype=np.int32)
+                    cv2.polylines(display, [temp_pts], isClosed=False, color=(0, 255, 255), thickness=1)
+
+            # 2. Gambar Bounding Box
             active = {}
             for trk in online:
                 if args.tracker in ("lighttrack", "deepocsort"):
@@ -314,12 +367,26 @@ def main():
                     x1, y1, x2, y2, tid = bx, by, bx + bw, by + bh, int(trk[1])
                 else:
                     x1, y1, x2, y2, tid = trk[0], trk[1], trk[2], trk[3], int(trk[4])
-                color = box_color(tid)
-                cv2.rectangle(display, (int(x1), int(y1)), (int(x2), int(y2)), color, 2)
-                cv2.putText(display, "ID %d" % tid, (int(x1), max(int(y1) - 6, 14)),
-                            cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 1, cv2.LINE_AA)
-                active[tid] = ((x1 + x2) / 2.0, (y1 + y2) / 2.0)
 
+                cx, cy = (x1 + x2) / 2.0, (y1 + y2) / 2.0
+                is_in_roi = True
+                if roi_polygon is not None:
+                    is_in_roi = PolygonDetector.is_inside(roi_polygon, Point(cx, cy))
+
+                if is_in_roi:
+                    color = box_color(tid)
+                    cv2.rectangle(display, (int(x1), int(y1)), (int(x2), int(y2)), color, 2)
+                    cv2.circle(display, (int(cx), int(cy)), 4, color, -1)
+                    cv2.putText(display, "ID %d" % tid, (int(x1), max(int(y1) - 6, 14)),
+                                cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 1, cv2.LINE_AA)
+                    active[tid] = (cx, cy)
+                else:
+                    # Di luar RoI: Digambar tipis abu-abu (tidak diproses)
+                    cv2.rectangle(display, (int(x1), int(y1)), (int(x2), int(y2)), (80, 80, 80), 1)
+                    cv2.putText(display, "ID %d (Luar RoI)" % tid, (int(x1), max(int(y1) - 6, 14)),
+                                cv2.FONT_HERSHEY_SIMPLEX, 0.4, (120, 120, 120), 1, cv2.LINE_AA)
+
+            # 3. Garis Virtual & Hitungan
             if counter is not None:
                 p1_draw = (int(line_start_pt.x), int(line_start_pt.y))
                 p2_draw = (int(line_end_pt.x), int(line_end_pt.y))
@@ -338,7 +405,7 @@ def main():
                 cv2.putText(display, "TRACK: %d" % len(active), (10, 30),
                             cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 255), 2, cv2.LINE_AA)
 
-            # Jika sedang klik-tarik mouse, gambar garis bantu preview putih putus-putus
+            # Jika sedang klik-tarik mouse garis, gambar preview garis putih
             if mouse_state["drawing"] and mouse_state["p1"] and mouse_state["p2"]:
                 cv2.line(display, mouse_state["p1"], mouse_state["p2"], (255, 255, 255), 2)
                 cv2.circle(display, mouse_state["p1"], 4, (0, 255, 0), -1)
@@ -373,6 +440,27 @@ def main():
         elif key in (ord("c"), ord("C")) and counter is not None:
             counter.count_in = counter.count_out = 0
             counter._tracks = {}
+            print("\n[GUI] Hitungan di-reset ke 0.")
+        elif key in (ord("r"), ord("R")):
+            if mouse_state["mode"] == "line":
+                mouse_state["mode"] = "roi"
+                mouse_state["roi_pts"] = []
+                print("\n[GUI] MODE GAMBAR RoI AKTIF: Klik titik-titik sudut poligon di layar. Tekan 'R' lagi untuk selesai.")
+            else:
+                mouse_state["mode"] = "line"
+                if len(mouse_state["roi_pts"]) >= 3:
+                    roi_polygon = Polygon(points=mouse_state["roi_pts"].copy())
+                    if counter:
+                        counter.roi = roi_polygon
+                    print(f"\n[GUI] RoI Poligon ({len(mouse_state['roi_pts'])} sudut) DIAKTIFKAN!")
+                else:
+                    print("\n[GUI] Titik RoI kurang dari 3, dibatalkan.")
+        elif key in (ord("x"), ord("X")):
+            roi_polygon = None
+            mouse_state["roi_pts"] = []
+            if counter:
+                counter.roi = None
+            print("\n[GUI] RoI DIHAPUS. Kembali ke mode area penuh (Full-Frame).")
 
     cap.release()
     if writer is not None:
