@@ -15,28 +15,35 @@ router = APIRouter(prefix="/api/stream", tags=["stream"])
 
 @router.get("/video_feed")
 async def video_feed(request: Request) -> StreamingResponse:
-    """Menyediakan aliran video real-time berformat MJPEG Multipart."""
+    """Menyediakan aliran video real-time berformat MJPEG Multipart teroptimasi."""
     pipeline = request.app.state.pipeline
     stream_mgr = request.app.state.stream_mgr
 
     async def frame_generator() -> AsyncGenerator[bytes, None]:
+        last_frame_id = -1
         while True:
-            # Cek jika klien terputus
             if await request.is_disconnected():
                 break
 
-            frame = stream_mgr.read_frame()
+            frame, frame_id = stream_mgr.read_frame()
             if frame is None:
                 await asyncio.sleep(0.02)
                 continue
 
+            # Cegah komputasi inferensi berulang pada frame yang sama
+            if frame_id == last_frame_id:
+                await asyncio.sleep(0.008)
+                continue
+
+            last_frame_id = frame_id
+
             # Jalankan inferensi AI
             annotated_frame, telemetry = pipeline.process_frame(frame)
 
-            # Encode ke JPEG berkualitas tinggi namun ringan
-            ret, buffer = cv2.imencode(".jpg", annotated_frame, [cv2.IMWRITE_JPEG_QUALITY, 80])
+            # Encode ke JPEG ringan dan cepat
+            ret, buffer = cv2.imencode(".jpg", annotated_frame, [cv2.IMWRITE_JPEG_QUALITY, 65])
             if not ret:
-                await asyncio.sleep(0.01)
+                await asyncio.sleep(0.005)
                 continue
 
             frame_bytes = buffer.tobytes()
@@ -46,8 +53,7 @@ async def video_feed(request: Request) -> StreamingResponse:
                 b"Content-Length: " + str(len(frame_bytes)).encode() + b"\r\n\r\n"
                 + frame_bytes + b"\r\n"
             )
-            # Throttle halus agar tidak membebani network
-            await asyncio.sleep(0.015)
+            await asyncio.sleep(0.005)
 
     return StreamingResponse(
         frame_generator(),

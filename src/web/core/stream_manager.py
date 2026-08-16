@@ -126,6 +126,7 @@ class StreamManager:
                 self._source_name = Path(str(src_val)).name
 
         self._running = True
+        self._frame_id = 0
         self._thread = threading.Thread(target=self._capture_loop, daemon=True)
         self._thread.start()
         print(f"[StreamManager] Sumber aktif: {self._source_name} ({self._frame_w}x{self._frame_h})")
@@ -144,6 +145,7 @@ class StreamManager:
                 if f is not None:
                     with self._lock:
                         self._latest_frame = f
+                        self._frame_id += 1
                 time.sleep(0.033)  # Simulasi ~30 FPS untuk sekuens gambar
             else:
                 if self.cap is None or not self.cap.isOpened():
@@ -153,18 +155,19 @@ class StreamManager:
                 if ret and f is not None:
                     with self._lock:
                         self._latest_frame = f
+                        self._frame_id += 1
                 else:
                     # Jika file video selesai, ulangi dari awal (looping)
                     if not isinstance(self.source, int) and not str(self.source).startswith("rtsp"):
                         self.cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
                     time.sleep(0.01)
 
-    def read_frame(self) -> Optional[np.ndarray]:
-        """Ambil frame terbaru secara thread-safe."""
+    def read_frame(self) -> Tuple[Optional[np.ndarray], int]:
+        """Ambil frame terbaru beserta ID uniknya secara thread-safe."""
         with self._lock:
             if self._latest_frame is None:
-                return None
-            return self._latest_frame.copy()
+                return None, 0
+            return self._latest_frame.copy(), self._frame_id
 
     def feed_client_frame(self, frame_bgr: np.ndarray) -> None:
         """Terima frame yang dikirim langsung dari browser atau HP klien."""
@@ -172,6 +175,7 @@ class StreamManager:
             with self._lock:
                 self._latest_frame = frame_bgr
                 self._frame_h, self._frame_w = frame_bgr.shape[:2]
+                self._frame_id += 1
 
     def set_source(self, new_source: Union[int, str]) -> bool:
         """Ganti sumber video secara dinamis saat runtime."""

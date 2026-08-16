@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>People Counting System — Real-Time Monitor</title>
-  <meta name="description" content="Konsol Real-Time People Counting YOLO26 + Deep-OC-SORT">
+  <title>People Counting Console — Real-Time Deep Learning</title>
+  <meta name="description" content="Konsol Analitik People Counting Real-Time YOLO26-S + Deep-OC-SORT">
   
   <link rel="stylesheet" href="/css/tokens.css">
   <link rel="stylesheet" href="/css/layout.css">
@@ -12,130 +12,142 @@
 </head>
 <body>
   <div class="viewport-app">
-    <!-- Top Compact Header -->
-    <header class="app-header">
-      <div class="brand-group">
-        <span class="brand-pill">AI-ENGINE</span>
-        <h1 class="brand-title">PEOPLE COUNTING CONSOLE</h1>
-        <div class="live-tag">
+    <!-- Top Compact Header Bar -->
+    <header class="console-header">
+      <div class="header-brand">
+        <span class="system-tag">DEEP LEARNING</span>
+        <h1 class="system-title">PEOPLE COUNTING CONSOLE</h1>
+        <div class="status-pill">
           <span id="status-dot" class="status-dot"></span>
-          <span id="status-text" class="status-text">LIVE</span>
+          <span id="status-text">LIVE</span>
         </div>
       </div>
 
-      <div class="header-meta">
-        <div class="meta-item">
-          <span class="meta-key">SUMBER:</span>
-          <span id="header-source" class="meta-val">Menghubungkan...</span>
+      <div class="header-telemetry-strip">
+        <div class="telemetry-chip">
+          <span class="chip-label">SUMBER:</span>
+          <span id="header-source" class="chip-val">Menghubungkan...</span>
         </div>
-        <div class="meta-item">
-          <span class="meta-key">FPS:</span>
-          <span id="header-fps" class="meta-val highlight">0.0 FPS</span>
+        <div class="telemetry-chip">
+          <span class="chip-label">FPS:</span>
+          <span id="header-fps" class="chip-val fps-val">0.0 FPS</span>
         </div>
-        <div class="meta-item">
-          <span class="meta-key">LATENSI:</span>
-          <span id="header-latency" class="meta-val">0.0 ms</span>
+        <div class="telemetry-chip">
+          <span class="chip-label">LATENSI:</span>
+          <span id="header-latency" class="chip-val">0.0 ms</span>
         </div>
       </div>
     </header>
 
-    <!-- One-Screen Workspace -->
-    <main class="console-body">
-      <!-- Left / Main: Video Monitor & Toolbar -->
-      <section class="video-viewport-panel">
-        <div class="video-contain-box" id="video-container">
-          <img id="video-player-img" class="video-stream-img" src="/api/stream/video_feed" alt="Video Feed">
+    <!-- Main Workspace (Balanced 2-Panel Split) -->
+    <main class="console-workspace">
+      <!-- Left Panel: Video Camera Monitor & Tight Toolbar -->
+      <section class="camera-monitor-panel">
+        <div class="camera-screen-box" id="video-container">
+          <img id="video-player-img" class="camera-stream-img" src="/api/stream/video_feed" alt="Video Stream">
           <canvas id="canvas-overlay" class="canvas-overlay"></canvas>
         </div>
 
-        <!-- Integrated Action Toolbar -->
-        <nav class="console-toolbar" aria-label="Kontrol Garis dan Zona">
-          <button id="btn-draw-line" class="btn btn-action" title="Tarik garis perlintasan">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="19" x2="19" y2="5"></line><circle cx="5" cy="19" r="2"></circle><circle cx="19" cy="5" r="2"></circle></svg>
-            <span>Tarik Garis</span>
-          </button>
-          <button id="btn-draw-roi" class="btn btn-action" title="Gambar area RoI">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 22 8.5 22 15.5 12 22 2 15.5 2 8.5 12 2"></polygon></svg>
-            <span>Gambar RoI</span>
-          </button>
-          <button id="btn-finish-roi" class="btn btn-success" style="display: none;" title="Kunci RoI">
-            <span>Selesai RoI</span>
-          </button>
-          <button id="btn-clear-roi" class="btn btn-subtle" title="Hapus RoI">
-            <span>Hapus RoI</span>
-          </button>
-          <button id="btn-flip-direction" class="btn btn-subtle" title="Tukar arah">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="17 1 21 5 17 9"></polyline><path d="M3 11V9a4 4 0 0 1 4-4h14"></path><polyline points="7 23 3 19 7 15"></polyline><path d="M21 13v2a4 4 0 0 1-4 4H3"></path></svg>
-            <span>Balik Arah</span>
-          </button>
-          <button id="btn-toggle-stream" class="btn btn-subtle" title="Jeda/Lanjutkan">
-            <span id="btn-toggle-stream-text">Jeda Video</span>
-          </button>
-          <button id="btn-change-source" class="btn btn-action" title="Ganti Sumber">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 7l-7 5 7 5V7z"></path><rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect></svg>
-            <span>Ganti Sumber</span>
-          </button>
-          <button id="btn-reset" class="btn btn-danger" title="Reset hitungan">
-            <span>Reset</span>
-          </button>
+        <!-- Tight Segmented Control Toolbar -->
+        <nav class="tight-toolbar" aria-label="Kontrol Garis dan Zona">
+          <div class="btn-group">
+            <button id="btn-draw-line" class="btn btn-action" title="Tarik garis perlintasan virtual">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="19" x2="19" y2="5"></line><circle cx="5" cy="19" r="2"></circle><circle cx="19" cy="5" r="2"></circle></svg>
+              <span>Tarik Garis</span>
+            </button>
+            <button id="btn-draw-roi" class="btn btn-action" title="Gambar batas poligon zona RoI">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 22 8.5 22 15.5 12 22 2 15.5 2 8.5 12 2"></polygon></svg>
+              <span>Gambar RoI</span>
+            </button>
+            <button id="btn-finish-roi" class="btn btn-success" style="display: none;" title="Kunci RoI">
+              <span>Selesai</span>
+            </button>
+            <button id="btn-clear-roi" class="btn btn-subtle" title="Hapus RoI">
+              <span>Hapus RoI</span>
+            </button>
+            <button id="btn-flip-direction" class="btn btn-subtle" title="Tukar arah IN/OUT">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="17 1 21 5 17 9"></polyline><path d="M3 11V9a4 4 0 0 1 4-4h14"></path><polyline points="7 23 3 19 7 15"></polyline><path d="M21 13v2a4 4 0 0 1-4 4H3"></path></svg>
+              <span>Balik Arah</span>
+            </button>
+          </div>
+
+          <div class="btn-group">
+            <button id="btn-toggle-stream" class="btn btn-subtle" title="Jeda atau lanjutkan video">
+              <span id="btn-toggle-stream-text">Jeda Video</span>
+            </button>
+            <button id="btn-change-source" class="btn btn-action" title="Ganti sumber kamera">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 7l-7 5 7 5V7z"></path><rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect></svg>
+              <span>Ganti Sumber</span>
+            </button>
+            <button id="btn-reset" class="btn btn-danger" title="Reset hitungan ke nol">
+              <span>Reset</span>
+            </button>
+          </div>
         </nav>
       </section>
 
-      <!-- Right / Bottom: Analytics & Telemetry Console Panel -->
-      <aside class="sidebar-analytics-panel">
-        <!-- 1. Real-Time Metric Strip -->
-        <div class="metric-ribbon">
-          <div class="metric-unit total-unit">
-            <span class="unit-label">TOTAL</span>
-            <span id="metric-total" class="unit-val">0</span>
+      <!-- Right Panel: Telemetry Metrics & Dynamic Traffic -->
+      <aside class="telemetry-dashboard-panel">
+        <!-- 1. High-Contrast KPI Ribbon -->
+        <div class="kpi-ribbon">
+          <div class="kpi-cell total-cell">
+            <span class="kpi-label">TOTAL MELINTAS</span>
+            <span id="metric-total" class="kpi-value">0</span>
           </div>
-          <div class="metric-unit in-unit">
-            <span class="unit-label">MASUK (IN)</span>
-            <span id="metric-in" class="unit-val">0</span>
+          <div class="kpi-cell in-cell">
+            <span class="kpi-label">ARAH MASUK (IN)</span>
+            <span id="metric-in" class="kpi-value">0</span>
           </div>
-          <div class="metric-unit out-unit">
-            <span class="unit-label">KELUAR (OUT)</span>
-            <span id="metric-out" class="unit-val">0</span>
+          <div class="kpi-cell out-cell">
+            <span class="kpi-label">ARAH KELUAR (OUT)</span>
+            <span id="metric-out" class="kpi-value">0</span>
           </div>
-          <div class="metric-unit roi-unit">
-            <span class="unit-label">DI ZONA (ROI)</span>
-            <span id="metric-occupancy" class="unit-val">0</span>
+          <div class="kpi-cell roi-cell">
+            <span class="kpi-label">DI DALAM ZONA (ROI)</span>
+            <span id="metric-occupancy" class="kpi-value">0</span>
           </div>
         </div>
 
-        <!-- 2. Integrated Traffic Sparkline -->
-        <div class="traffic-box">
-          <div class="traffic-header">
-            <span class="traffic-title">DINAMIKA ARUS (60s)</span>
-            <div class="traffic-legend">
-              <span class="legend-in">● IN</span>
-              <span class="legend-out">● OUT</span>
+        <!-- 2. Dynamic Traffic Dynamics Sparkline (60 Detik) -->
+        <div class="traffic-analytics-box">
+          <div class="analytics-header">
+            <span class="analytics-title">DINAMIKA ARUS MELINTAS (60s)</span>
+            <div class="analytics-legend">
+              <span class="legend-dot in-dot">● IN</span>
+              <span class="legend-dot out-dot">● OUT</span>
             </div>
           </div>
-          <div class="sparkline-wrapper">
-            <svg id="traffic-chart-svg" class="sparkline-svg" viewBox="0 0 400 80" preserveAspectRatio="none">
-              <line x1="0" y1="20" x2="400" y2="20" class="spark-grid"></line>
-              <line x1="0" y1="40" x2="400" y2="40" class="spark-grid"></line>
-              <line x1="0" y1="60" x2="400" y2="60" class="spark-grid"></line>
-              <path class="spark-line-in" d="M 0,75 L 400,75"></path>
-              <path class="spark-line-out" d="M 0,75 L 400,75"></path>
+          <div class="sparkline-container">
+            <svg id="traffic-chart-svg" class="sparkline-svg" viewBox="0 0 400 70" preserveAspectRatio="none">
+              <line x1="0" y1="18" x2="400" y2="18" class="chart-grid-line"></line>
+              <line x1="0" y1="36" x2="400" y2="36" class="chart-grid-line"></line>
+              <line x1="0" y1="54" x2="400" y2="54" class="chart-grid-line"></line>
+              <path class="chart-line-in" d="M 0,65 L 400,65"></path>
+              <path class="chart-line-out" d="M 0,65 L 400,65"></path>
             </svg>
           </div>
         </div>
 
-        <!-- 3. System Spec Info -->
-        <div class="system-spec-card">
-          <div class="spec-row">
-            <span>MODEL:</span>
-            <span id="header-model" class="spec-highlight">YOLO26-S + Deep-OC-SORT</span>
+        <!-- 3. Live Event Crossing Activity Log -->
+        <div class="activity-log-box">
+          <div class="log-header">
+            <span class="log-title">LOG AKTIVITAS TERKINI</span>
+            <span class="log-count">REAL-TIME</span>
           </div>
-          <div class="spec-row">
-            <span>TRACKER LOGIC:</span>
-            <span>State Machine (CD=30, Debounce)</span>
+          <div id="activity-log-list" class="log-list">
+            <div class="log-empty">Menunggu deteksi perlintasan orang...</div>
           </div>
-          <div class="spec-row">
-            <span>ZONA ROI:</span>
-            <span>Ray-Casting Polygon</span>
+        </div>
+
+        <!-- 4. Compact Pipeline Spec Footer -->
+        <div class="pipeline-spec-footer">
+          <div class="spec-entry">
+            <span>DETEKTOR:</span>
+            <strong id="header-model">YOLO26-S (640x640)</strong>
+          </div>
+          <div class="spec-entry">
+            <span>TRACKER:</span>
+            <strong>Deep-OC-SORT (ACM+VDC)</strong>
           </div>
         </div>
       </aside>
