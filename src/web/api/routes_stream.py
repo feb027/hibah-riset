@@ -52,3 +52,20 @@ async def video_feed(request: Request) -> StreamingResponse:
         frame_generator(),
         media_type="multipart/x-mixed-replace; boundary=frame",
     )
+
+
+@router.post("/upload_frame")
+async def upload_frame(request: Request):
+    """Menerima frame biner (JPEG) dari kamera HP atau webcam browser klien."""
+    stream_mgr = request.app.state.stream_mgr
+    body = await request.body()
+    if not body:
+        return {"status": "error", "message": "Body kosong"}
+
+    nparr = np.frombuffer(body, np.uint8)
+    frame_bgr = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+    if frame_bgr is not None:
+        stream_mgr.feed_client_frame(frame_bgr)
+        return {"status": "ok"}
+    return {"status": "error", "message": "Gagal decode frame"}
+

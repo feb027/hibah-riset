@@ -46,10 +46,18 @@ class StreamManager:
 
     def start(self) -> bool:
         """Buka sumber video dan jalankan worker pembaca frame di background thread."""
-        self.stop()
         self._is_sequence = False
+        self._is_client_feed = False
         self._image_sequence = []
         self._seq_idx = 0
+
+        # Cek jika sumber adalah stream kamera dari browser/HP klien
+        if str(self.source).lower() in ("client_upload", "browser_camera", "phone"):
+            self._is_client_feed = True
+            self._source_name = "Kamera Browser / HP"
+            self._running = True
+            print("[StreamManager] Menunggu aliran frame dari kamera browser/HP klien...")
+            return True
 
         # Cek jika sumber adalah direktori sekuens gambar
         if isinstance(self.source, str) and os.path.isdir(self.source):
@@ -134,15 +142,16 @@ class StreamManager:
                         self.cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
                     time.sleep(0.01)
 
-    def read_frame(self) -> Optional[np.ndarray]:
-        """Ambil frame terbaru secara thread-safe."""
-        with self._lock:
-            if self._latest_frame is None:
-                return None
-            return self._latest_frame.copy()
+    def feed_client_frame(self, frame_bgr: np.ndarray) -> None:
+        """Terima frame yang dikirim langsung dari browser atau HP klien."""
+        if frame_bgr is not None and frame_bgr.size > 0:
+            with self._lock:
+                self._latest_frame = frame_bgr
+                self._frame_h, self._frame_w = frame_bgr.shape[:2]
 
     def set_source(self, new_source: Union[int, str]) -> bool:
         """Ganti sumber video secara dinamis saat runtime."""
+        self.stop()
         self.source = new_source
         return self.start()
 

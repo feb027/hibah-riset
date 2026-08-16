@@ -111,6 +111,71 @@ export function initToolbar() {
     if (btnFinishRoi) btnFinishRoi.style.display = mode === 'draw_roi' ? 'inline-flex' : 'none';
   });
 
+  let clientCameraStream = null;
+  let clientCameraInterval = null;
+
+  async function startClientCamera() {
+    try {
+      if (clientCameraStream) {
+        clientCameraStream.getTracks().forEach(t => t.stop());
+      }
+      if (clientCameraInterval) {
+        clearInterval(clientCameraInterval);
+      }
+
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { width: { ideal: 640 }, height: { ideal: 480 }, facingMode: { ideal: "environment" } },
+        audio: false
+      });
+      clientCameraStream = stream;
+
+      const hiddenVideo = document.createElement('video');
+      hiddenVideo.srcObject = stream;
+      hiddenVideo.muted = true;
+      hiddenVideo.playsInline = true;
+      await hiddenVideo.play();
+
+      const offscreenCanvas = document.createElement('canvas');
+      offscreenCanvas.width = 640;
+      offscreenCanvas.height = 480;
+      const offCtx = offscreenCanvas.getContext('2d');
+
+      await restClient.changeSource('client_upload', 'Kamera Browser / HP');
+
+      // Unggah frame kamera lokal ke server setiap 40 ms (~25 FPS)
+      let isUploading = false;
+      clientCameraInterval = setInterval(() => {
+        if (hiddenVideo.readyState >= 2 && !isUploading) {
+          isUploading = true;
+          offCtx.drawImage(hiddenVideo, 0, 0, 640, 480);
+          offscreenCanvas.toBlob(async (blob) => {
+            if (blob) {
+              try {
+                await fetch('/api/stream/upload_frame', {
+                  method: 'POST',
+                  body: blob
+                });
+              } catch (e) {
+                // Abaikan jika network drop sesaat
+              }
+            }
+            isUploading = false;
+          }, 'image/jpeg', 0.75);
+        }
+      }, 40);
+
+      const videoImg = document.getElementById('video-player-img');
+      if (videoImg) {
+        videoImg.src = `/api/stream/video_feed?t=${Date.now()}`;
+      }
+      return true;
+    } catch (err) {
+      console.error('Gagal mengakses kamera perangkat:', err);
+      alert('Gagal membuka kamera perangkat: ' + (err.message || err.name));
+      return false;
+    }
+  }
+
   // Modal Sumber Video
   if (btnChangeSource && modalSource) {
     btnChangeSource.addEventListener('click', () => {
@@ -128,12 +193,28 @@ export function initToolbar() {
     btnApplySource.addEventListener('click', async () => {
       const sType = selectSourceType.value;
       let sUri = inputSourceUri.value.trim();
+
+      if (sType === 'client_camera') {
+        const ok = await startClientCamera();
+        if (ok) modalSource.classList.add('hidden');
+        return;
+      }
+
+      // Jika beralih dari kamera client ke server, hentikan streaming client
+      if (clientCameraStream) {
+        clientCameraStream.getTracks().forEach(t => t.stop());
+        clientCameraStream = null;
+      }
+      if (clientCameraInterval) {
+        clearInterval(clientCameraInterval);
+        clientCameraInterval = null;
+      }
+
       if (sType === 'webcam' && !sUri) sUri = '0';
 
       const res = await restClient.changeSource(sType, sUri);
       if (res && res.status === 'success') {
         modalSource.classList.add('hidden');
-        // Refresh video image player feed
         const videoImg = document.getElementById('video-player-img');
         if (videoImg) {
           videoImg.src = `/api/stream/video_feed?t=${Date.now()}`;
