@@ -13,10 +13,19 @@ export function initToolbar() {
   const btnReset = document.getElementById('btn-reset');
   const btnToggleStream = document.getElementById('btn-toggle-stream');
   const btnToggleStreamText = document.getElementById('btn-toggle-stream-text');
+  const btnChangeSource = document.getElementById('btn-change-source');
+
   const videoImg = document.getElementById('video-player-img');
   let isStreamRunning = true;
 
-  // Jeda / Nyalakan Video Stream
+  // Modal elements
+  const modalSource = document.getElementById('modal-source');
+  const btnCloseModal = document.getElementById('btn-close-modal');
+  const btnApplySource = document.getElementById('btn-apply-source');
+  const selectSourceType = document.getElementById('select-source-type');
+  const inputSourceUri = document.getElementById('input-source-uri');
+
+  // 1. Jeda / Nyalakan Video Stream
   if (btnToggleStream) {
     btnToggleStream.addEventListener('click', async () => {
       isStreamRunning = !isStreamRunning;
@@ -34,14 +43,7 @@ export function initToolbar() {
     });
   }
 
-  // Mode: Tarik Garis
-  const modalSource = document.getElementById('modal-source');
-  const btnCloseModal = document.getElementById('btn-close-modal');
-  const btnApplySource = document.getElementById('btn-apply-source');
-  const selectSourceType = document.getElementById('select-source-type');
-  const inputSourceUri = document.getElementById('input-source-uri');
-
-  // Mode: Tarik Garis
+  // 2. Mode: Tarik Garis
   if (btnDrawLine) {
     btnDrawLine.addEventListener('click', () => {
       const curMode = store.getState().mode;
@@ -50,7 +52,7 @@ export function initToolbar() {
     });
   }
 
-  // Mode: Gambar RoI
+  // 3. Mode: Gambar RoI
   if (btnDrawRoi) {
     btnDrawRoi.addEventListener('click', () => {
       const curMode = store.getState().mode;
@@ -59,7 +61,7 @@ export function initToolbar() {
     });
   }
 
-  // Selesai Gambar RoI
+  // 4. Selesai Gambar RoI
   if (btnFinishRoi) {
     btnFinishRoi.addEventListener('click', async () => {
       const { roiDraftPoints } = store.getState();
@@ -76,7 +78,7 @@ export function initToolbar() {
     });
   }
 
-  // Hapus RoI
+  // 5. Hapus RoI
   if (btnClearRoi) {
     btnClearRoi.addEventListener('click', async () => {
       store.setState({
@@ -88,14 +90,14 @@ export function initToolbar() {
     });
   }
 
-  // Balik Arah
+  // 6. Balik Arah
   if (btnFlipDirection) {
     btnFlipDirection.addEventListener('click', async () => {
       await restClient.triggerAction('flip_direction');
     });
   }
 
-  // Reset Hitungan
+  // 7. Reset Hitungan
   if (btnReset) {
     btnReset.addEventListener('click', async () => {
       if (confirm('Reset seluruh hitungan IN/OUT ke 0?')) {
@@ -104,13 +106,14 @@ export function initToolbar() {
     });
   }
 
-  // Sinkronisasi status aktif tombol dengan mode store
+  // 8. Sinkronisasi status aktif tombol dengan mode store
   store.subscribe('mode', (mode) => {
     if (btnDrawLine) btnDrawLine.classList.toggle('active', mode === 'draw_line');
     if (btnDrawRoi) btnDrawRoi.classList.toggle('active', mode === 'draw_roi');
     if (btnFinishRoi) btnFinishRoi.style.display = mode === 'draw_roi' ? 'inline-flex' : 'none';
   });
 
+  // 9. Streaming Kamera Browser / Kamera HP
   let clientCameraStream = null;
   let clientCameraInterval = null;
 
@@ -176,7 +179,7 @@ export function initToolbar() {
     }
   }
 
-  // Modal Sumber Video
+  // 10. Modal Sumber Video
   if (btnChangeSource && modalSource) {
     btnChangeSource.addEventListener('click', () => {
       modalSource.classList.remove('hidden');
@@ -196,7 +199,7 @@ export function initToolbar() {
 
       if (sType === 'client_camera') {
         const ok = await startClientCamera();
-        if (ok) modalSource.classList.add('hidden');
+        if (ok && modalSource) modalSource.classList.add('hidden');
         return;
       }
 
