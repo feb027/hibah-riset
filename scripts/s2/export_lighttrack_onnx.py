@@ -20,6 +20,13 @@ output "Applied workaround for CuDNN issue" adalah warning tidak berbahaya.
 """
 import argparse
 import os
+import sys
+
+# skrip dijalankan sebagai scripts/s2/export_lighttrack_onnx.py dari repo root:
+# sys.path[0] = scripts/s2, jadi tambah root repo agar `src.` bisa di-import
+_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+if _ROOT not in sys.path:
+    sys.path.insert(0, _ROOT)
 
 # butuh torch — skrip ini HANYA dijalankan di mesin yang punya torch (kampus),
 # bukan di PC target. Import dibawah untuk menghindari error saat --help.
