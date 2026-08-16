@@ -313,12 +313,37 @@ def step_detect(a: argparse.Namespace) -> None:
 
 # ---------------------------------------------------------------- track
 def step_track(a: argparse.Namespace) -> None:
-    print("\n== track: OC-SORT ==")
+    print(f"\n== track: {a.tracker.upper()} ==")
     try:
         import filterpy  # noqa: F401
     except ImportError:
         print("   filterpy belum ada — install otomatis ...")
         subprocess.run([py(), "-m", "pip", "install", "-q", "filterpy"], check=True)
+
+    if a.tracker == "deepocsort":
+        runner = a.repo_root / "scripts/s2/run_deepocsort_mot.py"
+        for ds, split in [("mot20", "train"), ("dancetrack", "val")]:
+            det_dir = a.data_dir / ds / "det_mot" / split
+            img_dir = a.data_dir / ds / split
+            if not det_dir.exists():
+                print(f"   (skip {ds}: deteksi belum ada)")
+                continue
+            out_dir = a.exp_dir / "deepocsort_results" / ds
+            if any(out_dir.glob("*.txt")) and not a.force:
+                print(f"   skip {ds} (hasil sudah ada)")
+                continue
+            print(f"   {ds}/{split} (Deep-OC-SORT) ...")
+            subprocess.run([py(), str(runner),
+                            "--det-dir", str(det_dir),
+                            "--out-dir", str(out_dir),
+                            "--img-dir", str(img_dir),
+                            "--min-conf", str(a.min_conf),
+                            "--iou-thresh", str(a.iou_thresh),
+                            "--delta-t", str(a.delta_t),
+                            "--min-hits", str(a.min_hits),
+                            "--max-age", str(a.max_age)], check=True)
+        return
+
     ocsort_root = a.ext_dir / "OC_SORT"
     if not (ocsort_root / "trackers").exists():
         print("   clone OC_SORT ...")
