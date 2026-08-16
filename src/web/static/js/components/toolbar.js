@@ -119,6 +119,17 @@ export function initToolbar() {
 
   async function startClientCamera() {
     try {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        alert(
+          'Browser HP memblokir kamera jika dibuka via HTTP biasa (Aturan Keamanan Browser).\n\n' +
+          'SOLUSI SANGAT MUDAH:\n' +
+          '1. Jalankan server dengan HTTPS: tambahkan flag --ssl di server kampus, lalu buka https://...\n' +
+          '2. ATAU install aplikasi "IP Webcam" di HP, lalu masukkan URL streaming (http://100.x.x.x:8080/video) di menu Ganti Sumber -> RTSP / IP Camera.\n' +
+          '3. ATAU di Chrome Android, buka chrome://flags/#unsafely-treat-insecure-origin-as-secure dan masukkan alamat IP server ini.'
+        );
+        return false;
+      }
+
       if (clientCameraStream) {
         clientCameraStream.getTracks().forEach(t => t.stop());
       }

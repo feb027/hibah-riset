@@ -79,6 +79,25 @@ def create_app(source: str = "0", tracker: str = "deepocsort", weights: str = No
     return app
 
 
+def ensure_ssl_certs() -> tuple:
+    """Buat self-signed certificate SSL untuk membuka akses kamera HTTPS di browser HP."""
+    cert_dir = ROOT / "out" / "ssl"
+    cert_dir.mkdir(parents=True, exist_ok=True)
+    cert_path = cert_dir / "cert.pem"
+    key_path = cert_dir / "key.pem"
+    if not (cert_path.is_file() and key_path.is_file()):
+        try:
+            import subprocess
+            subprocess.run([
+                "openssl", "req", "-x509", "-newkey", "rsa:2048",
+                "-keyout", str(key_path), "-out", str(cert_path),
+                "-days", "365", "-nodes", "-subj", "/CN=localhost"
+            ], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        except Exception:
+            pass
+    return str(cert_path), str(key_path)
+
+
 def parse_args():
     p = argparse.ArgumentParser(description="Jalankan Web Dashboard Real-Time People Counting")
     p.add_argument("--host", default="0.0.0.0", help="Host binding (0.0.0.0 untuk akses Tailscale/LAN)")
@@ -86,6 +105,7 @@ def parse_args():
     p.add_argument("--source", default="0", help="Sumber video: webcam index (0), video.mp4, atau URL RTSP")
     p.add_argument("--tracker", default="deepocsort", choices=["deepocsort", "ocsort", "lighttrack"])
     p.add_argument("--weights", default=str(ROOT / "data" / "s2" / "weights" / "best.onnx"))
+    p.add_argument("--ssl", action="store_true", help="Aktifkan HTTPS dengan self-signed cert (wajib untuk kamera browser HP)")
     return p.parse_args()
 
 
@@ -93,11 +113,30 @@ if __name__ == "__main__":
     import uvicorn
     args = parse_args()
     app = create_app(source=args.source, tracker=args.tracker, weights=args.weights)
+
+    ssl_certfile, ssl_keyfile = None, None
+    protocol = "http"
+    if args.ssl:
+        c_path, k_path = ensure_ssl_certs()
+        if os.path.isfile(c_path) and os.path.isfile(k_path):
+            ssl_certfile, ssl_keyfile = c_path, k_path
+            protocol = "https"
+
     print(f"\n==================================================================")
     print(f"  PEOPLE COUNTING WEB DASHBOARD BERJALAN")
-    print(f"  Akses Lokal     : http://localhost:{args.port}")
-    print(f"  Akses Tailscale : http://<IP-Tailscale>:{args.port}")
+    print(f"  Akses Lokal     : {protocol}://localhost:{args.port}")
+    print(f"  Akses Tailscale : {protocol}://<IP-Tailscale>:{args.port}")
     print(f"  Sumber Video    : {args.source}")
     print(f"  Tracker Aktif   : {args.tracker.upper()}")
+    if args.ssl:
+        print(f"  Mode Keamanan   : HTTPS Aktif (Kamera HP Diizinkan)")
     print(f"==================================================================\n")
-    uvicorn.run(app, host=args.host, port=args.port, log_level="info")
+
+    uvicorn.run(
+        app,
+        host=args.host,
+        port=args.port,
+        ssl_certfile=ssl_certfile,
+        ssl_keyfile=ssl_keyfile,
+        log_level="info",
+    )

@@ -159,6 +159,13 @@ class StreamManager:
                         self.cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
                     time.sleep(0.01)
 
+    def read_frame(self) -> Optional[np.ndarray]:
+        """Ambil frame terbaru secara thread-safe."""
+        with self._lock:
+            if self._latest_frame is None:
+                return None
+            return self._latest_frame.copy()
+
     def feed_client_frame(self, frame_bgr: np.ndarray) -> None:
         """Terima frame yang dikirim langsung dari browser atau HP klien."""
         if frame_bgr is not None and frame_bgr.size > 0:
