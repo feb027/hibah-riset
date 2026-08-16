@@ -1,6 +1,6 @@
 # Skenario B: Evaluasi Tracker dan Arah Tracker Usulan
 
-Bahan presentasi, 11 Agustus 2026.
+Bahan presentasi, 16 Agustus 2026.
 
 Pesan inti satu kalimat: yang membatasi kualitas counting adalah asosiasi identitas antar frame, bukan deteksi, dan jawabannya adalah tracker ringan dengan ReID yang bisa dilatih ulang.
 
@@ -123,20 +123,21 @@ Data run asli (20 epoch, MOT17 + MOT20, 4090):
 
 Bacaannya: LAE berhasil. Untuk TBSS, ada temuan penting 14 Agustus 2026: angka BCEacc validasi yang datar 0,5 selama ini TIDAK valid karena bug konstruksi fitur di validasi. Pasangan negatif di validasi salah memberi input: kotak yang dibandingkan sama dengan kotaknya sendiri sehingga IoU selalu 1,0, padahal di data latih IoU-nya dihitung dengan kotak anchor yang benar. Akibatnya pasangan negatif di validasi tampak seperti pasangan positif sempurna dan akurasi validasi macet di 0,5 apa pun yang dipelajari model. Artinya TBSS sebenarnya tidak pernah terukur dengan benar, dan skor validasi lama tidak bisa dipakai sebagai bukti TBSS gagal. Bug sudah diperbaiki (sisi kotak anchor dipakai konsisten di training, validasi, dan histogram) dan training dilanjutkan dari checkpoint yang ada.
 
-Perbaikan v2 yang sudah dikerjakan sebelumnya juga tetap: TBSS diganti transformer 73 dimensi (attention-nya tidak efektif) menjadi MLP ringan input 6 angka (IoU, cosine, selisih box), optimizer TBSS dipisah, BCE diberi bobot, checkpoint ala YOLO (last/best.pt). Status: training v2 sedang berjalan; setelah fix ini, BCEacc validasi berikutnya adalah angka yang pertama kali valid.
+Perbaikan v2 yang sudah dikerjakan sebelumnya juga tetap: TBSS diganti transformer 73 dimensi (attention-nya tidak efektif) menjadi MLP ringan input 6 angka (IoU, cosine, selisih box), optimizer TBSS dipisah, BCE diberi bobot, checkpoint ala YOLO (last/best.pt). Hasil v2: BCEacc validasi 0,92-0,98, best.pt 0,978 di epoch 15, TBSS terukur valid pertama kali.
 
-Catatan jujur untuk presentasi: angka HOTA/IDF1 tracker usulan belum ada. Yang terbukti baru encoder penampilan berfungsi baik.
+Catatan jujur untuk presentasi: angka HOTA/IDF1 tracker usulan sudah ada dan diukur dengan protokol yang sama (bagian 8, 8.1, 8.2).
 
 ## 8. Status dan Langkah Berikutnya
 
-- Baseline OC-SORT: selesai. DiffMOT: selesai. Tracker usulan: integrasi pertama selesai, tuning berjalan.
-- Evaluasi pertama tracker usulan (LAE+TBSS, ckpt best.pt BCEacc 0,978, 14 Agustus 2026), protokol sama:
+- Baseline OC-SORT: selesai. DiffMOT: selesai. Tracker usulan: integrasi pertama selesai, tuning selesai.
+- Evaluasi tracker usulan (LAE+TBSS, ckpt best.pt BCEacc 0,978), protokol sama, dua tahap:
 
 | Tracker | MOT20 HOTA | MOT20 IDF1 | DanceTrack HOTA | DanceTrack IDF1 |
 |---|---|---|---|---|
 | OC-SORT (baseline) | 36,51 | 42,88 | 28,39 | 26,63 |
 | DiffMOT | 44,37 | 53,86 | 39,05 | 43,39 |
-| Tracker usulan (LAE+TBSS, OCM, ma90_ea5, sm0.3_aw0.5) | **37,67** | 43,54 | 28,43 | 28,71 |
+| Tracker usulan, evaluasi pertama (14 Agustus, sebelum tuning) | 32,92 | 34,69 | 22,53 | 18,91 |
+| Tracker usulan, setelah tuning (OCM, ma90_ea5, sm0.3_aw0.5) | **37,67** | 43,54 | 28,43 | 28,71 |
 | Ablasi LAE-only | 12,01 | 10,17 | 19,61 | 18,69 |
 
 Bacaannya: pipeline end-to-end sudah bekerja, dengan OCM + tuning gate berhasil menembus baseline OC-SORT (37,67 vs 36,51 HOTA MOT20, +1,16) sambil IDF1 naik (43,54 vs 42,88). DiffMOT tetap unggul jauh (44,37), posisi jujur untuk presentasi: tracker usulan menang tipis atas OC-SORT, kalah telak dari DiffMOT, alasan pivot ke LightTrack-ReID (S014). Ablasi LAE-only menunjukkan penampilan tanpa geometri justru merusak asosiasi, konsisten dengan pelajaran paper (LAE menambah di atas baseline IoU, bukan menggantikan).
