@@ -112,6 +112,23 @@ def main():
         sys.exit("Gagal membaca frame pertama dari sumber: %s" % args.source)
     frame_h, frame_w = first_frame.shape[:2]
 
+    # ONNX: ultralytics default bikin session CPU. Kalau DirectML tersedia,
+    # pemanasan sekali (membangun predictor), lalu TUKAR session-nya ke DML
+    # supaya deteksi jalan di GPU (RX6600) bukan CPU.
+    if str(args.weights).lower().endswith(".onnx"):
+        import onnxruntime as ort
+        if "DmlExecutionProvider" in ort.get_available_providers():
+            print("DirectML tersedia — mengalihkan deteksi ke GPU (DML) ...")
+            # source=array: pemanasan, hasilnya tak dipakai; predictor jadi ada
+            model.predict(source=first_frame, verbose=False)
+            sess = ort.InferenceSession(
+                str(args.weights),
+                providers=["DmlExecutionProvider", "CPUExecutionProvider"])
+            model.predictor.model.session = sess
+            print("Deteksi ONNX sekarang memakai DmlExecutionProvider.")
+        else:
+            print("DirectML tidak tersedia — deteksi ONNX di CPU.")
+
     if args.tracker == "lighttrack":
         if args.onnx_dir:
             sys.path.insert(0, ROOT)
