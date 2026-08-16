@@ -1,4 +1,4 @@
-/* Zero-Scroll Balanced Command Center Layout (Anti-Slop Pro Standard) */
+/* Mobile-First Pro Console Layout (Zero-Scroll & Always Visible Telemetry) */
 html, body {
   height: 100%;
   margin: 0;
@@ -33,13 +33,14 @@ html, body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 4px 10px;
+  padding: 4px 8px;
   background-color: var(--bg-surface);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-sm);
   flex-shrink: 0;
-  height: 34px;
   box-sizing: border-box;
+  gap: 6px;
+  flex-wrap: wrap;
 }
 
 .header-brand {
@@ -54,16 +55,22 @@ html, body {
   font-weight: 700;
   background-color: var(--bg-elevated);
   border: 1px solid var(--border-subtle);
-  padding: 1px 5px;
+  padding: 1px 4px;
   border-radius: 3px;
   color: var(--text-muted);
 }
 
 .system-title {
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.02em;
   color: var(--text-primary);
+}
+
+@media (min-width: 640px) {
+  .system-title {
+    font-size: 12px;
+  }
 }
 
 .status-pill {
@@ -73,12 +80,11 @@ html, body {
   font-size: 10px;
   font-family: var(--font-mono);
   color: var(--accent-emerald);
-  margin-left: 2px;
 }
 
 .status-dot {
-  width: 5px;
-  height: 5px;
+  width: 6px;
+  height: 6px;
   border-radius: 50%;
   background-color: var(--accent-emerald);
 }
@@ -90,7 +96,7 @@ html, body {
 .header-telemetry-strip {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   font-family: var(--font-mono);
   font-size: 11px;
 }
@@ -98,22 +104,24 @@ html, body {
 .telemetry-chip {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 3px;
   white-space: nowrap;
 }
 
 .chip-label {
   color: var(--text-muted);
+  font-size: 10px;
 }
 
 .chip-val {
   color: var(--text-secondary);
   font-variant-numeric: tabular-nums;
+  font-size: 11px;
 }
 
 .chip-val.fps-val {
   color: var(--accent-emerald);
-  font-weight: 600;
+  font-weight: 700;
 }
 
 /* Console Workspace */
@@ -138,7 +146,7 @@ html, body {
 .camera-monitor-panel {
   display: flex;
   flex-direction: column;
-  flex: 1.1;
+  flex: 1.15;
   min-height: 0;
   background-color: var(--bg-surface);
   border: 1px solid var(--border-subtle);
@@ -163,6 +171,7 @@ html, body {
   align-items: center;
   justify-content: center;
   overflow: hidden;
+  touch-action: none;
 }
 
 .camera-stream-img,
@@ -186,18 +195,17 @@ html, body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 5px 8px;
+  padding: 4px 6px;
   background-color: var(--bg-elevated);
   border-top: 1px solid var(--border-subtle);
-  gap: 6px;
+  gap: 4px;
   flex-shrink: 0;
-  flex-wrap: wrap;
 }
 
 .btn-group {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: 3px;
 }
 
 @media (max-width: 767px) {
@@ -205,10 +213,15 @@ html, body {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
     gap: 4px;
-    padding: 6px;
+    padding: 4px;
   }
   .btn-group {
     display: contents;
+  }
+  .btn {
+    padding: 6px 2px;
+    font-size: 11px;
+    justify-content: center;
   }
 }
 
@@ -248,7 +261,7 @@ html, body {
 .kpi-cell {
   display: flex;
   flex-direction: column;
-  padding: 8px 10px;
+  padding: 6px 8px;
   border-right: 1px solid var(--border-subtle);
   gap: 1px;
 }
@@ -268,7 +281,7 @@ html, body {
 }
 
 .kpi-label {
-  font-size: 9px;
+  font-size: 8.5px;
   font-weight: 700;
   letter-spacing: 0.05em;
   color: var(--text-muted);
@@ -276,7 +289,7 @@ html, body {
 }
 
 .kpi-value {
-  font-size: 20px;
+  font-size: 18px;
   font-weight: 700;
   font-family: var(--font-mono);
   color: var(--text-primary);
@@ -309,7 +322,7 @@ html, body {
   background-color: var(--bg-surface);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-sm);
-  padding: 6px 10px;
+  padding: 5px 8px;
   flex: 0.8;
   min-height: 0;
   gap: 2px;
@@ -323,7 +336,7 @@ html, body {
 }
 
 .analytics-title {
-  font-size: 9px;
+  font-size: 8.5px;
   font-family: var(--font-mono);
   font-weight: 700;
   letter-spacing: 0.04em;
@@ -332,8 +345,8 @@ html, body {
 
 .analytics-legend {
   display: flex;
-  gap: 8px;
-  font-size: 10px;
+  gap: 6px;
+  font-size: 9.5px;
   font-family: var(--font-mono);
 }
 
@@ -348,7 +361,7 @@ html, body {
 .sparkline-container {
   width: 100%;
   flex: 1;
-  min-height: 35px;
+  min-height: 30px;
 }
 
 .sparkline-svg {
@@ -373,14 +386,14 @@ html, body {
   stroke-width: 1.75;
 }
 
-/* Live Event Crossing Activity Log */
+/* Activity Log */
 .activity-log-box {
   display: flex;
   flex-direction: column;
   background-color: var(--bg-surface);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-sm);
-  padding: 6px 10px;
+  padding: 5px 8px;
   flex: 1.1;
   min-height: 0;
   overflow: hidden;
@@ -390,12 +403,12 @@ html, body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 4px;
+  margin-bottom: 2px;
   flex-shrink: 0;
 }
 
 .log-title {
-  font-size: 9px;
+  font-size: 8.5px;
   font-family: var(--font-mono);
   font-weight: 700;
   letter-spacing: 0.04em;
@@ -403,7 +416,7 @@ html, body {
 }
 
 .log-count {
-  font-size: 9px;
+  font-size: 8.5px;
   font-family: var(--font-mono);
   color: var(--accent-emerald);
 }
@@ -411,7 +424,7 @@ html, body {
 .log-list {
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 2px;
   overflow-y: auto;
   flex: 1;
   min-height: 0;
@@ -422,8 +435,8 @@ html, body {
   justify-content: space-between;
   align-items: center;
   font-family: var(--font-mono);
-  font-size: 11px;
-  padding: 3px 6px;
+  font-size: 10px;
+  padding: 2px 5px;
   background-color: var(--bg-elevated);
   border-radius: 2px;
   border-left: 2px solid var(--border-subtle);
@@ -439,12 +452,12 @@ html, body {
 
 .log-time {
   color: var(--text-muted);
-  font-size: 10px;
+  font-size: 9px;
 }
 
 .log-empty {
   color: var(--text-muted);
-  font-size: 11px;
+  font-size: 10px;
   font-family: var(--font-mono);
   text-align: center;
   margin: auto 0;
@@ -455,11 +468,11 @@ html, body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 6px 10px;
+  padding: 4px 8px;
   background-color: var(--bg-surface);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-sm);
-  font-size: 10px;
+  font-size: 9.5px;
   font-family: var(--font-mono);
   color: var(--text-muted);
   flex-shrink: 0;

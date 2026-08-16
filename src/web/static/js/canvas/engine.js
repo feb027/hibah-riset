@@ -1,5 +1,5 @@
 /**
- * High-Performance Layered Canvas Renderer (Adaptive Letterbox Aware).
+ * High-Performance Layered Canvas Renderer (Live Line Preview & Letterbox Aware).
  */
 import { store } from '../store.js';
 
@@ -72,12 +72,12 @@ export class CanvasEngine {
 
     const box = getVideoRenderBox(this.canvas);
 
-    // 1. Gambar Zona RoI
-    if (state.roi.enabled && state.roi.points.length >= 3) {
+    // 1. Gambar Zona RoI Aktif
+    if (state.roi && state.roi.enabled && state.roi.points.length >= 3) {
       this.drawPolygon(ctx, state.roi.points, box, 'rgba(56, 189, 248, 0.12)', '#38bdf8');
     }
 
-    // 2. Gambar Draft RoI jika dalam mode gambar
+    // 2. Gambar Draft RoI jika sedang dalam mode penarikan
     if (state.mode === 'draw_roi' && state.roiDraftPoints.length > 0) {
       this.drawPolygon(ctx, state.roiDraftPoints, box, 'rgba(245, 158, 11, 0.15)', '#f59e0b', true);
       state.roiDraftPoints.forEach((pt, i) => {
@@ -85,23 +85,46 @@ export class CanvasEngine {
         const py = box.y + pt.y * box.h;
         ctx.fillStyle = '#f59e0b';
         ctx.beginPath();
-        ctx.arc(px, py, 5, 0, Math.PI * 2);
+        ctx.arc(px, py, 6, 0, Math.PI * 2);
         ctx.fill();
         ctx.fillStyle = '#ffffff';
         ctx.font = '10px monospace';
-        ctx.fillText(`P${i+1}`, px + 6, py - 4);
+        ctx.fillText(`P${i+1}`, px + 8, py - 4);
       });
     }
 
-    // 3. Gambar Garis Virtual Counting
-    const { line } = state;
-    if (line && line.start && line.end) {
-      const p1x = box.x + line.start.x * box.w;
-      const p1y = box.y + line.start.y * box.h;
-      const p2x = box.x + line.end.x * box.w;
-      const p2y = box.y + line.end.y * box.h;
+    // 3. Gambar Garis Live Saat Ditarik (Line Draft Preview)
+    if (state.lineDraft && state.lineDraft.start && state.lineDraft.end) {
+      const p1x = box.x + state.lineDraft.start.x * box.w;
+      const p1y = box.y + state.lineDraft.start.y * box.h;
+      const p2x = box.x + state.lineDraft.end.x * box.w;
+      const p2y = box.y + state.lineDraft.end.y * box.h;
 
-      // Garis utama amber tegas
+      ctx.strokeStyle = '#10b981';
+      ctx.lineWidth = 3;
+      ctx.setLineDash([6, 4]);
+      ctx.beginPath();
+      ctx.moveTo(p1x, p1y);
+      ctx.lineTo(p2x, p2y);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      this.drawHandle(ctx, p1x, p1y, '#10b981');
+      this.drawHandle(ctx, p2x, p2y, '#10b981');
+
+      const midX = (p1x + p2x) / 2;
+      const midY = (p1y + p2y) / 2;
+      ctx.fillStyle = '#10b981';
+      ctx.font = '11px monospace';
+      ctx.fillText('LEPASKAN UNTUK MENYIMPAN', midX + 8, midY - 6);
+    }
+    // 4. Gambar Garis Virtual Counting Standar
+    else if (state.line && state.line.start && state.line.end) {
+      const p1x = box.x + state.line.start.x * box.w;
+      const p1y = box.y + state.line.start.y * box.h;
+      const p2x = box.x + state.line.end.x * box.w;
+      const p2y = box.y + state.line.end.y * box.h;
+
       ctx.strokeStyle = '#f59e0b';
       ctx.lineWidth = 2.5;
       ctx.beginPath();
@@ -109,33 +132,31 @@ export class CanvasEngine {
       ctx.lineTo(p2x, p2y);
       ctx.stroke();
 
-      // Handle titik awal & akhir
       this.drawHandle(ctx, p1x, p1y, '#f59e0b');
       this.drawHandle(ctx, p2x, p2y, '#f59e0b');
 
-      // Teks label garis
       const midX = (p1x + p2x) / 2;
       const midY = (p1y + p2y) / 2;
       ctx.fillStyle = '#f59e0b';
       ctx.font = '10px monospace';
-      ctx.fillText('GARIS COUNTING', midX + 6, midY - 5);
+      ctx.fillText('GARIS COUNTING', midX + 8, midY - 6);
     }
 
-    // 4. Petunjuk mode aktif di pojok canvas
+    // 5. Badge Mode Aktif
     if (state.mode === 'draw_line') {
-      this.drawModeBadge(ctx, 'MODE: TARIK GARIS (Klik & Seret Mouse)');
+      this.drawModeBadge(ctx, 'MODE: TARIK GARIS (Sentuh & Geser Jari)');
     } else if (state.mode === 'draw_roi') {
-      this.drawModeBadge(ctx, 'MODE: GAMBAR RoI (Klik titik sudut, klik Selesai RoI jika sudah)');
+      this.drawModeBadge(ctx, 'MODE: GAMBAR RoI (Ketuk titik sudut)');
     }
   }
 
   drawHandle(ctx, x, y, color) {
     ctx.fillStyle = color;
     ctx.beginPath();
-    ctx.arc(x, y, 6, 0, Math.PI * 2);
+    ctx.arc(x, y, 7, 0, Math.PI * 2);
     ctx.fill();
     ctx.strokeStyle = '#ffffff';
-    ctx.lineWidth = 1.5;
+    ctx.lineWidth = 2;
     ctx.stroke();
   }
 
@@ -164,10 +185,10 @@ export class CanvasEngine {
     ctx.fillStyle = '#18181b';
     ctx.strokeStyle = '#f59e0b';
     ctx.lineWidth = 1;
-    ctx.fillRect(8, 8, 330, 22);
-    ctx.strokeRect(8, 8, 330, 22);
+    ctx.fillRect(8, 8, 300, 24);
+    ctx.strokeRect(8, 8, 300, 24);
     ctx.fillStyle = '#f4f4f5';
-    ctx.font = '10px sans-serif';
-    ctx.fillText(text, 14, 23);
+    ctx.font = '11px sans-serif';
+    ctx.fillText(text, 14, 24);
   }
 }
