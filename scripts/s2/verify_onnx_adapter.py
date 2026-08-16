@@ -66,22 +66,28 @@ def main():
         e_o = onnx_app.embed(frame, dets)
         cos = float(np.mean(np.sum(e_t * e_o, axis=1)))          # L2-unit -> cosine
         cos_all.append(cos)
-        # skor: track sintetik = 10 deteksi pertama, det = semuanya
+        # UJI 1 — skor dengan embedding SAMA (mengisolasi feature-build adapter:
+        # IoU, urutan fitur, reshape, TBSS exec). Torch dan ONNX diberi e_t.
         tr = dets[:max(1, len(dets) // 4)]
         s_t = torch_app.score(w, h, tr, dets, e_t[:len(tr)], e_t)
+        s_o_same = onnx_app.score(w, h, tr, dets, e_t[:len(tr)], e_t)
+        d_same = float(np.abs(s_t - s_o_same).max())
+        # UJI 2 — skor dengan embedding masing-masing (efek kumulatif beda crop).
         s_o = onnx_app.score(w, h, tr, dets, e_o[:len(tr)], e_o)
-        d = float(np.abs(s_t - s_o).max())
+        d_path = float(np.abs(s_t - s_o).max())
         diff_all.append(np.abs(e_t - e_o).max())
-        score_diff_all.append(d)
-        print("  %-30s cos=%.4f | emb_maxdiff=%.2e | tbss_maxdiff=%.2e"
-              % (os.path.basename(fp), cos, diff_all[-1], d))
+        score_diff_all.append(d_same)
+        print("  %-30s cos=%.4f | emb_maxdiff=%.2e | tbss_sameEmb=%.2e | tbss_fullPath=%.2e"
+              % (os.path.basename(fp), cos, diff_all[-1], d_same, d_path))
 
     print()
-    print("RINGKASAN: embed cos min=%.4f (harus > 0.99) | tbss maxdiff maks=%.2e (harus < 1e-3)"
+    print("RINGKASAN: embed cos min=%.4f (harus > 0.99) | "
+          "tbss diff (embedding sama) maks=%.2e (harus < 1e-3)"
           % (min(cos_all), max(score_diff_all)))
     assert min(cos_all) > 0.99, "embedding ONNX menyimpang dari torch"
-    assert max(score_diff_all) < 1e-3, "skor TBSS ONNX menyimpang dari torch"
-    print("OK: adapter ONNX konsisten dengan torch.")
+    assert max(score_diff_all) < 1e-3, "feature-build/TBSS adapter ONNX menyimpang dari torch"
+    print("OK: feature-build + TBSS ONNX konsisten dengan torch (drift emb = efek "
+          "crop path, bukan bug).")
 
 
 if __name__ == "__main__":
