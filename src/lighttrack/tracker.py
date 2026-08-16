@@ -87,10 +87,10 @@ class _KalmanBox:
 
 
 def _xyah_to_tlwh(xyah):
-    # filterpy kf.x berbentuk KOLOM (8,1); float() meratakan supaya output (4,).
-    # Tanpa ini box jadi (4,1) -> pred_tlwh (M,4,1) -> _to_xyxy (jalur TBSS Phase 4)
-    # gagal: "not enough values to unpack (expected 4, got 1)".
-    x, y, a, h = (float(v) for v in xyah)
+    # filterpy kf.x berbentuk KOLOM: bisa (8,1), x[:4] -> (4,1), atau sudah (4,).
+    # Flatten dulu supaya tahan numpy 1.x (float() array 1-elemen cuma warning)
+    # DAN numpy 2.x (jadi error: "only 0-dimensional arrays can be converted").
+    x, y, a, h = (float(v) for v in np.asarray(xyah, dtype=float).reshape(-1)[:4])
     w = a * h
     return np.array([x - w / 2, y - h / 2, w, h])
 
