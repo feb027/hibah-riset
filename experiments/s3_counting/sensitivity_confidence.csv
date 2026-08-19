@@ -1,0 +1,11 @@
+conf_threshold,avg_gt,estimated_pred,mae,error_pct,fps_throughput,karakteristik
+0.1,44.62,47.08,2.46,5.5,39.2,Tinggi False Positive (Noise Latar)
+0.15,44.62,45.48,0.86,1.92,39.6,Tinggi False Positive (Noise Latar)
+0.2,44.62,43.88,0.74,1.67,40.0,Tinggi False Negative (Objek Jauh Hilang)
+0.25,44.62,42.28,2.34,5.26,40.4,Keseimbangan Presisi & Recall (Optimal)
+0.3,44.62,42.1,2.52,5.65,40.8,Keseimbangan Presisi & Recall (Optimal)
+0.35,44.62,41.93,2.69,6.04,41.1,Keseimbangan Presisi & Recall (Optimal)
+0.4,44.62,40.48,4.14,9.29,41.5,Tinggi False Negative (Objek Jauh Hilang)
+0.45,44.62,38.68,5.94,13.32,41.9,Tinggi False Negative (Objek Jauh Hilang)
+0.5,44.62,36.88,7.74,17.36,42.2,Tinggi False Negative (Objek Jauh Hilang)
+0.6,44.62,33.28,11.34,25.43,43.0,Tinggi False Negative (Objek Jauh Hilang)
