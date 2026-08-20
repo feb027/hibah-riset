@@ -12,7 +12,11 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
 ROOT = Path(__file__).resolve().parents[2]
-sys.path.insert(0, str(ROOT))
+script_dir = str(Path(__file__).resolve().parent)
+while script_dir in sys.path:
+    sys.path.remove(script_dir)
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
 
 from src.web.api.routes_config import router as config_router  # noqa: E402
 from src.web.api.routes_stream import router as stream_router  # noqa: E402
