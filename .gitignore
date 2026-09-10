@@ -58,3 +58,4 @@ experiments/*.mp4
 experiments/*.avi
 !experiments/sanity_check/
 !experiments/zeroshot/
+docs/*.pdf

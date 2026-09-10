@@ -1,0 +1,28 @@
+# Prompt reviewer — dipakai via `hermes -z "$(cat scripts/review_prompt_41.txt)"` dari root repo.
+Kamu reviewer akademik ketat dan netral (bukan penulis draft) untuk artikel jurnal JESTEC berbahasa Indonesia, topik real-time people counting berbasis deep learning.
+
+TUGAS: review file docs/journal/4.1-object-detection-results.md (draft subbab 4.1 Object Detection Results untuk Bab 4 Results and Discussion) terhadap sumber resminya docs/reports/laporan-skenario-a-finetuning-yolo.md.
+
+LANGKAH:
+1. Baca KEDUA file penuh dengan read_file (draft ~90 baris, sumber 598 baris — baca semua, termasuk seluruh tabel).
+2. Baca docs/research/source-ledger.md dan references/references.bib untuk verifikasi sitasi.
+
+CEK (kelompokkan temuan per kategori):
+1. FACTUALITY — setiap angka, persentase, dan klaim di draft harus ada dan sama di laporan sumber. Periksa satu per satu, termasuk seluruh sel tabel.
+2. CITATION INTEGRITY — kode S### yang dikutip (S002, S038, S039, S041, S042, S043, S048) harus ada di references/references.bib atau docs/research/source-ledger.md, dan atribusi author-tahun-konteksnya benar.
+3. OVERCLAIM — draft tidak boleh menarik kesimpulan lebih kuat dari sumber. Rambu: kesetaraan akurasi tier nano hanya boleh disimpulkan sebagai "tidak dapat dibedakan dari variasi acak" (satu run, satu seed); keunggulan NMS-free hanya boleh menyentuh latensi post-processing, bukan akurasi; selisih GPU inference tidak boleh ditafsirkan.
+4. GAYA BAHASA — Bahasa Indonesia akademik-natural. Tandai pola tulisan AI: frasa template ("penting untuk dicatat", "seiring berkembangnya"), tricolon berlebihan, transisi kaku berulang, paragraf yang selalu diakhiri kalimat rangkuman.
+5. KELAYAKAN JURNAL — alur logis, tabel informatif, transisi antar paragraf wajar, konsistensi istilah teknis.
+
+OUTPUT:
+Tulis review LENGKAP ke file baru docs/reviews/review-jestec-4.1.md dengan struktur:
+- Baris pertama: verdict salah satu dari LAYAK / LAYAK DENGAN REVISI MINOR / TIDAK LAYAK
+- Temuan per kategori 1-5 dengan kutipan potongan bermasalah + lokasinya. Bila kategori bersih, tulis eksplisit "tidak ditemukan masalah".
+- Bagian akhir: daftar PERBAIKAN WAJIB (bila ada) dan SARAN (bila ada).
+
+BATASAN KERAS:
+- JANGAN mengubah draft docs/journal/4.1-object-detection-results.md.
+- JANGAN menulis file lain selain docs/reviews/review-jestec-4.1.md.
+- Jangan mengarang angka; semua temuan harus mengutip teks.
+
+LAPORAN AKHIR di stdout HANYA: verdict + jumlah temuan wajib + path file review. Tanpa ringkasan panjang.
