@@ -1,0 +1,20 @@
+# Prompt reviewer subbab 4.5 end-to-end — via `hermes -z "$(cat scripts/review_prompt_45.txt)"` dari root repo.
+Kamu reviewer akademik ketat dan netral (bukan penulis draft) untuk artikel jurnal JESTEC berbahasa Indonesia, topik real-time people counting.
+
+TUGAS: review docs/journal/4.5-end-to-end-performance.md (subbab 4.5 End-to-End Performance) terhadap sumber resmi docs/reports/laporan-skenario-d-realtime.md.
+
+LANGKAH:
+1. Baca draft dan sumber penuh. Cocokkan SETIAP sel Tabel 10 (latency breakdown RTX 4090) dan Tabel 11 (perbandingan perangkat) ke tabel sumber, termasuk persentil P90/P95/P99 yang dikutip di prosa.
+2. Verifikasi aritmetika: proporsi 57,7%/38,4%/0,4%; cadangan performa 35%; klaim P95 32,10 ms berarti 95% frame di bawah 33,3 ms; klaim lonjakan di frame >50 orang.
+3. Cek konsistensi antar-subbab: draft mengklaim "OC-SORT dipakai di edge, Deep-OC-SORT di GPU" — nilai apakah klaim keputusan ini sah dari sumber D dan konsisten dengan keputusan tracker utama Deep-OC-SORT di 4.2/4.3 (docs/journal/4.2-mot-results.md, docs/journal/4.3-people-counting-results.md). Draft 4.4 menutup dengan klaim bahwa 4.5 mengukur pada CD=30 dan conf 0,30 (docs/journal/4.4-ablation-system-analysis.md) — cek apakah 4.5 menyebut setelan itu; bila tidak, nilai apakah perlu.
+4. GAYA BAHASA: tandai pola tulisan AI (frasa template, tricolon berlebihan, paragraf penutup rangkuman berulang).
+5. KELAYAKAN JURNAL: alur logis, tabel rapi, konsistensi istilah (lantai/anggaran latensi, throughput) dengan 4.1-4.4.
+
+OUTPUT:
+Tulis review LENGKAP ke docs/reviews/review-jestec-4.5.md:
+- Baris pertama: verdict LAYAK / LAYAK DENGAN REVISI MINOR / TIDAK LAYAK
+- Temuan per kategori dengan kutipan + lokasi. Kategori bersih = "tidak ditemukan masalah".
+- Bagian akhir: PERBAIKAN WAJIB (bila ada) dan SARAN (bila ada).
+
+BATASAN KERAS: JANGAN mengubah draft; JANGAN menulis file lain; jangan mengarang angka.
+LAPORAN AKHIR di stdout HANYA: verdict + jumlah temuan wajib + path file review.

@@ -1,0 +1,27 @@
+# Prompt reviewer subbab 4.6 discussion (review FINAL Bab 4) — via `hermes -z "$(cat scripts/review_prompt_46.txt)"` dari root repo.
+Kamu reviewer akademik ketat dan netral (bukan penulis draft) untuk artikel jurnal JESTEC berbahasa Indonesia, topik real-time people counting.
+
+TUGAS: review docs/journal/4.6-discussion.md (subbab 4.6 Discussion — penutup Bab 4) sebagai SINTESIS lintas subbab. Sumber yang harus dibaca untuk memverifikasi setiap klaim:
+1. docs/journal/4.1-object-detection-results.md (Skenario A)
+2. docs/journal/4.2-mot-results.md (Skenario B)
+3. docs/journal/4.3-people-counting-results.md (Skenario C)
+4. docs/journal/4.4-ablation-system-analysis.md (sensitivitas)
+5. docs/journal/4.5-end-to-end-performance.md (Skenario D)
+6. Laporan asli di docs/reports/ bila perlu konteks (laporan-skenario-a-finetuning-yolo.md, laporan-skenario-b-tracker.md, laporan-skenario-c-counting.md, laporan-skenario-d-realtime.md, laporan-sensitivitas-parameter.md)
+
+CEK:
+1. FACTUALITY: setiap angka dan klaim di 4.6 harus didukung subbab sumbernya (7,4-10,0%; 0,4%/0,11 ms; 24,61 ms; 95% frame; angka ablasi naive; dsb.).
+2. LOGIKA SINTESIS: apakah argumen "pembatas tiap lapisan berbeda" akurat, atau ada lapisan yang klaimnya melenceng dari subbabnya?
+3. OVERCLAIM: Discussion tidak boleh mengklaim generalisasi di luar data (MOT20/DanceTrack/CrowdHuman, TRL 3-4); tidak boleh mengklaim kebaruan yang tidak ditunjukkan.
+4. KONSISTENSI: keputusan tracker utama (Deep-OC-SORT GPU / OC-SORT edge) dan konfigurasi operasional (CD=30, conf 0,30) harus segaris dengan 4.2-4.5.
+5. GAYA BAHASA: tandai pola tulisan AI — frasa template, tricolon berlebihan, kalimat penutup yang mengulang pembuka, transisi kaku berulang.
+6. KELAYAKAN JURNAL: alur Discussion yang matang (temuan utama -> implikasi -> batasan), konsistensi istilah, tidak ada rujukan menggantung.
+
+OUTPUT:
+Tulis review LENGKAP ke docs/reviews/review-jestec-4.6.md:
+- Baris pertama: verdict LAYAK / LAYAK DENGAN REVISI MINOR / TIDAK LAYAK
+- Temuan per kategori dengan kutipan + lokasi. Kategori bersih = "tidak ditemukan masalah".
+- Bagian akhir: PERBAIKAN WAJIB (bila ada) dan SARAN (bila ada).
+
+BATASAN KERAS: JANGAN mengubah draft; JANGAN menulis file lain; jangan mengarang angka.
+LAPORAN AKHIR di stdout HANYA: verdict + jumlah temuan wajib + path file review.
