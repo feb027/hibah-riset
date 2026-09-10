@@ -103,12 +103,12 @@ def main():
     ap.add_argument("--fps", type=int, default=0, help="override fps (default: baca seqinfo)")
     ap.add_argument("--source", choices=["track", "gt"], default="track",
                     help="track = hasil tracker (OC-SORT/DiffMOT); gt = ground truth (referensi)")
-    ap.add_argument("--tracker", choices=["ocsort", "diffmot"], default="ocsort",
+    ap.add_argument("--tracker", choices=["ocsort", "diffmot", "deepocsort", "lighttrack"], default="ocsort",
                     help="hasil tracking mana yang dirender (format MOT di experiments/s2_tracker/<tracker>_results/)")
     ap.add_argument("--max-w", type=int, default=960)
     args = ap.parse_args()
 
-    TRACKER_LABEL = {"ocsort": "OC-SORT", "diffmot": "DiffMOT"}
+    TRACKER_LABEL = {"ocsort": "OC-SORT", "diffmot": "DiffMOT", "deepocsort": "Deep-OC-SORT", "lighttrack": "LightTrack"}
 
     is_mot = args.seq.startswith("MOT20")
     fallback_fps = SEQ_DEFAULT_FPS.get("MOT20" if is_mot else "dancetrack", 30)
