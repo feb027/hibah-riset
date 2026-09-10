@@ -59,6 +59,7 @@
 | S046 | B-support | accepted | amodal box center problem | ECCV peer-reviewed | 2020 | Tracking Objects as Points (CenterTrack) | https://arxiv.org/abs/2004.01177 (akses 2026-07) | States the amodal-box-center problem and the distance-to-sides fix; bounds Skenario A mechanistic explanation. | Tracking context. | detector/evaluation |
 | S047 | B-support | accepted | border effect from zero padding | CVPR peer-reviewed | 2020 | Making Convolutional Networks Shift-Invariant Again / On Translation Invariance in CNNs | https://arxiv.org/abs/2003.07064 (akses 2026-07) | Documents border effects in CNNs from zero padding even for interior objects. | Short conference paper. | detector |
 | S048 | B-support | accepted | MR^-2 pedestrian metric | TPAMI peer-reviewed | 2012 | Pedestrian Detection: An Evaluation of the State of the Art | https://doi.org/10.1109/TPAMI.2012.99 (akses 2026-07) | Source of the MR^-2 metric used in the official CrowdHuman protocol evaluation. | Metric source, not method. | metric |
+| S049 | A-main | accepted | adaptive Re-ID tracker (Deep-OC-SORT) | IEEE TIP peer-reviewed | 2024 | Deep-OC-SORT: Multi-Pedestrian Tracking by Adaptive Re-Identification | https://arxiv.org/abs/2306.04946 ; DOI 10.1109/TIP.2024.3411507 (akses 2026-08) | Tracker utama Skenario C/D: Re-ID adaptif ringan tanpa diffusion; HOTA/IDSW diukur pada protokol sama dengan OC-SORT/DiffMOT. | appearance embedding butuh biaya komputasi tambahan (terukur di Skenario D). | tracker/core method |
 
 ## Immediate citation strategy
 
