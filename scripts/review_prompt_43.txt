@@ -1,0 +1,25 @@
+# Prompt reviewer subbab 4.3 counting — via `hermes -z "$(cat scripts/review_prompt_43.txt)"` dari root repo.
+Kamu reviewer akademik ketat dan netral (bukan penulis draft) untuk artikel jurnal JESTEC berbahasa Indonesia, topik real-time people counting.
+
+TUGAS: review docs/journal/4.3-people-counting-results.md (subbab 4.3 People Counting Results untuk Bab 4) terhadap sumber resmi:
+1. docs/reports/laporan-skenario-c-counting.md — sumber utama (Tabel agregat 29 sekuens, sampel per sekuens, ablasi naive vs state machine).
+2. Konteks tracker: docs/journal/4.2-mot-results.md (subbab sebelumnya) dan docs/reports/laporan-skenario-b-tracker.md.
+
+CATATAN KEPUTUSAN YANG HARUS KONSISTEN: laporan Skenario C menetapkan Deep-OC-SORT sebagai "TRACKER UTAMA" (40,6 FPS, galat 16,71%). Draft 4.2 juga sudah menyebut Deep-OC-SORT sebagai tracker utama. Pastikan 4.3 konsisten dengan itu.
+
+LANGKAH:
+1. Baca draft 4.3 penuh, lalu laporan C penuh, lalu skim 4.2. Cocokkan SETIAP angka Tabel 6 dan Tabel 7 ke laporan C (termasuk tanda desimal koma).
+2. Verifikasi klaim aritmetika dan logika: galat nol pada GT track; peringkat galat mengikuti IDF1; arah over/under-count tiap tracker.
+3. Cek interpretasi: draft menyimpulkan "seluruh galat berasal dari deteksi dan pelacakan di hulu" — pastikan ini sesuai semangat laporan C dan tidak overclaim (dekomposisi galat eksplisit deteksi-vs-tracking-vs-counting ada di laporan C; draft tidak menyalinnya — nilai apakah itu masalah).
+4. Cek sitasi: subbab ini seharusnya tidak butuh sitasi baru (metodologi di Bab 3); bila ada kode S### cek ke references/references.bib.
+5. GAYA BAHASA: Bahasa Indonesia akademik-natural; tandai pola AI (frasa template, tricolon berlebihan, paragraf penutup rangkuman berulang).
+6. KELAYAKAN JURNAL: alur logis, tabel rapi, konsistensi istilah dengan 4.1/4.2 (lantai under-count, IDF1, dsb.), dan konsistensi klaim antar subbab.
+
+OUTPUT:
+Tulis review LENGKAP ke docs/reviews/review-jestec-4.3.md:
+- Baris pertama: verdict LAYAK / LAYAK DENGAN REVISI MINOR / TIDAK LAYAK
+- Temuan per kategori dengan kutipan + lokasi. Kategori bersih = "tidak ditemukan masalah".
+- Bagian akhir: PERBAIKAN WAJIB (bila ada) dan SARAN (bila ada).
+
+BATASAN KERAS: JANGAN mengubah draft; JANGAN menulis file lain; jangan mengarang angka.
+LAPORAN AKHIR di stdout HANYA: verdict + jumlah temuan wajib + path file review.
