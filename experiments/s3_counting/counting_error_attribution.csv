@@ -1,0 +1,9 @@
+seq,tracker,gt_total,pred_total,tercatat,gagal_deteksi,gagal_asosiasi,sah,duplikat,tanpa_padanan,id_switches,id_tracked
+MOT20-01,ocsort,10,9,9,0,1,9,0,0,87,149
+MOT20-01,deepocsort,10,9,9,0,1,9,0,0,76,177
+MOT20-01,diffmot,10,9,9,0,1,9,0,0,76,135
+MOT20-01,lighttrack,10,9,9,0,1,9,0,0,159,233
+MOT20-02,ocsort,197,165,136,10,51,136,17,12,499,803
+MOT20-02,deepocsort,197,154,134,11,52,134,10,10,502,999
+MOT20-02,diffmot,197,169,134,12,51,134,11,24,423,758
+MOT20-02,lighttrack,197,199,134,1,62,134,28,37,859,1230

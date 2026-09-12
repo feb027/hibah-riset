@@ -29,6 +29,7 @@
 | 17 | Judul / nama sistem | S7 |
 | 18 | Tabel 4 (catatan kaki) | V9 |
 | 19 | §4.4.3 baru — ablasi penyaringan RoI | S3 (terjawab) |
+| 20 | §4.4.4 baru — dekomposisi galat hitung | K1, K2, V5 |
 
 ---
 
@@ -279,7 +280,7 @@ Pertama, seluruh evaluasi berjalan pada *benchmark* publik yang tidak memiliki l
 
 Kedua, seluruh eksperimen dijalankan dengan satu *seed* dan tanpa pengulangan. Peringkat antar *tracker* yang selisih metriknya kecil, misalnya selisih HOTA 0.39 antara OC-SORT dan Deep-OC-SORT di MOT20, atau selisih 0.52 di DanceTrack, tidak dapat dinyatakan berbeda secara bermakna dari variasi antar sekuens. Simpangan baku galat per sekuens yang dilaporkan pada Tabel 6 dan Tabel 7 memperlihatkan sebaran yang lebar, dari 11.36 sampai 57.81, sehingga peringkat tersebut dibaca sebagai urutan pada konfigurasi yang diuji dan bukan sebagai perbedaan yang terbukti.
 
-Ketiga, dekomposisi galat belum dipisahkan menurut penyebab. Angka pada Tabel 6 mencakup gabungan galat yang berasal dari objek yang tidak terdeteksi dan galat yang berasal dari identitas yang berpindah. Lantai deteksi diketahui berada pada rentang 7.4% hingga 10.0% dari Sub-bab 4.1, tetapi berapa bagian dari total galat hitung yang berasal dari pergantian identitas belum diukur secara terpisah.
+Ketiga, dekomposisi galat kini terukur sebagian. Sub-bab 4.4.4 memisahkan kejadian perlintasan *ground truth* yang gagal tercatat karena objek tidak terlacak pada jendela perlintasan (lantai deteksi) dari yang gagal tercatat meski objek terlacak (kegagalan asosiasi), serta kejadian hitung berlebih yang berasal dari perlintasan berulang dan identitas tanpa padanan. Yang masih belum diukur adalah atribusi galat pada tingkat *tracker* itu sendiri, yaitu berapa bagian dari kegagalan asosiasi yang berasal dari pergantian ID dan berapa yang berasal dari lintasan terdistorsi.
 
 Kelima, kontribusi tiap mekanisme pada counting logic baru terisolasi sebagian. Model B pada laporan utama menggabungkan penyaringan RoI, pengujian perpotongan segmen, dan state machine dengan *cooldown*, tetapi RoI ternyata tidak diaktifkan pada konfigurasi yang dievaluasi. Sub-bab 4.4.3 mengukur pengaruh RoI secara terpisah pada sekuens yang tersedia, sedangkan pemisahan peran pengujian perpotongan segmen dari peran state machine belum dilakukan karena keduanya tidak dapat dipisahkan tanpa mengubah definisi perlintasan. Yang berhasil diisolasi penuh adalah kontribusi keseluruhan counting logic, melalui perbandingan pada lintasan *ground truth* pada Tabel 8 yang menurunkan galat dari 60.60% menjadi nol.
 
@@ -339,6 +340,27 @@ Script itu menyimpan hasil ke `experiments/s3_counting/counting_ablation_roi.csv
 
 ---
 
+### BLOK 20 — Sub-bab baru "4.4.4 Dekomposisi Galat Hitung" (sisipkan setelah 4.4.3)
+
+Sub-bab ini memisahkan sebab galat hitung, karena satu angka galat tidak menunjukkan apakah perbaikannya harus diarahkan ke detektor, ke *tracker*, atau ke logika hitung. Caranya dengan memadankan identitas *tracker* ke identitas *ground truth* melalui IoU kotak per frame pada ambang 0.30, lalu memberi sebab pada setiap kejadian perlintasan. Kejadian *ground truth* yang tidak menghasilkan hitungan dipisahkan menjadi gagal deteksi, yaitu tidak ada lintasan *tracker* yang terpadan pada jendela 30 frame di sekitar perlintasan, dan gagal asosiasi, yaitu lintasan terpadan ada tetapi tidak menghasilkan kejadian perlintasan karena identitasnya berpindah atau lintasannya terdistorsi. Sisi sebaliknya juga dipisahkan: kejadian hitung yang padanannya sudah pernah dihitung sebelumnya dicatat sebagai duplikat, dan kejadian hitung yang tidak memiliki padanan *ground truth* pada saat itu dicatat sebagai identitas tanpa padanan.
+
+Hasil pada sekuens yang tersedia menunjukkan bahwa kegagalan asosiasi mendominasi, bukan lantai deteksi. Dari 207 kejadian perlintasan *ground truth*, sekitar 5% gagal tercatat karena objeknya tidak terlacak pada jendela perlintasan, sedangkan 25% hingga 30% gagal tercatat meskipun objeknya terlacak. Sisi kelebihan hitung juga terukur: 6% hingga 13% kejadian hitung merupakan perlintasan berulang dari orang yang sama, dan 6% hingga 18% tidak memiliki padanan pada saat itu. LightTrack menunjukkan pola paling ekstrem pada kedua sisi sekaligus, dengan 28 kejadian duplikat dan 37 kejadian tanpa padanan dari 208 kejadian hitung.
+
+Temuan ini meluruskan pembacaan pada Sub-bab 4.3. Klaim bahwa galat 13.08% hingga 16.71% "mencakup lantai deteksi 7.4% hingga 10.0%" menyiratkan deteksi sebagai penyebab utama, sedangkan pengukuran ini menunjukkan bagian yang berasal dari deteksi hanya sekitar 5% dari kejadian perlintasan dan sisanya berasal dari asosiasi identitas. Dua angka itu memang berbeda basis, karena lantai deteksi diukur pada tingkat objek sedangkan dekomposisi ini diukur pada tingkat kejadian perlintasan, tetapi arah kesimpulannya jelas: penguatan asosiasi identitas memberi perbaikan yang lebih besar daripada peningkatan kualitas kotak deteksi.
+
+**Tabel 12. Dekomposisi galat hitung per kejadian perlintasan (state machine CD=30, deteksi YOLO26s).**
+
+| Jalur pelacakan | Kejadian GT | Tercatat | Gagal deteksi | Gagal asosiasi | Kejadian tracker | Sah | Duplikat | Tanpa padanan |
+|---|---|---|---|---|---|---|---|---|
+| OC-SORT | 207 | 145 | 10 | 52 | 174 | 145 | 17 | 12 |
+| Deep-OC-SORT | 207 | 143 | 11 | 53 | 163 | 143 | 10 | 10 |
+| DiffMOT | 207 | 143 | 12 | 52 | 178 | 143 | 11 | 24 |
+| LightTrack | 207 | 143 | 1 | 63 | 208 | 143 | 28 | 37 |
+
+**Catatan penting untuk penulis (jangan dipaste).** Sama seperti ablasi RoI, dekomposisi ini baru dijalankan pada 2 dari 29 sekuens, yaitu MOT20-01 dan MOT20-02. Urutan kerja yang benar: jalankan dulu `python3 scripts/journal/attribute_counting_error.py` di mesin yang menyimpan DanceTrack dan MOT20 lengkap, lalu ganti angka pada tabel dan paragraf di atas dengan keluaran baru sebelum dipaste ke naskah. Angka absolut pilot ini tidak boleh masuk naskah apa adanya.
+
+---
+
 ## Lampiran — jejak angka (tidak dipaste ke naskah)
 
 Semua angka pada blok di atas dapat diregenerasi dan diverifikasi dengan:
@@ -356,9 +378,10 @@ Script tersebut menegaskan ulang bahwa angka headline naskah (13.08, 16.71, 22.3
 | Kurva cooldown (termasuk lintasan GT dan CD=120) | `experiments/s3_counting/sensitivity_cooldown.csv` |
 | Kurva ambang keyakinan | `experiments/s3_counting/sensitivity_confidence.csv` |
 | Ablasi RoI x state machine (pilot 2 sekuens) | `experiments/s3_counting/counting_ablation_roi.csv` |
+| Dekomposisi galat hitung per kejadian (pilot 2 sekuens) | `experiments/s3_counting/counting_error_attribution.csv` |
 | Latensi per tahap dan distribusi persentil | `docs/reports/laporan-skenario-d-realtime.md` |
 | Metrik tracking HOTA/MOTA/IDF1/IDSW/Frag | `docs/reports/laporan-skenario-b-tracker.md` |
 
-Tiga hal yang **tidak** dapat dikerjakan dari data yang ada dan karena itu ditulis sebagai batasan, bukan diperbaiki: pemisahan peran pengujian perpotongan segmen dari peran state machine (keduanya tidak dapat dipisahkan tanpa mengubah definisi perlintasan), atribusi kuantitatif galat antara *missed detection* dan *identity switch*, serta validasi pada rekaman ruang publik dengan label arus masuk-keluar. Yang pertama memerlukan varian yang mendefinisikan perlintasan tanpa pengujian segmen, yang kedua memerlukan pelacakan asal setiap kejadian hitung, yang ketiga memerlukan rekaman dan anotasi manual.
+Dua hal yang **belum** dapat dikerjakan dan karena itu ditulis sebagai batasan, bukan diperbaiki: pemisahan peran pengujian perpotongan segmen dari peran state machine (keduanya tidak dapat dipisahkan tanpa mengubah definisi perlintasan), dan validasi pada rekaman ruang publik dengan label arus masuk-keluar (memerlukan rekaman dan anotasi manual).
 
-Ablasi RoI sudah dikerjakan dan tidak lagi menjadi batasan. Jalankan ulang `scripts/journal/ablation_roi_sm.py` di mesin yang menyimpan DanceTrack dan MOT20 lengkap untuk mengganti pilot 2 sekuens dengan tabel 29 sekuens.
+Dua eksperimen tambahan sudah dikerjakan tetapi baru pada 2 dari 29 sekuens: ablasi RoI (Sub-bab 4.4.3) dan dekomposisi galat (Sub-bab 4.4.4). Jalankan `scripts/journal/ablation_roi_sm.py` dan `scripts/journal/attribute_counting_error.py` di mesin yang menyimpan DanceTrack dan MOT20 lengkap untuk mengganti angka pilot dengan tabel 29 sekuens. Kedua script memuat pemeriksaan otomatis: yang pertama menegaskan konfigurasi kontrolnya identik dengan laporan lama, yang kedua menegaskan jumlah kejadian terklasifikasi sama dengan total kejadian.
