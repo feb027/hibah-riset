@@ -59,3 +59,6 @@ experiments/*.avi
 !experiments/sanity_check/
 !experiments/zeroshot/
 docs/*.pdf
+
+# salinan lokal PDF/docx untuk ekstraksi teks (jangan pernah ikut ter-push)
+docs/_extracted/
