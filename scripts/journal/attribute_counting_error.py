@@ -43,9 +43,12 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from core.counting.counter import PeopleCounter  # noqa: E402
 from core.counting.models import Line, Point  # noqa: E402
+
+from ablation_roi_sm import DATA_ROOT, TRACKER_ROOT, find_sequences  # noqa: E402
 
 LINE_FRAC = 0.33
 COOLDOWN = 30
@@ -188,17 +191,9 @@ def attribute(gt_frames, pred_frames, line, max_frame) -> dict:
     return res
 
 
-def sequences() -> list[tuple[str, Path, str]]:
-    found: dict[str, tuple[str, Path, str]] = {}
-    for ds, split, roots in (("mot20", "train", ["mot20", "mot20_hf"]), ("dancetrack", "val", ["dancetrack"])):
-        for root in roots:
-            base = ROOT / "data" / "s2" / root / split
-            if not base.is_dir():
-                continue
-            for p in sorted(base.iterdir()):
-                if p.is_dir() and (p / "gt" / "gt.txt").is_file() and p.name not in found:
-                    found[p.name] = (p.name, p, ds)
-    return list(found.values())
+def sequences(data_root: Path = DATA_ROOT, tracker_root: Path = TRACKER_ROOT) -> list[tuple[str, Path, str]]:
+    """Reuse penemuan sekuens dari ablation_roi_sm (satu tempat, tidak ada tebakan path)."""
+    return find_sequences(data_root, tracker_root)
 
 
 def dimensions(seq_dir: Path) -> tuple[int, int, int]:
@@ -213,14 +208,16 @@ def dimensions(seq_dir: Path) -> tuple[int, int, int]:
 
 
 def main() -> None:
+    data_root = Path(sys.argv[1]) if len(sys.argv) > 1 else DATA_ROOT
+    tracker_root = Path(sys.argv[2]) if len(sys.argv) > 2 else TRACKER_ROOT
     rows = []
-    for seq, sdir, ds in sequences():
+    for seq, sdir, ds in sequences(data_root, tracker_root):
         w, h, seq_len = dimensions(sdir)
         line = Line(start=Point(int(w * LINE_FRAC), 0), end=Point(int(w * LINE_FRAC), h))
         gt_frames = load_mot(sdir / "gt" / "gt.txt", gt=True)
         max_frame = max(max(gt_frames, default=1), seq_len)
         for trk in TRACKERS:
-            pred = load_mot(ROOT / "experiments" / "s2_tracker" / f"{trk}_results" / ds / f"{seq}.txt", gt=False)
+            pred = load_mot(tracker_root / f"{trk}_results" / ds / f"{seq}.txt", gt=False)
             if not pred:
                 continue
             r = attribute(gt_frames, pred, line, max_frame)
@@ -229,6 +226,9 @@ def main() -> None:
                   f"tercatat={r['tercatat']} det={r['gagal_deteksi']} asos={r['gagal_asosiasi']} "
                   f"sah={r['sah']} dup={r['duplikat']} tanpa_padanan={r['tanpa_padanan']}")
 
+    if not rows:
+        sys.exit("tidak ada baris hasil. Cek pesan [cari] di atas, lalu tunjuk lokasi manual:\n"
+                 f"  python3 {Path(__file__).name} <data_root> <tracker_root>")
     out = ROOT / "experiments" / "s3_counting" / "counting_error_attribution.csv"
     with open(out, "w", newline="") as fh:
         wtr = csv.DictWriter(fh, fieldnames=list(rows[0].keys()))

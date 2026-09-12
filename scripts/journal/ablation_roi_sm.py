@@ -26,6 +26,7 @@ from __future__ import annotations
 
 import configparser
 import csv
+import os
 import statistics as st
 import sys
 from collections import defaultdict
@@ -33,6 +34,9 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
+
+DATA_ROOT = ROOT / "data"
+TRACKER_ROOT = ROOT / "experiments" / "s2_tracker"
 
 from core.counting.counter import PeopleCounter  # noqa: E402
 from core.counting.models import Line, Point, Polygon  # noqa: E402
@@ -122,25 +126,52 @@ def replay(counter, frames: dict[int, list[tuple[int, float, float]]], max_frame
     return counter.count_in, counter.count_out
 
 
-def find_sequences() -> list[tuple[str, Path, str]]:
-    """Kumpulkan sekuens yang tersedia lokal, satu entri per nama sekuens (dedup)."""
+def find_sequences(data_root: Path = DATA_ROOT, tracker_root: Path = TRACKER_ROOT) -> list[tuple[str, Path, str]]:
+    """Sekuens = irisan hasil tracker dan direktori yang punya gt/gt.txt.
+
+    Path GT tidak ditebak: indeks dibangun sekali dengan menelusuri data_root, lalu nama
+    sekuens diambil dari berkas hasil tracker sehingga pasangan keduanya pasti cocok.
+    """
+    gt_index: dict[str, Path] = {}
+    if data_root.is_dir():
+        for dirpath, dirnames, filenames in os.walk(data_root):
+            dirnames[:] = [d for d in dirnames if d != ".cache"]
+            if os.path.basename(dirpath) == "gt" and "gt.txt" in filenames:
+                seq_dir = Path(dirpath).parent
+                gt_index.setdefault(seq_dir.name, seq_dir)
+
     found: dict[str, tuple[str, Path, str]] = {}
-    for ds, split, roots in (("mot20", "train", ["mot20", "mot20_hf"]), ("dancetrack", "val", ["dancetrack"])):
-        for root in roots:
-            base = ROOT / "data" / "s2" / root / split
-            if not base.is_dir():
-                continue
-            for p in sorted(base.iterdir()):
-                if p.is_dir() and (p / "gt" / "gt.txt").is_file() and p.name not in found:
-                    found[p.name] = (p.name, p, ds)
+    missing: list[str] = []
+    if tracker_root.is_dir():
+        for trk_dir in sorted(tracker_root.glob("*_results")):
+            for ds_dir in sorted(p for p in trk_dir.iterdir() if p.is_dir()):
+                for f in sorted(ds_dir.glob("*.txt")):
+                    seq = f.stem
+                    if seq in found:
+                        continue
+                    sdir = gt_index.get(seq)
+                    if sdir is None:
+                        missing.append(seq)
+                        continue
+                    found[seq] = (seq, sdir, ds_dir.name)
+
+    print(f"[cari] {len(gt_index)} direktori GT di {data_root}")
+    print(f"[cari] {len(found)} sekuens punya GT + hasil tracker"
+          + (f"; {len(set(missing))} tanpa GT (contoh: {sorted(set(missing))[:3]})" if missing else ""))
     return list(found.values())
 
 
 def main() -> None:
-    seqs = find_sequences()
+    data_root = Path(sys.argv[1]) if len(sys.argv) > 1 else DATA_ROOT
+    tracker_root = Path(sys.argv[2]) if len(sys.argv) > 2 else TRACKER_ROOT
+    seqs = find_sequences(data_root, tracker_root)
     if not seqs:
-        sys.exit("tidak ada sekuens dengan ground truth di data/s2")
-    print(f"sekuens ditemukan: {len(seqs)} -> {[s[0] for s in seqs]}\n")
+        sys.exit(f"tidak ada sekuens: tidak ada irisan antara berkas di {tracker_root} dan "
+                 f"direktori ber-gt/gt.txt di {data_root}.\n"
+                 f"Periksa dengan: find {data_root} -name gt.txt | head\n"
+                 f"Atau tunjuk lokasi lain: python3 {Path(__file__).name} <data_root> <tracker_root>")
+    print(f"sekuens dipakai: {len(seqs)} -> {[s[0] for s in seqs][:6]}"
+          f"{' ...' if len(seqs) > 6 else ''}\n")
 
     rows: list[dict] = []
     for seq, sdir, ds in seqs:
