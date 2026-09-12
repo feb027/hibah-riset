@@ -133,8 +133,11 @@ def find_sequences(data_root: Path = DATA_ROOT, tracker_root: Path = TRACKER_ROO
     sekuens diambil dari berkas hasil tracker sehingga pasangan keduanya pasti cocok.
     """
     gt_index: dict[str, Path] = {}
+    if data_root.is_symlink():
+        # ponytail: data/ sering berupa symlink ke volume dataset; os.walk tidak menembusnya
+        data_root = data_root.resolve()
     if data_root.is_dir():
-        for dirpath, dirnames, filenames in os.walk(data_root):
+        for dirpath, dirnames, filenames in os.walk(data_root, followlinks=True):
             dirnames[:] = [d for d in dirnames if d != ".cache"]
             if os.path.basename(dirpath) == "gt" and "gt.txt" in filenames:
                 seq_dir = Path(dirpath).parent
