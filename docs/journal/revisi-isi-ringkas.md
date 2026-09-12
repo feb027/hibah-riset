@@ -110,7 +110,7 @@ Sistem tidak memiliki mekanisme adaptif maupun estimasi grup. Ganti akronim pada
 2. **Pangkas §2.1.** Status YOLO26 sebagai preprint/vendor sudah dinyatakan di §1; cukup satu kalimat di §2.1. Buang kalimat tentang LCDnet dan Jetson Orin Nano. Hemat ±10 baris.
 3. **Buang pengulangan §2.2 dan §1.** Dua paragraf tentang density-map vs detection-tracking-counting muncul di kedua bagian. Simpan hanya di §2.2. Hemat ±6 baris.
 4. **Buang paragraf penjelasan latensi GPU yang tidak dipakai** (§4.1.2 tentang porsi post-processing bisa cukup tabelnya saja). Hemat ±5 baris.
-5. **Nomenclature** dibuat satu kolom padat, bukan tabel dua kolom. Hemat ±5 baris.
+5. **Nomenclature** (belum ada, wajib di JESTEC) dibuat satu kolom padat, bukan tabel dua kolom. Hemat ±5 baris.
 
 Total hemat ±38 baris melawan tambahan ±25 baris, jadi masih ada sisa sekitar 13 baris.
 
