@@ -28,6 +28,7 @@
 | 16 | Abstract (ganti total) | K4 |
 | 17 | Judul / nama sistem | S7 |
 | 18 | Tabel 4 (catatan kaki) | V9 |
+| 19 | §4.4.3 baru — ablasi penyaringan RoI | S3 (terjawab) |
 
 ---
 
@@ -81,9 +82,11 @@ dengan (D>0) menunjukkan IN dan (D<0) menunjukkan OUT. Perlu dinyatakan bahwa de
 
 Lapisan *counting* menyimpan status per identitas dengan dua keadaan operasional, yaitu TRACKING dan COOLDOWN. Identitas baru masuk sebagai TRACKING dan mulai mengumpulkan riwayat posisi. Ketika lintasannya memotong garis virtual, penghitung bertambah dan statusnya berpindah ke COOLDOWN selama 30 frame; selama masa itu identitas tidak dapat memicu hitungan baru meskipun lintasannya bergetar di sekitar garis. Setelah *cooldown* berakhir, identitas kembali ke TRACKING dan dapat dihitung lagi pada perlintasan berikutnya. Struktur status yang lebih rinci, mencakup penandaan arah hitungan dan identitas kedaluwarsa, disediakan pada lapisan model untuk pengembangan lanjutan tetapi belum diaktifkan pada konfigurasi yang diuji. Karena itu, sifat yang dijamin mekanisme ini adalah satu hitungan per identitas per jendela *cooldown*, bukan satu hitungan per identitas sepanjang sesi. Pembedaan ini relevan untuk membaca Sub-bab 4.4, karena panjang *cooldown* menentukan seberapa besar peluang satu orang tercatat lebih dari sekali ketika ia bergerak bolak-balik di area garis.
 
+Penyaringan RoI tersedia pada implementasi namun tidak diaktifkan pada konfigurasi yang dievaluasi. Seluruh hasil pada Bagian 4 dijalankan dengan area aktif berupa garis virtual penuh tanpa poligon RoI, sehingga klaim kontribusi pada sub-bab ini dibatasi pada mekanisme state machine dengan *debouncing*. Pengaruh penyaringan RoI diukur terpisah sebagai ablasi tambahan dan dilaporkan pada Sub-bab 4.4.3, tanpa dimasukkan ke konfigurasi operasional.
+
 **Paragraf tambahan (sisipkan setelahnya), batas mekanisme:**
 
-Tiga batas mekanisme perlu dinyatakan agar hasil pada Sub-bab 4.4 dibaca pada konteks yang benar. Pertama, penyaringan RoI bekerja sebagai gerbang di awal pemrosesan: *centroid* di luar poligon tidak memperbarui riwayat posisi sama sekali, sehingga ketika objek masuk kembali segmen lintasan yang diuji dibentuk dari titik terakhir sebelum keluar. Untuk objek yang bergerak di sepanjang tepi RoI, segmen tersebut dapat menyeberangi garis virtual secara semu. Kedua, riwayat posisi dibatasi sepuluh titik terakhir untuk menahan penggunaan memori, yang berarti pada objek bergerak cepat atau *frame rate* rendah segmen uji tetap dibentuk dari dua titik terakhir dan tidak memanfaatkan riwayat lebih panjang. Ketiga, panjang *cooldown* dinyatakan dalam satuan frame, sehingga durasi efektifnya bergantung pada *frame rate* masukan: 30 frame setara satu detik pada 30 FPS dan setengah detik pada 60 FPS. Ketiga batas ini tidak diuji secara terpisah pada penelitian ini dan menjadi bagian dari keterbatasan yang dibahas pada Sub-bab 4.6.
+Tiga batas mekanisme perlu dinyatakan agar hasil pada Sub-bab 4.4 dibaca pada konteks yang benar. Pertama, penyaringan RoI bekerja sebagai gerbang di awal pemrosesan: *centroid* di luar poligon tidak memperbarui riwayat posisi sama sekali, sehingga ketika objek masuk kembali segmen lintasan yang diuji dibentuk dari titik terakhir sebelum keluar. Untuk objek yang bergerak di sepanjang tepi RoI, segmen tersebut dapat menyeberangi garis virtual secara semu. Kedua, riwayat posisi dibatasi sepuluh titik terakhir untuk menahan penggunaan memori, yang berarti pada objek bergerak cepat atau *frame rate* rendah segmen uji tetap dibentuk dari dua titik terakhir dan tidak memanfaatkan riwayat lebih panjang. Ketiga, panjang *cooldown* dinyatakan dalam satuan frame, sehingga durasi efektifnya bergantung pada *frame rate* masukan: 30 frame setara satu detik pada 30 FPS dan setengah detik pada 60 FPS. Ketiga batas ini tidak diuji secara terpisah sebagai variabel bebas pada laporan utama; pengaruh penyaringan RoI diukur pada Sub-bab 4.4.3, sedangkan dua batas lainnya belum diukur dan dibahas sebagai keterbatasan pada Sub-bab 4.6.
 
 ---
 
@@ -278,9 +281,9 @@ Kedua, seluruh eksperimen dijalankan dengan satu *seed* dan tanpa pengulangan. P
 
 Ketiga, dekomposisi galat belum dipisahkan menurut penyebab. Angka pada Tabel 6 mencakup gabungan galat yang berasal dari objek yang tidak terdeteksi dan galat yang berasal dari identitas yang berpindah. Lantai deteksi diketahui berada pada rentang 7.4% hingga 10.0% dari Sub-bab 4.1, tetapi berapa bagian dari total galat hitung yang berasal dari pergantian identitas belum diukur secara terpisah.
 
-Keempat, kontribusi tiap mekanisme pada counting logic belum diisolasi. Model B menggabungkan tiga mekanisme sekaligus, yaitu penyaringan RoI, pengujian perpotongan segmen, dan state machine dengan *cooldown*, sehingga peran masing-masing tidak dapat dipisahkan dari data yang tersedia. Yang berhasil diisolasi adalah kontribusi keseluruhan counting logic, melalui perbandingan pada lintasan *ground truth* pada Tabel 8 yang menurunkan galat dari 60.60% menjadi nol. Ablasi per mekanisme perlu dijalankan sebelum klaim tentang peran RoI atau peran validasi lintasan dapat dibuat.
+Kelima, kontribusi tiap mekanisme pada counting logic baru terisolasi sebagian. Model B pada laporan utama menggabungkan penyaringan RoI, pengujian perpotongan segmen, dan state machine dengan *cooldown*, tetapi RoI ternyata tidak diaktifkan pada konfigurasi yang dievaluasi. Sub-bab 4.4.3 mengukur pengaruh RoI secara terpisah pada sekuens yang tersedia, sedangkan pemisahan peran pengujian perpotongan segmen dari peran state machine belum dilakukan karena keduanya tidak dapat dipisahkan tanpa mengubah definisi perlintasan. Yang berhasil diisolasi penuh adalah kontribusi keseluruhan counting logic, melalui perbandingan pada lintasan *ground truth* pada Tabel 8 yang menurunkan galat dari 60.60% menjadi nol.
 
-Kelima, latensi diukur pada dua perangkat dan dua *runtime*, sehingga hasilnya tidak digeneralisasi ke perangkat lain. Selain itu panjang *cooldown* dinyatakan dalam satuan frame, sehingga konfigurasi 30 frame hanya setara satu detik pada 30 FPS dan nilainya perlu diskalakan ulang ketika *frame rate* kamera berubah. Ketiga batas mekanisme yang disebut pada Sub-bab 3.3, yaitu pembekuan riwayat posisi di luar RoI, pembatasan riwayat sepuluh titik, dan ketergantungan *cooldown* pada *frame rate*, belum diuji secara terpisah.
+Keenam, latensi diukur pada dua perangkat dan dua *runtime*, sehingga hasilnya tidak digeneralisasi ke perangkat lain. Selain itu panjang *cooldown* dinyatakan dalam satuan frame, sehingga konfigurasi 30 frame hanya setara satu detik pada 30 FPS dan nilainya perlu diskalakan ulang ketika *frame rate* kamera berubah. Ketiga batas mekanisme yang disebut pada Sub-bab 3.3, yaitu pembekuan riwayat posisi di luar RoI, pembatasan riwayat sepuluh titik, dan ketergantungan *cooldown* pada *frame rate*, belum diuji secara terpisah.
 
 ---
 
@@ -318,6 +321,24 @@ Tambahkan di bawah Tabel 4: "Percepatan dihitung dari latensi inferensi murni, y
 
 ---
 
+### BLOK 19 — Sub-bab baru "4.4.3 Ablasi Penyaringan RoI" (sisipkan setelah 4.4.2)
+
+Sub-bab ini memisahkan pengaruh penyaringan RoI dari pengaruh state machine. Konfigurasi laporan utama tidak mengaktifkan RoI, sehingga kontribusi RoI belum terukur sampai ablasi ini dijalankan. Empat kombinasi diuji pada sekuens yang memiliki *ground truth* tersedia: *naive line crossing* tanpa RoI, *naive line crossing* dengan RoI, state machine 30 frame tanpa RoI, dan state machine 30 frame dengan RoI. RoI diuji pada dua ukuran, yaitu persegi yang menyisakan margin 5% dan 10% pada tiap sisi frame, agar hasilnya tidak bergantung pada satu pilihan geometri. Garis hitung tetap berada pada posisi yang sama, x = 0.33 lebar frame, sehingga seluruh konfigurasi hanya berbeda pada ada atau tidaknya penyaringan area.
+
+Hasilnya menunjukkan bahwa penyaringan RoI tidak memberi perbaikan pada konfigurasi yang diuji. Pada margin 5%, seluruh metrik identik dengan konfigurasi tanpa RoI karena tidak ada *centroid* yang berada pada pita tepi, sehingga filter tidak pernah aktif. Pada margin 10%, filter mulai aktif dan justru memperburuk hasil: galat gabungan bergeser lebih jauh ke arah kurang menghitung dan MAE naik pada seluruh jalur pelacakan, dengan contoh paling jelas pada Deep-OC-SORT yang galat gabungannya berubah dari −21.26% menjadi −23.67% dan MAE dari 22.00 menjadi 24.50. Dua sebab menjelaskannya. Pertama, garis hitung berada pada sepertiga lebar frame sehingga secara geometris sudah jauh dari tepi, dan penyaringan area tidak lagi menyaring sesuatu yang mengganggu. Kedua, pejalan yang sebenarnya melintas di dekat tepi frame menjadi tidak tercatat, dan karena riwayat posisi dibekukan selama objek berada di luar RoI, segmen lintasan yang terbentuk saat objek masuk kembali dibentuk dari titik yang sudah tua.
+
+Kesimpulan dari ablasi ini adalah bahwa penyaringan RoI tidak dipertahankan sebagai komponen kontribusi pada penelitian ini. Mekanisme tersebut tetap tersedia pada implementasi dan relevan untuk skenario penempatan kamera dengan area pengamatan terbatas, tetapi pada konfigurasi evaluasi dengan garis virtual melintang penuh frame, penambahan RoI hanya menurunkan jumlah orang yang tercatat tanpa mengurangi galat yang berasal dari *tracker*. Klaim kontribusi pada Sub-bab 3.3 karena itu dibatasi pada state machine dengan *debouncing*, dan pengaruh penyaringan area dinyatakan sebagai temuan negatif yang perlu diuji ulang pada skenario kamera yang berbeda.
+
+**Catatan penting untuk penulis (jangan dipaste).** Ablasi ini baru dijalankan pada 2 dari 29 sekuens, yaitu MOT20-01 dan MOT20-02, karena hanya kedua sekuens itu yang tersedia bersama *ground truth* pada mesin kerja saat ini. Angka absolut di atas karena itu tidak mewakili 29 sekuens dan tidak boleh masuk naskah apa adanya; yang dapat dipertahankan adalah **arah temuan**, yaitu RoI tidak memberi perbaikan dan memperburuk hasil pada margin yang lebih besar. Untuk mendapat tabel final, jalankan perintah berikut di mesin 4090 yang menyimpan DanceTrack dan MOT20 lengkap:
+
+```
+python3 scripts/journal/ablation_roi_sm.py
+```
+
+Script itu menyimpan hasil ke `experiments/s3_counting/counting_ablation_roi.csv`, mencetak tabel markdown untuk 6 konfigurasi, dan sekaligus memverifikasi bahwa konfigurasi `B1_sm30_no_roi` mereproduksi angka laporan lama secara identik (cek ini sudah lolos pada pilot 2 sekuens, 8 baris). Setelah dijalankan penuh, ganti angka pada paragraf di atas dengan keluaran baru.
+
+---
+
 ## Lampiran — jejak angka (tidak dipaste ke naskah)
 
 Semua angka pada blok di atas dapat diregenerasi dan diverifikasi dengan:
@@ -334,7 +355,10 @@ Script tersebut menegaskan ulang bahwa angka headline naskah (13.08, 16.71, 22.3
 | Ablasi Model A vs CD 15/30/60, empat tracker | `experiments/s3_counting/counting_ablation.csv` |
 | Kurva cooldown (termasuk lintasan GT dan CD=120) | `experiments/s3_counting/sensitivity_cooldown.csv` |
 | Kurva ambang keyakinan | `experiments/s3_counting/sensitivity_confidence.csv` |
+| Ablasi RoI x state machine (pilot 2 sekuens) | `experiments/s3_counting/counting_ablation_roi.csv` |
 | Latensi per tahap dan distribusi persentil | `docs/reports/laporan-skenario-d-realtime.md` |
 | Metrik tracking HOTA/MOTA/IDF1/IDSW/Frag | `docs/reports/laporan-skenario-b-tracker.md` |
 
-Tiga hal yang **tidak** dapat dikerjakan dari data yang ada dan karena itu ditulis sebagai batasan, bukan diperbaiki: ablasi per mekanisme counting logic (RoI terpisah, perpotongan segmen terpisah), atribusi kuantitatif galat antara *missed detection* dan *identity switch*, serta validasi pada rekaman ruang publik dengan label arus masuk-keluar. Kalau salah satu ingin dikerjakan, ketiganya memerlukan eksperimen baru: yang pertama memerlukan tiga varian konfigurasi pada 29 sekuens, yang kedua memerlukan pelacakan asal setiap kejadian hitung, yang ketiga memerlukan rekaman dan anotasi manual.
+Tiga hal yang **tidak** dapat dikerjakan dari data yang ada dan karena itu ditulis sebagai batasan, bukan diperbaiki: pemisahan peran pengujian perpotongan segmen dari peran state machine (keduanya tidak dapat dipisahkan tanpa mengubah definisi perlintasan), atribusi kuantitatif galat antara *missed detection* dan *identity switch*, serta validasi pada rekaman ruang publik dengan label arus masuk-keluar. Yang pertama memerlukan varian yang mendefinisikan perlintasan tanpa pengujian segmen, yang kedua memerlukan pelacakan asal setiap kejadian hitung, yang ketiga memerlukan rekaman dan anotasi manual.
+
+Ablasi RoI sudah dikerjakan dan tidak lagi menjadi batasan. Jalankan ulang `scripts/journal/ablation_roi_sm.py` di mesin yang menyimpan DanceTrack dan MOT20 lengkap untuk mengganti pilot 2 sekuens dengan tabel 29 sekuens.
