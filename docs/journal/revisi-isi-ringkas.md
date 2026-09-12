@@ -62,7 +62,7 @@ Kurva cooldown membentuk pola U, dan yang perlu dibaca adalah arah galatnya. Tan
 
 Tambahkan setelah paragraf 4.4.2: "Angka 1.67% pada ambang 0.20 diukur dengan definisi galat gabungan, berbeda dari Tabel 6 yang memakai galat per sekuens; pada konfigurasi 0.30, galat gabungannya 5.65% sedangkan galat per sekuensnya 16.71%. Ambang 0.30 dipilih meski bukan titik terendah karena selisihnya berada di bawah variasi antar sekuens, dan ambang rendah menambah deteksi palsu dari latar yang berisiko menjadi hitungan palsu di sekitar garis."
 
-Tambahkan 3 kalimat hasil eksperimen tambahan: "Dua pengujian tambahan memisahkan sebab galat. Penyaringan RoI tidak memberi perbaikan: pada margin 5% filter tidak pernah aktif sehingga seluruh metrik identik dengan konfigurasi tanpa RoI, dan pada margin 10% MAE naik karena pejalan di dekat tepi frame tidak tercatat. Dekomposisi per kejadian perlintasan menunjukkan kegagalan asosiasi mendominasi (sekitar 25% hingga 30% kejadian GT tidak tercatat meski objeknya terlacak) sementara bagian yang berasal dari deteksi hanya sekitar 5%, dan sisanya kelebihan hitung dari perlintasan berulang serta identitas tanpa padanan."
+Tambahkan 1 paragraf (pakai **ini**, ganti kalimat dekomposisi pilot yang lama): "Kaitan antara konsistensi identitas dan akurasi hitung dapat diperiksa pada seluruh 29 sekuens. Di DanceTrack, urutan galat hitung keempat jalur sama persis dengan urutan IDF1, dari DiffMOT (IDF1 43.39, galat 13.78%) hingga LightTrack (IDF1 18.91, galat 59.94%), dengan korelasi peringkat −1.00. Di MOT20 urutannya tidak sekonsisten itu karena LightTrack mencatat galat 9.84% meski IDF1-nya terendah (34.69); kesalahan LightTrack di sekuens MOT20 tersebar dua arah sehingga saling mengompensasi pada sekuens yang jumlah orangnya kecil. Digabung pada delapan titik pengukuran, korelasi peringkat antara IDF1 dan galat hitung sebesar −0.79. Rata-rata kedua benchmark juga berbanding terbalik: DiffMOT galat 11.24% dengan IDF1 48.62, Deep-OC-SORT 15.30% dengan 34.77, OC-SORT 17.76% dengan 34.76, dan LightTrack 34.89% dengan 26.80, meski dua jalur di tengah memiliki IDF1 yang hampir sama sehingga urutan keduanya tidak bermakna. Pola ini menunjukkan bahwa penguatan asosiasi identitas berkaitan lebih erat dengan akurasi hitung daripada kualitas kotak deteksi, dengan catatan bahwa delapan titik pengukuran belum cukup untuk menyatakan hubungan sebab akibat."
 
 ---
 
@@ -84,7 +84,7 @@ Ganti kalimat pembuka sub-bab dengan tabel berikut, lalu satu kalimat penutup.
 
 Ganti kalimat "Temuan ini dibatasi oleh penggunaan satu seed, benchmark publik dengan deteksi offline, dan latensi yang bergantung pada perangkat." menjadi:
 
-"Temuan ini dibatasi oleh penggunaan satu seed, benchmark publik dengan deteksi offline, latensi yang bergantung pada perangkat, serta belum adanya validasi pada rekaman ruang publik dengan definisi arus masuk-keluar yang sebenarnya. Selisih metrik antar tracker yang lebih kecil dari simpangan baku galat per sekuens, misalnya selisih HOTA 0.39 di MOT20, tidak dinyatakan sebagai perbedaan yang terbukti. Panjang cooldown juga dinyatakan dalam satuan frame sehingga nilainya perlu diskalakan ulang ketika frame rate kamera berubah."
+"Temuan ini dibatasi oleh penggunaan satu seed, benchmark publik dengan deteksi offline, latensi yang bergantung pada perangkat, serta belum adanya validasi pada rekaman ruang publik dengan definisi arus masuk-keluar yang sebenarnya. Selisih metrik antar tracker yang lebih kecil dari simpangan baku galat per sekuens, misalnya selisih HOTA 0.39 di MOT20, tidak dinyatakan sebagai perbedaan yang terbukti. Panjang cooldown juga dinyatakan dalam satuan frame sehingga nilainya perlu diskalakan ulang ketika frame rate kamera berubah. Pemisahan bagian galat yang berasal dari deteksi dan yang berasal dari asosiasi identitas masih bersifat tidak langsung melalui korelasi pada Sub-bab 4.3, bukan melalui dekomposisi per kejadian perlintasan."
 
 ---
 
@@ -116,13 +116,14 @@ Total hemat ±38 baris melawan tambahan ±25 baris, jadi masih ada sisa sekitar 
 
 ---
 
-## Yang belum bisa dikerjakan
+## Yang belum dikerjakan (dan tidak lagi bisa)
 
-Pemisahan peran pengujian perpotongan segmen dari state machine (tidak bisa dipisah tanpa mengubah definisi perlintasan), dan validasi rekaman ruang publik (datanya belum ada).
+Dataset benchmark sudah tidak tersedia, jadi ablasi RoI dan dekomposisi galat per kejadian batal dijalankan pada 29 sekuens. Jangan paste angka pilot 2 sekuens dari `revisi-isi-lengkap-arsip.md` ke naskah — reviewer akan langsung menanyakan mengapa hanya 2 dari 29.
 
-Angka ablasi RoI dan dekomposisi galat di BLOK 7 masih berasal dari 2 dari 29 sekuens (MOT20-01, -02). Jalankan di mesin 4090 sebelum dipaste:
+Penggantinya untuk klaim yang sama sudah disiapkan dan hanya memakai data yang ada: paragraf korelasi IDF1–galat hitung pada BLOK 7. Angkanya bisa diregenerasi dengan:
 
 ```
-python3 scripts/journal/ablation_roi_sm.py
-python3 scripts/journal/attribute_counting_error.py
+python3 scripts/journal/idf1_error_correlation.py
 ```
+
+Sisa yang memang tidak bisa dikerjakan: validasi pada rekaman ruang publik dengan definisi arus masuk-keluar. Itu bukan soal waktu, datanya memang belum ada.
