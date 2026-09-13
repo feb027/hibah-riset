@@ -104,6 +104,26 @@ Sistem tidak memiliki mekanisme adaptif maupun estimasi grup. Ganti akronim pada
 
 ---
 
+### BLOK 12 — Gabung Gambar 4 dan 5 jadi satu figur dua panel (hemat ±9 cm)
+
+File siap: `experiments/journal_figs/fig4ab_cooldown_conf.png` (1440×680 px, jadi ±7.6 cm tinggi pada lebar 16 cm). Ganti dua gambar lama (cooldown dan confidence) dengan satu gambar ini, lalu caption-nya jadi:
+
+"Fig. 4. Sensitivitas parameter counting pada konfigurasi operasional: (a) panjang cooldown pada Deep-OC-SORT dan (b) ambang keyakinan detektor."
+
+Kalimat rujukan di §4.4.1 dan §4.4.2 diubah dari "Gambar 4" dan "Gambar 5" menjadi "Gambar 4(a)" dan "Gambar 4(b)".
+
+**Konsekuensi penomoran: semua gambar setelahnya turun satu nomor** (yang tadinya Gambar 6 jadi Gambar 5, dan seterusnya sampai Gambar 8/9). Cek juga rujukan di teks, bukan hanya caption — nomor gambar yang tidak sinkron adalah temuan format yang paling mudah terlihat.
+
+Regenerasi kalau perlu ubah font atau ukuran:
+
+```
+/tmp/plotenv/bin/python scripts/journal/make_combined_fig.py
+```
+
+(venv `/tmp/plotenv` dibuat karena numpy di mesin ini tidak kompatibel dengan CPU-nya; di mesin lain cukup `python3`.)
+
+---
+
 ## Pemotongan wajib (hemat ±1 halaman)
 
 1. **Gabung Tabel 1 dan Tabel 2.** Metriknya tumpang tindih (precision/recall/mAP dan MR⁻²/AP@0.5). Jadi satu tabel 4 baris × 7 kolom. Hemat ±12 baris.
@@ -111,8 +131,9 @@ Sistem tidak memiliki mekanisme adaptif maupun estimasi grup. Ganti akronim pada
 3. **Buang pengulangan §2.2 dan §1.** Dua paragraf tentang density-map vs detection-tracking-counting muncul di kedua bagian. Simpan hanya di §2.2. Hemat ±6 baris.
 4. **Buang paragraf penjelasan latensi GPU yang tidak dipakai** (§4.1.2 tentang porsi post-processing bisa cukup tabelnya saja). Hemat ±5 baris.
 5. **Nomenclature** (belum ada, wajib di JESTEC) dibuat satu kolom padat, bukan tabel dua kolom. Hemat ±5 baris.
+6. **Gabung Gambar 4 dan 5** jadi satu figur dua panel (BLOK 12). Hemat ±9 cm atau sekitar sepertiga halaman. Ini pemotongan terbesar setelah Tabel 1+2.
 
-Total hemat ±38 baris melawan tambahan ±25 baris, jadi masih ada sisa sekitar 13 baris.
+Total hemat ±38 baris + ±9 cm melawan tambahan ±25 baris, jadi masih ada sisa sekitar 13 baris plus ruang gambar.
 
 ---
 
