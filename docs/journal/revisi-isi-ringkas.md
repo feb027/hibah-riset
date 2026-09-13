@@ -124,27 +124,29 @@ Regenerasi kalau perlu ubah font atau ukuran:
 
 ---
 
-### BLOK 13 — Isi placeholder parameter dan GFLOPs YOLO26 (§4.1)
+### BLOK 13 — Isi placeholder parameter/GFLOPs + jawaban "kenapa bukan YOLOv11s" (§4.1)
 
-Angka yang benar, jangan ditebak lagi:
+**Tabel 1 versi diperluas** — tambah dua kolom terakhir, semua angka bersumber:
 
-| Placeholder | Nilai | Sumber |
-|---|---|---|
-| `[PARAM_N]` | 2,4 juta | Jocher dkk. (2026), Tabel 7 |
-| `[PARAM_S]` | 9,5 juta | Jocher dkk. (2026), Tabel 7 |
-| `[GFLOPS_N]` | 5,4 | Jocher dkk. (2026), Tabel 7 |
-| `[GFLOPS_S]` | 20,7 | Jocher dkk. (2026), Tabel 7 |
+| Arsitektur | NMS-free | Precision | Recall | mAP@0.5 | mAP@0.5:0.95 | Params (juta) | FLOPs (G) |
+|---|---|---|---|---|---|---|---|
+| YOLO26n | ya | 0,8230 | 0,6888 | 0,7814 | 0,4497 | 2,4 | 5,4 |
+| YOLO26s | ya | 0,8480 | 0,7455 | 0,8266 | 0,4974 | 9,5 | 20,7 |
+| YOLOv10n | ya | 0,8212 | 0,6892 | 0,7826 | 0,4521 | 2,3 | 6,7 |
+| YOLOv11n | tidak | 0,8352 | 0,6965 | 0,7855 | 0,4463 | 2,6 | 6,5 |
 
-Sumber: G. Jocher, J. Qiu, M. Liu, S. Lyu, F. C. Akyon, M. E. Kalfaoglu, "Ultralytics YOLO26: Unified Real-Time End-to-End Vision Models", arXiv:2606.03748, 2026, Tabel 7. DOI 10.48550/arXiv.2606.03748.
+Sumber angka kolom Params/FLOPs:
+- YOLO26n dan YOLO26s: Jocher dkk. (2026), Tabel 7 (S050).
+- YOLOv10n: Wang dkk. (2024), Tabel 1 (S003).
+- YOLOv11n: Jocher dkk. (2026), bagian pendahuluan, nilai YOLO11n dengan DFL (S050).
 
-Kalimat pengganti untuk paragraf §4.1:
+Catatan kaki untuk tabel: "Nilai parameter dan FLOPs adalah untuk model rilis yang sudah difusi (Conv dan BatchNorm digabung, cabang one-to-many dilepas); checkpoint pra-latih memuat arsitektur pelatihan penuh dan angkanya bisa lebih tinggi."
 
-"Peningkatan dari YOLO26n ke YOLO26s menghasilkan kenaikan mAP@0.5:0.95 sebesar 0,0477 dan recall sebesar 5,7 poin, dengan parameter meningkat dari 2,4 juta menjadi 9,5 juta dan kebutuhan komputasi dari 5,4 menjadi 20,7 GFLOPs (Jocher dkk., 2026). Perbandingan itu menunjukkan trade-off akurasi-komputasi yang terukur: kapasitas model naik hampir empat kali, tetapi latensi CPU ONNX hanya naik 2,25 kali, dari 10,28 ms menjadi 23,15 ms (Tabel 4), sehingga YOLO26s dipilih sebagai konfigurasi akurasi-utama pada tahap evaluasi berikutnya dan YOLO26n dipertahankan untuk kondisi komputasi terbatas."
+**Kalimat pengganti untuk paragraf §4.1** (sudah termasuk jawaban atas pertanyaan "kenapa bukan YOLOv11s"):
 
-Dua catatan supaya tidak kena tembak reviewer:
+"Pada skala nano, YOLOv11n unggul pada mAP@0.5 (0,7855 berbanding 0,7814), namun pada mAP@0.5:0.95, metrik dengan ambang IoU lebih ketat yang lebih mencerminkan presisi lokalisasi, YOLO26n justru lebih baik (0,4497 berbanding 0,4463). Keunggulan YOLOv11n pada mAP@0.5 karena itu tidak konsisten pada evaluasi IoU yang lebih ketat, sehingga arsitektur NMS-free tetap dipertahankan sebagai basis pengembangan. Peningkatan dari YOLO26n ke YOLO26s menaikkan mAP@0.5:0.95 sebesar 0,0477 dan recall sebesar 5,7 poin, dengan parameter naik dari 2,4 juta ke 9,5 juta dan kebutuhan komputasi dari 5,4 ke 20,7 GFLOPs (Jocher dkk., 2026); nilai tersebut untuk model rilis yang sudah difusi. Pilihan tier s, dan bukan tier s dari famili sebelumnya, bertumpu pada benchmark resmi: pada ukuran model setara, YOLO26s mencatat 48,6 AP dibandingkan 47,0 pada YOLO11s, dengan FLOPs lebih rendah (20,7 berbanding 21,5 G) dan parameter setara (9,5 berbanding 9,4 juta). YOLOv11s tidak di-fine-tune pada penelitian ini, sehingga perbandingan tier s tersebut bersandar pada benchmark vendor dan bukan pada pengukuran sendiri; yang diukur secara langsung pada penelitian ini adalah perbandingan tier nano pada Tabel 1."
 
-1. **Sebutkan status angkanya.** Nilai parameter dan FLOPs di Tabel 7 paper adalah untuk model rilis yang sudah difusi (Conv dan BatchNorm digabung, cabang *one-to-many* dilepas), sedangkan checkpoint pra-latih memuat arsitektur pelatihan penuh dan angkanya bisa lebih tinggi. Satu klausa cukup: "nilai tersebut untuk model rilis yang sudah difusi". Tanpa ini, reviewer yang mengukur sendiri dari berkas bobot akan menemukan angka berbeda.
-2. **Dokumentasi Ultralytics sekarang menampilkan 5,5 dan 20,9 GFLOPs**, sedikit berbeda dari paper. Kalau memakai angka paper (5,4 dan 20,7), sitasinya ke paper; jangan menulis angka paper dengan sitasi dokumentasi, karena versi dokumentasi sudah berubah.
+**Kenapa paragraf ini penting.** Tanpa kalimat tier s, reviewer akan bertanya mengapa bukan YOLOv11s setelah v11n menang di satu metrik pada tier nano. Tanpa klausa batasan pada kalimat terakhir, reviewer akan membaca benchmark vendor sebagai hasil eksperimen sendiri. Keduanya wajib ada; memilih salah satu saja tetap menyisakan lubang.
 
 ---
 
