@@ -124,6 +124,30 @@ Regenerasi kalau perlu ubah font atau ukuran:
 
 ---
 
+### BLOK 13 — Isi placeholder parameter dan GFLOPs YOLO26 (§4.1)
+
+Angka yang benar, jangan ditebak lagi:
+
+| Placeholder | Nilai | Sumber |
+|---|---|---|
+| `[PARAM_N]` | 2,4 juta | Jocher dkk. (2026), Tabel 7 |
+| `[PARAM_S]` | 9,5 juta | Jocher dkk. (2026), Tabel 7 |
+| `[GFLOPS_N]` | 5,4 | Jocher dkk. (2026), Tabel 7 |
+| `[GFLOPS_S]` | 20,7 | Jocher dkk. (2026), Tabel 7 |
+
+Sumber: G. Jocher, J. Qiu, M. Liu, S. Lyu, F. C. Akyon, M. E. Kalfaoglu, "Ultralytics YOLO26: Unified Real-Time End-to-End Vision Models", arXiv:2606.03748, 2026, Tabel 7. DOI 10.48550/arXiv.2606.03748.
+
+Kalimat pengganti untuk paragraf §4.1:
+
+"Peningkatan dari YOLO26n ke YOLO26s menghasilkan kenaikan mAP@0.5:0.95 sebesar 0,0477 dan recall sebesar 5,7 poin, dengan parameter meningkat dari 2,4 juta menjadi 9,5 juta dan kebutuhan komputasi dari 5,4 menjadi 20,7 GFLOPs (Jocher dkk., 2026). Perbandingan itu menunjukkan trade-off akurasi-komputasi yang terukur: kapasitas model naik hampir empat kali, tetapi latensi CPU ONNX hanya naik 2,25 kali, dari 10,28 ms menjadi 23,15 ms (Tabel 4), sehingga YOLO26s dipilih sebagai konfigurasi akurasi-utama pada tahap evaluasi berikutnya dan YOLO26n dipertahankan untuk kondisi komputasi terbatas."
+
+Dua catatan supaya tidak kena tembak reviewer:
+
+1. **Sebutkan status angkanya.** Nilai parameter dan FLOPs di Tabel 7 paper adalah untuk model rilis yang sudah difusi (Conv dan BatchNorm digabung, cabang *one-to-many* dilepas), sedangkan checkpoint pra-latih memuat arsitektur pelatihan penuh dan angkanya bisa lebih tinggi. Satu klausa cukup: "nilai tersebut untuk model rilis yang sudah difusi". Tanpa ini, reviewer yang mengukur sendiri dari berkas bobot akan menemukan angka berbeda.
+2. **Dokumentasi Ultralytics sekarang menampilkan 5,5 dan 20,9 GFLOPs**, sedikit berbeda dari paper. Kalau memakai angka paper (5,4 dan 20,7), sitasinya ke paper; jangan menulis angka paper dengan sitasi dokumentasi, karena versi dokumentasi sudah berubah.
+
+---
+
 ## Pemotongan wajib (hemat ±1 halaman)
 
 1. **Gabung Tabel 1 dan Tabel 2.** Metriknya tumpang tindih (precision/recall/mAP dan MR⁻²/AP@0.5). Jadi satu tabel 4 baris × 7 kolom. Hemat ±12 baris.
