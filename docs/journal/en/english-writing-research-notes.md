@@ -112,6 +112,65 @@ and the Blind Review template.
       decomposition while the caption reads "Fig. 5". The EN file uses Fig. 5 in both places.
 - [ ] Add author names + affiliations only in the camera-ready version, not the blind-review version.
 
+## 7. Word formatting spec — read directly from the JESTEC template XML
+
+`word/styles.xml` + `word/document.xml` of the Blind Review template, inspected 14 Sep 2026.
+**Paste the text into the template file itself** — do not rebuild the styles; the template already carries every
+named style below and pasting as plain text + reapplying the style is faster than re-creating them.
+
+### Page
+
+| Item | Value |
+| --- | --- |
+| Page size | A4 (11907 × 16840 twips) |
+| Margins | top 1" (1440), right 2.44" (3514), bottom 2.25" (3240), left 1.25" (1800) |
+| Columns | single (`<w:cols w:space="720"/>`) |
+
+### Text styles (Times New Roman unless noted)
+
+| Element | Style name | Size | Weight/style | Layout |
+| --- | --- | --- | --- | --- |
+| Title | `JESTECTitle` | 11 pt **Arial** | bold | centred, 60 pt before / 15 pt after |
+| Author | `JESTECAuthor` | 10 pt | — | centred |
+| Affiliation | `JESTECAffiliation` | 9 pt | — | centred |
+| "Abstract" / "Keywords" heading | `AbstractandKeywordsHeading` | 10 pt | bold | left |
+| Abstract body | `JESTECAbstract` | 9 pt | regular | justified, 6 pt before, 0 after |
+| Body text | `JESTECStyleBodyTextIndentComplex10ptFirstline` | 10 pt | regular | justified, first-line indent 0.5 cm |
+| Section heading (1, 2, 3 …) | `JESTECHeading1` | 11 pt | bold | 6 pt before / 6 pt after |
+| Sub-section heading | `JESTECHeading2` | 11 pt | bold | 6 pt before / 6 pt after |
+| **Figure caption** | `figurecaption` | 11 pt | **bold** | centred, caption **below** the figure |
+| **Table caption** | `tablecaption` | 10 pt | **bold** | centred, caption **above** the table |
+| Table title row (inside the table, grey `F2F2F2` fill) | — | 8 pt | **bold + italic** | centred |
+| Nomenclature sub-heading ("Greek Symbols", etc.) | — | — | **bold + italic** | left |
+| Reference entry | — | 10 pt | regular | hanging indent 357 twips, 3 pt before |
+
+### Where the template actually uses italics
+
+Confirmed by listing every run carrying `<w:i/>` in `document.xml` (100 italic runs; the clean list collapses to
+six rules). Italic is **not** decorative and is **not** applied to body prose.
+
+| # | What | Example from the template | Notes |
+| --- | --- | --- | --- |
+| 1 | **Variables / symbols**, including subscripts | `*C*<sub>D0</sub>`, `*C*<sub>N</sub>`, `*D*`, `*d*`, `*L*<sub>ref</sub>`, `*x*<sub>cp</sub>` | The submission page states it outright: "Symbols: Italicize variables". Subscripts follow the same italic run in this template. |
+| 2 | **`Appendix …` cross-references** | `Appendix A` | The only cross-reference type set in italic. |
+| 3 | **Journal / proceedings name** in a reference | `*Journal of Engineering Science and Technology*` | Article title stays upright. |
+| 4 | **Conference proceedings name** in a reference | `*Proceedings of the 1<sup>st</sup> Conference on Power, Manufacturing, and Materials*` | |
+| 5 | **Book / report / thesis title** in a reference | `*Advances in education*`, `*NACA Report No. 6623*`, `*PhD Thesis*` | |
+| 6 | Greek symbols in the Nomenclature | `*α*, *β*, *θ*` | |
+
+**Not italic in this template** (common false assumptions):
+
+- `Fig. 1` and `Eq. (1)` cross-references — upright. Only `Appendix A` is italic.
+- Figure captions — **bold**, not italic.
+- Table captions — **bold**, not italic (the 8 pt bold+italic row is the table *title row inside the table*).
+- Section and sub-section headings — **bold**, not italic.
+- Reference author names, years, volume/issue and page numbers — upright. Only the venue/book/report title is italic.
+
+Applied to `jestec-manuscript-en.md`: variables in Eq. (1)–(4), the `*p*₁/*p*₂/*q*₁/*q*₂` definitions, the `*D*`
+sign test, the four affected reference venues (`*IEEE Access*`, `*Int. J. Inf. Technol.*`, `*Computers in Industry*`,
+`*Computational Geometry in C*`) and the Nomenclature symbol column are marked up with `*…*` so the italics are
+visible before pasting. Everything else stays upright.
+
 ---
 
 ## Sources (accessed 14 September 2026)

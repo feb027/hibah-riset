@@ -64,17 +64,17 @@ Every tracker outputs in tlwh format with a standardised track_id, so counting l
 
 ### 3.3 Trajectory-Based Counting
 
-The counting component of RANCAGE evaluates the trajectory of each ID against the RoI and virtual lines, rather than counting objects per frame. The approach adopts the virtual-line RoI concept used in people counting [29]. Two models are compared. Model A (naive line crossing) records an object when its trajectory crosses the virtual line with no state memory, which leaves it vulnerable to spatial jitter and tracking noise that can cause double counting or missed counts [30]. Model B addresses this through RoI validation, crossing detection and an ID state machine. Only centroids inside the RoI polygon are processed. A crossing is determined from the trajectory segment between the last two points, p1 = (x1, y1) and p2 = (x2, y2), against the virtual line segment q1 = (xq1, yq1) and q2 = (xq2, yq2). Intersection is tested with the counterclockwise (CCW) test for line segments [31]:
+The counting component of RANCAGE evaluates the trajectory of each ID against the RoI and virtual lines, rather than counting objects per frame. The approach adopts the virtual-line RoI concept used in people counting [29]. Two models are compared. Model A (naive line crossing) records an object when its trajectory crosses the virtual line with no state memory, which leaves it vulnerable to spatial jitter and tracking noise that can cause double counting or missed counts [30]. Model B addresses this through RoI validation, crossing detection and an ID state machine. Only centroids inside the RoI polygon are processed. A crossing is determined from the trajectory segment between the last two points, *p*<sub>1</sub> = (*x*<sub>1</sub>, *y*<sub>1</sub>) and *p*<sub>2</sub> = (*x*<sub>2</sub>, *y*<sub>2</sub>), against the virtual line segment *q*<sub>1</sub> = (*x*<sub>q1</sub>, *y*<sub>q1</sub>) and *q*<sub>2</sub> = (*x*<sub>q2</sub>, *y*<sub>q2</sub>). Intersection is tested with the counterclockwise (CCW) test for line segments [31]:
 
 <!-- Eq. (1): reproduce with Word Equation Editor (OMML extracted from master docx) -->
-Eq. (1)  CCW(A, B, C) = (Bx − Ax)(Cy − Ay) − (By − Ay)(Cx − Ax)
+Eq. (1)  *CCW*(*A*, *B*, *C*) = (*B*<sub>x</sub> − *A*<sub>x</sub>)(*C*<sub>y</sub> − *A*<sub>y</sub>) − (*B*<sub>y</sub> − *A*<sub>y</sub>)(*C*<sub>x</sub> − *A*<sub>x</sub>)
 
 The two segments intersect when the CCW values show a sign change on each segment. Crossing direction is determined with the cross product:
 
 <!-- Eq. (2): reproduce with Word Equation Editor -->
-Eq. (2)  D = v_line,x · v_move,y − v_line,y · v_move,x
+Eq. (2)  *D* = *v*<sub>line,x</sub> · *v*<sub>move,y</sub> − *v*<sub>line,y</sub> · *v*<sub>move,x</sub>
 
-D > 0 indicates the IN direction and D < 0 the OUT direction. Direction depends on the order of the two points defining the virtual line, which is fixed once in the configuration file and applied consistently across all sequences. The counting layer tracks the status of each identity through two operational states, TRACKING and COOLDOWN. When a trajectory crosses the virtual line, the system emits a count and puts that identity into COOLDOWN for 30 frames, during which it cannot trigger another count. Once the cooldown ends, the identity can be counted again on the next crossing. The mechanism therefore guarantees one count per identity within each cooldown window, not one count for the whole session. Although RoI filtering is available in the implementation, it was not enabled in the experimental configuration.
+*D* > 0 indicates the IN direction and *D* < 0 the OUT direction. Direction depends on the order of the two points defining the virtual line, which is fixed once in the configuration file and applied consistently across all sequences. The counting layer tracks the status of each identity through two operational states, TRACKING and COOLDOWN. When a trajectory crosses the virtual line, the system emits a count and puts that identity into COOLDOWN for 30 frames, during which it cannot trigger another count. Once the cooldown ends, the identity can be counted again on the next crossing. The mechanism therefore guarantees one count per identity within each cooldown window, not one count for the whole session. Although RoI filtering is available in the implementation, it was not enabled in the experimental configuration.
 
 ### 3.4 Dataset, Experimental Setup and Evaluation Metrics
 
@@ -83,8 +83,8 @@ Three public datasets are used, according to the characteristics and purpose of 
 Counting error is reported with two metrics, because the two can disagree. Per-sequence error is the mean relative difference over sequences, as in Eq. (3), which makes it more sensitive to sequences with few objects and lets it reflect error variation between individual sequences. Aggregate error uses the difference between total predictions and total ground truth, as in Eq. (4), which better captures the overall bias of the system; a negative value indicates under-counting. The counting ground truth is obtained by applying the same counting logic to the ground-truth trajectories. These metrics therefore measure the sensitivity of the counting logic to imperfect trajectories, not the true number of people at the site.
 
 <!-- Eq. (3) and Eq. (4): reproduce with Word Equation Editor -->
-Eq. (3)  (Pᵢ − Gᵢ) / Gᵢ
-Eq. (4)  (ΣPᵢ − ΣGᵢ) / ΣGᵢ
+Eq. (3)  (*P*<sub>i</sub> − *G*<sub>i</sub>) / *G*<sub>i</sub>
+Eq. (4)  (Σ*P*<sub>i</sub> − Σ*G*<sub>i</sub>) / Σ*G*<sub>i</sub>
 
 The system evaluation has four main scenarios (S). S1 evaluates detector performance in terms of accuracy and latency, and compares zero-shot against fine-tuned configurations. S2 compares trackers using the TrackEval framework with HOTA, IDF1, MOTA and ID switch on identical detection output. S3 evaluates the effect of the counting logic by comparing Model A and Model B, and by a sensitivity analysis of cooldown and confidence threshold. S4 evaluates end-to-end performance through FPS and tail latency at P90, P95 and P99 on an RTX 4090 server GPU and an AMD RX 6600 edge device with DirectML. The system counts as meeting real-time requirements when it sustains at least 30 FPS.
 
@@ -275,13 +275,13 @@ ID stability and trajectory validation therefore matter for holding counting acc
 
 | Symbol | Meaning |
 | --- | --- |
-| CE | Counting error |
-| D | Crossing-direction cross product |
-| CD | Cooldown length, frames |
-| Pᵢ | Predicted count for sequence i |
-| Gᵢ | Ground-truth count for sequence i |
-| p1, p2 | Last two points of the trajectory segment |
-| q1, q2 | Two points defining the virtual line |
+| *CE* | Counting error |
+| *D* | Crossing-direction cross product |
+| *CD* | Cooldown length, frames |
+| *P*<sub>i</sub> | Predicted count for sequence *i* |
+| *G*<sub>i</sub> | Ground-truth count for sequence *i* |
+| *p*<sub>1</sub>, *p*<sub>2</sub> | Last two points of the trajectory segment |
+| *q*<sub>1</sub>, *q*<sub>2</sub> | Two points defining the virtual line |
 
 ## References
 
@@ -309,7 +309,7 @@ ID stability and trajectory validation therefore matter for holding counting acc
 
 [11] P. Sun et al., "DanceTrack: Multi-Object Tracking in Uniform Appearance and Diverse Motion," pp. 20993–21002.
 
-[12] A. D. Sappa, "A Decade of You Only Look Once (YOLO) for Object Detection: A Review," IEEE Access, vol. 13, no. November, pp. 192747–192794, 2025, doi: 10.1109/ACCESS.2025.3630988.
+[12] A. D. Sappa, "A Decade of You Only Look Once (YOLO) for Object Detection: A Review," *IEEE Access*, vol. 13, no. November, pp. 192747–192794, 2025, doi: 10.1109/ACCESS.2025.3630988.
 
 [13] A. Wang et al., "YOLOv10: Real-Time End-to-End Object Detection," no. NeurIPS, pp. 1–28, 2024.
 
@@ -325,7 +325,7 @@ ID stability and trajectory validation therefore matter for holding counting acc
 
 [19] M. A. Khan, H. Menouar, R. Hamila, and A. Abu-dayya, "Crowd counting at the edge using weighted knowledge distillation," pp. 1–16, 2025.
 
-[20] M. R. Holla and D. S. M. Darshan, "Optimizing accuracy and efficiency in real-time people counting with cascaded object detection," Int. J. Inf. Technol., 2024, doi: 10.1007/s41870-024-02153-w.
+[20] M. R. Holla and D. S. M. Darshan, "Optimizing accuracy and efficiency in real-time people counting with cascaded object detection," *Int. J. Inf. Technol.*, 2024, doi: 10.1007/s41870-024-02153-w.
 
 [21] S. Diaz-santos and P. Caballero-gil, "Real-Time Passenger Flow Analysis in Tram Stations Using YOLO-Based Computer Vision and Edge AI on Jetson Nano," 2025.
 
@@ -343,8 +343,8 @@ ID stability and trajectory validation therefore matter for holding counting acc
 
 [28] M. Tracking, E. Ristani, F. Solera, R. Zou, R. Cucchiara, and C. Tomasi, "Performance Measures and a Data Set for Multi-Target, Multi-Camera Tracking," vol. 1.
 
-[29] C. Mccarthy, H. Ghaderi, F. Martí, P. Jayaraman, and H. Dia, "Video-based automatic people counting for public transport: On-bus versus," Computers in Industry, vol. 164, no. September 2024, p. 104195, 2025, doi: 10.1016/j.compind.2024.104195.
+[29] C. Mccarthy, H. Ghaderi, F. Martí, P. Jayaraman, and H. Dia, "Video-based automatic people counting for public transport: On-bus versus," *Computers in Industry*, vol. 164, no. September 2024, p. 104195, 2025, doi: 10.1016/j.compind.2024.104195.
 
 [30] L. Song, L. Han, J. Wang, H. Feng, and R. Ji, "Optimization of Indoor Pedestrian Counting Based on Target Detection and Tracking," pp. 1–20, 2026.
 
-[31] J. O'Rourke, Computational Geometry in C, 2nd ed. Cambridge University Press, 1998.
+[31] J. O'Rourke, *Computational Geometry in C*, 2nd ed. Cambridge University Press, 1998.
