@@ -147,7 +147,7 @@ K1+K2 — pembuka §4.1.1 sekaligus paragraf trade-off (menggantikan potongan "B
 
 K3 — penutup §4.1.2 (menggantikan kalimat pemilihan konfigurasi):
 
-"YOLO26s dipakai saat GPU tersedia, YOLO26n untuk komputasi terbatas. YOLOv10n dan YOLOv11n tidak dilanjutkan karena tidak menyediakan jalur skala setara, dan YOLOv11s tidak di-fine-tune di sini sehingga perbandingan tier s memakai benchmark vendor (48,6 berbanding 47,0 AP)."
+"YOLO26s ditetapkan sebagai konfigurasi operasional pada perangkat GPU, sedangkan YOLO26n disiapkan untuk perangkat berdaya terbatas. YOLOv10n dan YOLOv11n tidak dilanjutkan karena tidak menyediakan jalur skala setara, dan YOLOv11s tidak di-fine-tune di sini sehingga perbandingan tier s memakai benchmark vendor (48,6 berbanding 47,0 AP)."
 
 **Kenapa tiga kalimat ini cukup.** Tier dipisah (K1), trade-off berangka dengan YOLO26n sebagai pemenang efisiensi (K1), dan pertanyaan "kenapa bukan YOLOv11s" terjawab terbuka (K3). Klausa "(nilai untuk model rilis yang sudah difusi)" dipindahkan ke catatan kaki Tabel 1, bukan di badan teks, supaya hemat baris.
 
