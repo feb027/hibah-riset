@@ -13,6 +13,8 @@ Hasilnya berupa potongan tabel markdown siap tempel.
 """
 from __future__ import annotations
 
+import contextlib
+import io
 import re
 from pathlib import Path
 
@@ -40,24 +42,29 @@ def main() -> None:
             continue
 
         model = YOLO(str(weights))
-        # info() mencetak ringkasan; ambil angkanya dari layer agar bisa dipakai di tabel
-        model.info(verbose=False)
-        n_params = sum(p.numel() for p in model.model.parameters())
-        n_layers = len(list(model.model.modules()))
-        # GFLOPs pada resolusi 640 (nilai tercetak info() mengikuti imgsz model)
-        gflops = getattr(model.model, "gflops", None)
-        if callable(gflops):  # beberapa versi menyimpan callable
-            gflops = gflops(640)
+
+        # Angka diambil dari keluaran model.info() karena atribut .gflops tidak selalu terisi
+        # dan nilainya berbeda antar versi ultralytics.
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            model.info()
+        info = buf.getvalue()
+        print(info.strip())
+
+        m_params = re.search(r"([\d,]+)\s+parameters", info)
+        m_gflops = re.search(r"([\d.]+)\s+GFLOPs", info)
+        n_params = int(m_params.group(1).replace(",", "")) if m_params else sum(
+            p.numel() for p in model.model.parameters())
+        gflops = float(m_gflops.group(1)) if m_gflops else float("nan")
         nc = getattr(model.model, "nc", None)
 
         rows.append({
             "label": label,
             "params": n_params / 1e6,
-            "gflops": float(gflops) if gflops else float("nan"),
+            "gflops": gflops,
             "nc": nc,
-            "layers": n_layers,
         })
-        print(f"{label}: {n_params/1e6:.2f} juta parameter, {gflops} GFLOPs, nc={nc}")
+        print(f"--> {label}: {n_params/1e6:.2f} juta parameter, {gflops} GFLOPs, nc={nc}\n")
 
     if not rows:
         raise SystemExit("tidak ada bobot best.pt yang ditemukan; cek folder runs/detect")
@@ -65,7 +72,8 @@ def main() -> None:
     print("\n| Arsitektur | Params (juta) | FLOPs (G) |")
     print("|---|---|---|")
     for r in rows:
-        print(f"| {r['label']} | {r['params']:.2f} | {r['gflops']:.2f} |")
+        g = "n/a" if r["gflops"] != r["gflops"] else f"{r['gflops']:.2f}"
+        print(f"| {r['label']} | {r['params']:.2f} | {g} |")
 
     ncs = {r["nc"] for r in rows}
     print(f"\njumlah kelas pada bobot fine-tune: {ncs}")
@@ -73,9 +81,10 @@ def main() -> None:
         print("Catatan untuk naskah: bobot dilatih dengan satu kelas (person), sehingga jumlah "
               "parameter head berbeda dari angka COCO 80 kelas pada paper vendor. Pakai angka "
               "di tabel atas untuk Tabel 1, bukan angka paper.")
-    else:
-        print("Catatan: jumlah kelas bukan 1; periksa kembali konfigurasi dataset sebelum "
-              "menyimpulkan perbedaan parameter terhadap paper vendor.")
+    if any(r["gflops"] != r["gflops"] for r in rows):
+        print("\nFLOPs belum terbaca dari info(). Jalankan sekali lagi dengan "
+              "`model.info(verbose=True)` atau pakai ultralytics.utils.torch_utils.get_flops, "
+              "lalu salin angka GFLOPs yang tercetak di atas.")
 
 
 if __name__ == "__main__":
