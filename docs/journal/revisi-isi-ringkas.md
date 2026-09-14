@@ -126,14 +126,16 @@ Regenerasi kalau perlu ubah font atau ukuran:
 
 ### BLOK 13 — Isi placeholder parameter/GFLOPs + jawaban "kenapa bukan YOLOv11s" (§4.1)
 
-**Tabel 1 versi diperluas** — tambah dua kolom terakhir, semua angka bersumber:
+**Tabel 1 versi diperluas** — tambah kolom Tier, Params, dan FLOPs. Semua angka bersumber:
 
-| Arsitektur | NMS-free | Precision | Recall | mAP@0.5 | mAP@0.5:0.95 | Params (juta) | FLOPs (G) |
-|---|---|---|---|---|---|---|---|
-| YOLO26n | ya | 0,8230 | 0,6888 | 0,7814 | 0,4497 | 2,4 | 5,4 |
-| YOLO26s | ya | 0,8480 | 0,7455 | 0,8266 | 0,4974 | 9,5 | 20,7 |
-| YOLOv10n | ya | 0,8212 | 0,6892 | 0,7826 | 0,4521 | 2,3 | 6,7 |
-| YOLOv11n | tidak | 0,8352 | 0,6965 | 0,7855 | 0,4463 | 2,6 | 6,5 |
+| Arsitektur | Tier | NMS-free | Precision | Recall | mAP@0.5 | mAP@0.5:0.95 | Params (juta) | FLOPs (G) |
+|---|---|---|---|---|---|---|---|---|
+| YOLO26n | n | ya | 0,8230 | 0,6888 | 0,7814 | 0,4497 | 2,4 | 5,4 |
+| YOLOv10n | n | ya | 0,8212 | 0,6892 | 0,7826 | 0,4521 | 2,3 | 6,7 |
+| YOLOv11n | n | tidak | 0,8352 | 0,6965 | 0,7855 | 0,4463 | 2,6 | 6,5 |
+| YOLO26s | s | ya | 0,8480 | 0,7455 | 0,8266 | 0,4974 | 9,5 | 20,7 |
+
+Catatan: urutkan tier nano dulu, YOLO26s di baris terakhir dan dipisahkan garis, supaya terbaca bahwa ia bukan pembanding setara. Ini menutup keberatan "bandingannya campur n dan s".
 
 Sumber angka kolom Params/FLOPs:
 - YOLO26n dan YOLO26s: Jocher dkk. (2026), Tabel 7 (S050).
@@ -142,11 +144,21 @@ Sumber angka kolom Params/FLOPs:
 
 Catatan kaki untuk tabel: "Nilai parameter dan FLOPs adalah untuk model rilis yang sudah difusi (Conv dan BatchNorm digabung, cabang one-to-many dilepas); checkpoint pra-latih memuat arsitektur pelatihan penuh dan angkanya bisa lebih tinggi."
 
-**Kalimat pengganti untuk paragraf §4.1** (sudah termasuk jawaban atas pertanyaan "kenapa bukan YOLOv11s"):
+**Kalimat pengganti untuk paragraf §4.1** (tiga kalimat; sudah termasuk jawaban atas "kenapa bukan YOLOv11s" dan keberatan tier campur). Ambil yang ini, jangan versi sebelumnya.
 
-"Pada skala nano, YOLOv11n unggul pada mAP@0.5 (0,7855 berbanding 0,7814), namun pada mAP@0.5:0.95, metrik dengan ambang IoU lebih ketat yang lebih mencerminkan presisi lokalisasi, YOLO26n justru lebih baik (0,4497 berbanding 0,4463). Keunggulan YOLOv11n pada mAP@0.5 karena itu tidak konsisten pada evaluasi IoU yang lebih ketat, sehingga arsitektur NMS-free tetap dipertahankan sebagai basis pengembangan. Peningkatan dari YOLO26n ke YOLO26s menaikkan mAP@0.5:0.95 sebesar 0,0477 dan recall sebesar 5,7 poin, dengan parameter naik dari 2,4 juta ke 9,5 juta dan kebutuhan komputasi dari 5,4 ke 20,7 GFLOPs (Jocher dkk., 2026); nilai tersebut untuk model rilis yang sudah difusi. Pilihan tier s, dan bukan tier s dari famili sebelumnya, bertumpu pada benchmark resmi: pada ukuran model setara, YOLO26s mencatat 48,6 AP dibandingkan 47,0 pada YOLO11s, dengan FLOPs lebih rendah (20,7 berbanding 21,5 G) dan parameter setara (9,5 berbanding 9,4 juta). YOLOv11s tidak di-fine-tune pada penelitian ini, sehingga perbandingan tier s tersebut bersandar pada benchmark vendor dan bukan pada pengukuran sendiri; yang diukur secara langsung pada penelitian ini adalah perbandingan tier nano pada Tabel 1."
+K1 — pembuka §4.1.1 (menggantikan potongan "Berdasarkan Table 1," yang menggantung di PDF v3):
 
-**Kenapa paragraf ini penting.** Tanpa kalimat tier s, reviewer akan bertanya mengapa bukan YOLOv11s setelah v11n menang di satu metrik pada tier nano. Tanpa klausa batasan pada kalimat terakhir, reviewer akan membaca benchmark vendor sebagai hasil eksperimen sendiri. Keduanya wajib ada; memilih salah satu saja tetap menyisakan lubang.
+"Berdasarkan Table 1, pada tier nano YOLOv11n menang tipis pada mAP@0.5 (0,7855 berbanding 0,7814) sedangkan YOLO26n menang pada mAP@0.5:0.95 (0,4497 berbanding 0,4463); YOLO26s berada satu tier di atas ketiganya sehingga dilaporkan sebagai konfigurasi lanjutan, bukan sebagai pembanding setara."
+
+K2 — paragraf trade-off:
+
+"Peningkatan dari YOLO26n ke YOLO26s menghasilkan kenaikan mAP@0.5:0.95 sebesar 0,0477 dan recall sebesar 5,7 poin, dengan parameter naik dari 2,4 ke 9,5 juta dan kebutuhan komputasi dari 5,4 ke 20,7 GFLOPs (Jocher dkk., 2026; nilai untuk model rilis yang sudah difusi). Trade-off-nya terbaca pada Table 1: YOLO26n adalah arsitektur paling ringan di antara tiga model nano, 5,4 G berbanding 6,5 G pada YOLOv11n dan 6,7 G pada YOLOv10n, sehingga pada tier nano keunggulan famili ini terletak pada efisiensi komputasi, bukan pada akurasi; tier s dipakai ketika akurasi menjadi prioritas."
+
+K3 — penutup §4.1.2 (menggantikan kalimat pemilihan konfigurasi):
+
+"Berdasarkan hasil tersebut, YOLO26s dipakai ketika GPU tersedia karena memberi akurasi tertinggi di antara varian NMS-free pada beban komputasi yang masih menerima, sedangkan YOLO26n dipertahankan untuk kondisi komputasi terbatas. YOLOv10n dan YOLOv11n tidak dilanjutkan karena keduanya tidak menyediakan jalur skala yang setara di dalam rilis yang dipakai, dan YOLOv11s tidak di-fine-tune pada penelitian ini sehingga perbandingan tier s terhadapnya bersandar pada benchmark vendor, 48,6 AP pada YOLO26s berbanding 47,0 pada YOLOv11s dengan parameter setara dan FLOPs lebih rendah, bukan pada pengukuran sendiri."
+
+**Kenapa tiga kalimat ini.** K1 menutup keberatan "bandingan campur n dan s". K2 menutup keberatan "v11 menang lebih banyak metrik" dengan mengubah klaim dari akurasi menjadi efisiensi, disertai angka yang membuktikan. K3 menutup pertanyaan "kenapa bukan YOLOv11s" sekaligus tidak menyembunyikan bahwa tier s tidak diuji sendiri.
 
 ---
 
