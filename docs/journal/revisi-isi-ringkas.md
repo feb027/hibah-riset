@@ -143,7 +143,9 @@ Catatan kaki untuk tabel: "Parameter dan FLOPs diukur pada bobot hasil fine-tuni
 
 K1+K2 — pembuka §4.1.1 sekaligus paragraf trade-off (menggantikan potongan "Berdasarkan Table 1," yang menggantung di PDF v3):
 
-"Pada tier nano, YOLOv11n menang tipis di mAP@0.5 (0,7855 berbanding 0,7814) tetapi kalah di mAP@0.5:0.95 (0,4463 berbanding 0,4497), sedangkan YOLO26n menjadi model paling ringan di antara ketiganya dengan 2,50 juta parameter dan 5,8 GFLOPs, dibandingkan 2,59 juta dan 6,4 G pada YOLOv11n serta 2,71 juta dan 8,4 G pada YOLOv10n. YOLO26s berada satu tier di atas ketiganya dengan 9,95 juta parameter dan 22,5 GFLOPs, sehingga dilaporkan sebagai konfigurasi lanjutan ketika akurasi diprioritaskan."
+"Table 1 memisahkan hasil menurut tier. Pada tier nano, YOLOv11n unggul tipis pada mAP@0.5 (0,7855 berbanding 0,7814) tetapi berada di bawah YOLO26n pada mAP@0.5:0.95 (0,4463 berbanding 0,4497). YOLO26n juga yang paling ringan di tier tersebut, yaitu 2,50 juta parameter dan 5,8 GFLOPs; YOLOv11n 2,59 juta dan 6,4 G; YOLOv10n 2,71 juta dan 8,4 G. YOLO26s berada di tier di atasnya dengan 9,95 juta parameter dan 22,5 GFLOPs, sehingga dilaporkan sebagai konfigurasi lanjutan ketika akurasi diprioritaskan."
+
+Catatan gaya: jangan menumpuk pembuka adverbial ("Berdasarkan Table 1, Pada tier nano, ...") dan jangan merangkai lebih dari satu penghubung dalam satu kalimat (tetapi + sedangkan + dibandingkan + serta dalam satu tarikan napas adalah run-on). Daftar angka sebaiknya dipisah titik koma, bukan koma.
 
 K3 — penutup §4.1.2 (menggantikan kalimat pemilihan konfigurasi):
 
