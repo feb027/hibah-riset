@@ -92,7 +92,7 @@ The system evaluation has four main scenarios (S). S1 evaluates detector perform
 
 ### 4.1 Object Detection Results
 
-Four detection models — YOLO26n, YOLO26s, YOLOv10n and YOLOv11n — were fine-tuned on CrowdHuman with identical training settings. Evaluation used the 4,370-image validation set with 103,115 full-body annotation boxes. CrowdHuman carries no temporal information, so this section concentrates on detection performance.
+Four detection models were fine-tuned on CrowdHuman under identical training settings: YOLO26n, YOLO26s, YOLOv10n and YOLOv11n. Evaluation used the 4,370-image validation set with 103,115 full-body annotation boxes. CrowdHuman carries no temporal information, so this section concentrates on detection performance.
 
 #### 4.1.1 Detection accuracy
 
@@ -148,7 +148,7 @@ On that basis, YOLO26s is chosen when a GPU is available, because it gives the b
 
 ### 4.2 Multi-Object Tracking Results
 
-This section evaluates the tracking layer that links detection boxes across frames into temporal identities. The trackers compared on identical detection — OC-SORT, Deep-OC-SORT, DiffMOT and LightTrack — all run on the same YOLO26s output. Evaluation used TrackEval on MOT20-train and DanceTrack-val. MOT20 is dense: an average of 179 detections per frame, peaking at 272. Under those conditions DiffMOT gives the best results, with HOTA 44.37, MOTA 60.91 and IDF1 53.86, and the lowest IDSW at 6,905. OC-SORT, by contrast, has MOTA 55.98 but produces 14,293 IDSW and 27,646 fragmentations. The results in Table 5 show that high detection accuracy does not guarantee stable identity under occlusion.
+This section evaluates the tracking layer that links detection boxes across frames into temporal identities. All four trackers run on the same YOLO26s output: OC-SORT, Deep-OC-SORT, DiffMOT and LightTrack. Evaluation used TrackEval on MOT20-train and DanceTrack-val. MOT20 is dense: an average of 179 detections per frame, peaking at 272. Under those conditions DiffMOT gives the best results, with HOTA 44.37, MOTA 60.91 and IDF1 53.86, and the lowest IDSW at 6,905. OC-SORT, by contrast, has MOTA 55.98 but produces 14,293 IDSW and 27,646 fragmentations. The results in Table 5 show that high detection accuracy does not guarantee stable identity under occlusion.
 
 **Table 5.** TrackEval results on identical YOLO26 detection
 
@@ -203,7 +203,7 @@ Fig. 4(b) shows the trade-off between false positives and false negatives agains
 
 ### 4.5 End-to-End Performance
 
-This section integrates every pipeline stage — detection, Re-ID feature extraction, tracker association and counting logic — to assess readiness for real-time operation. The reference is 30 FPS with a latency budget of 33.3 ms per frame. The test uses the operational configuration from Section 4.4 (cooldown 30 frames, confidence 0.30) on MOT20-02, where density sits at around 34–38 people per frame. Latency is measured in microseconds for each computation stage.
+This section integrates every pipeline stage (detection, Re-ID feature extraction, tracker association and counting logic) to assess readiness for real-time operation. The reference is 30 FPS with a latency budget of 33.3 ms per frame. The test uses the operational configuration from Section 4.4 (cooldown 30 frames, confidence 0.30) on MOT20-02, where density sits at around 34–38 people per frame. Latency is measured in microseconds for each computation stage.
 
 #### 4.5.1 Latency decomposition on the target device
 
@@ -231,7 +231,7 @@ The evaluation shows that each pipeline layer has a different limiting factor. I
 
 In the counting logic, the state machine suppresses over-counting effectively, at an added computational cost of only 0.11 ms per frame: the detection-tracking pipeline moves from 24.50 ms to 24.61 ms end-to-end, a 0.4% increase. Cooldown selection still needs to be matched to object density and movement patterns. End-to-end, the operational configuration reaches 24.61 ms per frame (40.6 FPS) on the RTX 4090, with 95% of frames inside the 33.3 ms budget. On edge devices, OC-SORT is the better fit for holding real time, while Deep-OC-SORT suits GPU hardware when identity consistency is the priority.
 
-These findings are limited by the use of a single seed, by public benchmarks with offline detection, and by device-dependent latency. Overall, people counting performance is determined by how detection, identity, tracking and counting logic align, not by any single component on its own.
+These findings are limited by the use of a single seed, by public benchmarks with offline detection, and by device-dependent latency. People counting performance is therefore set by how detection, identity, tracking and counting logic align, rather than by any single component on its own.
 
 ## 5. Conclusions
 

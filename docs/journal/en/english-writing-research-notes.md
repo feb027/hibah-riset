@@ -100,6 +100,12 @@ and the Blind Review template.
    ("Computational cost is therefore dominated by detection and tracking." / "CrowdHuman is dense.").
 5. Nominalisations converted back to verbs where the noun added no meaning.
 6. Every number re-read against the Indonesian master after the decimal-separator conversion.
+7. Em-dash audit — the raw count matters less than the **pattern**. A list framed by a *paired* em-dash
+   (`The trackers — A, B, C — all run …`) reads as AI even once or twice in a paper. Convert to a colon,
+   brackets, or a restructured clause. Keep at most one em-dash in the whole manuscript, and only for a real
+   interruption; the en-dash in numeric ranges (`88.7–155.1%`) is unaffected and stays.
+8. Opener audit on paragraphs — `Overall,`, `In summary,`, `Taken together,` used to launch a concluding
+   paragraph. Cut the opener and let the claim carry itself.
 
 ## 6. Open items before submission
 
