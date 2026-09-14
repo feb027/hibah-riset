@@ -43,19 +43,25 @@ def main() -> None:
 
         model = YOLO(str(weights))
 
-        # Angka diambil dari keluaran model.info() karena atribut .gflops tidak selalu terisi
-        # dan nilainya berbeda antar versi ultralytics.
+        # Angka diambil dari keluaran model.info(). Ringkasan dicetak lewat logging Ultralytics
+        # yang menulis ke stderr, jadi stdout DAN stderr sama-sama harus ditangkap.
         buf = io.StringIO()
-        with contextlib.redirect_stdout(buf):
+        with contextlib.redirect_stdout(buf), contextlib.redirect_stderr(buf):
             model.info()
         info = buf.getvalue()
         print(info.strip())
 
         m_params = re.search(r"([\d,]+)\s+parameters", info)
-        m_gflops = re.search(r"([\d.]+)\s+GFLOPs", info)
-        n_params = int(m_params.group(1).replace(",", "")) if m_params else sum(
-            p.numel() for p in model.model.parameters())
+        m_gflops = re.search(r"([\d.]+)\s*GFLOPs", info)
+        # parameter dihitung langsung dari model: selalu tersedia, tidak bergantung format log
+        n_params = sum(p.numel() for p in model.model.parameters())
         gflops = float(m_gflops.group(1)) if m_gflops else float("nan")
+        if gflops != gflops:
+            try:
+                from ultralytics.utils.torch_utils import get_flops
+                gflops = float(get_flops(model.model, imgsz=640))
+            except Exception as exc:  # noqa: BLE001
+                print(f"[peringatan] GFLOPs tidak terbaca: {exc}")
         nc = getattr(model.model, "nc", None)
 
         rows.append({
