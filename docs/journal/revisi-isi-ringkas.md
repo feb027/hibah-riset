@@ -147,7 +147,9 @@ K1+K2 — pembuka §4.1.1 sekaligus paragraf trade-off (menggantikan potongan "B
 
 K3 — penutup §4.1.2 (menggantikan kalimat pemilihan konfigurasi):
 
-"YOLO26s ditetapkan sebagai konfigurasi operasional pada perangkat GPU, sedangkan YOLO26n disiapkan untuk perangkat berdaya terbatas. YOLOv10n dan YOLOv11n tidak dilanjutkan karena tidak menyediakan jalur skala setara, dan YOLOv11s tidak di-fine-tune di sini sehingga perbandingan tier s memakai benchmark vendor (48,6 berbanding 47,0 AP)."
+"Untuk menjaga sistem tetap dapat dijalankan pada perangkat dengan kapasitas komputasi berbeda, YOLO26s ditetapkan sebagai konfigurasi operasional pada perangkat GPU, sedangkan YOLO26n disiapkan untuk perangkat sumber daya terbatas. YOLOv10n dan YOLOv11n tidak dilanjutkan karena tidak menyediakan jalur skala setara, dan YOLOv11s tidak di-fine-tune di sini sehingga perbandingan tier s memakai benchmark vendor (48,6 berbanding 47,0 AP)."
+
+Catatan: jangan menulis "unconditional environment" (bukan istilah lazim) dan jangan mengklaim "adaptabilitas model" — yang benar-benar dilakukan adalah menyediakan dua konfigurasi untuk dua kelas perangkat. Kalau pembimbing tetap ingin kata adaptabilitas, pakai "adaptabilitas sistem terhadap heterogenitas perangkat" dan tambahkan satu kalimat pembatas di §4.6 bahwa adaptabilitas di sini berupa pemilihan konfigurasi, bukan penyesuaian otomatis saat berjalan.
 
 **Kenapa tiga kalimat ini cukup.** Tier dipisah (K1), trade-off berangka dengan YOLO26n sebagai pemenang efisiensi (K1), dan pertanyaan "kenapa bukan YOLOv11s" terjawab terbuka (K3). Klausa "(nilai untuk model rilis yang sudah difusi)" dipindahkan ke catatan kaki Tabel 1, bukan di badan teks, supaya hemat baris.
 
