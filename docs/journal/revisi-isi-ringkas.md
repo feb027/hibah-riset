@@ -143,9 +143,9 @@ Catatan kaki untuk tabel: "Parameter dan FLOPs diukur pada bobot hasil fine-tuni
 
 K1+K2 — pembuka §4.1.1 sekaligus paragraf trade-off (menggantikan potongan "Berdasarkan Table 1," yang menggantung di PDF v3):
 
-"Table 1 memisahkan hasil menurut tier. Pada tier nano, YOLOv11n unggul tipis pada mAP@0.5 (0,7855 berbanding 0,7814) tetapi berada di bawah YOLO26n pada mAP@0.5:0.95 (0,4463 berbanding 0,4497). YOLO26n juga yang paling ringan di tier tersebut, yaitu 2,50 juta parameter dan 5,8 GFLOPs; YOLOv11n 2,59 juta dan 6,4 G; YOLOv10n 2,71 juta dan 8,4 G. YOLO26s berada di tier di atasnya dengan 9,95 juta parameter dan 22,5 GFLOPs, sehingga dilaporkan sebagai konfigurasi lanjutan ketika akurasi diprioritaskan."
+"Hasil fine-tuning keempat arsitektur, dipisahkan menurut tier, ditampilkan pada Table 1. Pada tier nano, YOLOv11n unggul tipis pada mAP@0.5 (0,7855 berbanding 0,7814) tetapi berada di bawah YOLO26n pada mAP@0.5:0.95 (0,4463 berbanding 0,4497). YOLO26n juga yang paling ringan di tier tersebut, yaitu 2,50 juta parameter dan 5,8 GFLOPs; YOLOv11n 2,59 juta dan 6,4 G; YOLOv10n 2,71 juta dan 8,4 G. YOLO26s berada di tier di atasnya dengan 9,95 juta parameter dan 22,5 GFLOPs, sehingga dilaporkan sebagai konfigurasi lanjutan ketika akurasi diprioritaskan."
 
-Catatan gaya: jangan menumpuk pembuka adverbial ("Berdasarkan Table 1, Pada tier nano, ...") dan jangan merangkai lebih dari satu penghubung dalam satu kalimat (tetapi + sedangkan + dibandingkan + serta dalam satu tarikan napas adalah run-on). Daftar angka sebaiknya dipisah titik koma, bukan koma.
+Catatan gaya: jangan menjadikan tabel sebagai subjek kalimat ("Table 1 memisahkan hasil..."). Yang benar: hasilnya yang dilaporkan, tabel disebut sebagai tempatnya ("... ditampilkan pada Table 1"). Hindari juga menumpuk pembuka adverbial ("Berdasarkan Table 1, Pada tier nano, ...") dan merangkai lebih dari satu penghubung dalam satu kalimat. Daftar angka dipisah titik koma, bukan koma.
 
 K3 — penutup §4.1.2 (menggantikan kalimat pemilihan konfigurasi):
 
