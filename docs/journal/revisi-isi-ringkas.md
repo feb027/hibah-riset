@@ -126,29 +126,24 @@ Regenerasi kalau perlu ubah font atau ukuran:
 
 ### BLOK 13 — Isi placeholder parameter/GFLOPs + jawaban "kenapa bukan YOLOv11s" (§4.1)
 
-**Tabel 1 versi diperluas** — tambah kolom Tier, Params, dan FLOPs. Semua angka bersumber:
+**Tabel 1 versi diperluas** — tambah kolom Tier, Params, dan FLOPs. Angka params/FLOPs diukur dari **bobot hasil fine-tuning sendiri** (hasil `scripts/journal/report_model_stats.py`), bukan dari tabel paper:
 
 | Arsitektur | Tier | NMS-free | Precision | Recall | mAP@0.5 | mAP@0.5:0.95 | Params (juta) | FLOPs (G) |
 |---|---|---|---|---|---|---|---|---|
-| YOLO26n | n | ya | 0,8230 | 0,6888 | 0,7814 | 0,4497 | 2,4 | 5,4 |
-| YOLOv10n | n | ya | 0,8212 | 0,6892 | 0,7826 | 0,4521 | 2,3 | 6,7 |
-| YOLOv11n | n | tidak | 0,8352 | 0,6965 | 0,7855 | 0,4463 | 2,6 | 6,5 |
-| YOLO26s | s | ya | 0,8480 | 0,7455 | 0,8266 | 0,4974 | 9,5 | 20,7 |
+| YOLO26n | n | ya | 0,8230 | 0,6888 | 0,7814 | 0,4497 | 2,50 | 5,8 |
+| YOLOv10n | n | ya | 0,8212 | 0,6892 | 0,7826 | 0,4521 | 2,71 | 8,4 |
+| YOLOv11n | n | tidak | 0,8352 | 0,6965 | 0,7855 | 0,4463 | 2,59 | 6,4 |
+| YOLO26s | s | ya | 0,8480 | 0,7455 | 0,8266 | 0,4974 | 9,95 | 22,5 |
 
 Catatan: urutkan tier nano dulu, YOLO26s di baris terakhir dan dipisahkan garis, supaya terbaca bahwa ia bukan pembanding setara. Ini menutup keberatan "bandingannya campur n dan s".
 
-Sumber angka kolom Params/FLOPs:
-- YOLO26n dan YOLO26s: Jocher dkk. (2026), Tabel 7 (S050).
-- YOLOv10n: Wang dkk. (2024), Tabel 1 (S003).
-- YOLOv11n: Jocher dkk. (2026), bagian pendahuluan, nilai YOLO11n dengan DFL (S050).
-
-Catatan kaki untuk tabel: "Nilai parameter dan FLOPs adalah untuk model rilis yang sudah difusi (Conv dan BatchNorm digabung, cabang one-to-many dilepas); checkpoint pra-latih memuat arsitektur pelatihan penuh dan angkanya bisa lebih tinggi."
+Catatan kaki untuk tabel: "Parameter dan FLOPs diukur pada bobot hasil fine-tuning dengan satu kelas (person) dan arsitektur pelatihan penuh, sehingga nilainya berbeda dari angka model terfusi pada Tabel 7 Jocher dkk. (2026) yang dilatih pada 80 kelas COCO."
 
 **Kalimat pengganti untuk paragraf §4.1** (versi pendek, tiga kalimat jadi dua blok). Ambil yang ini.
 
 K1+K2 — pembuka §4.1.1 sekaligus paragraf trade-off (menggantikan potongan "Berdasarkan Table 1," yang menggantung di PDF v3):
 
-"Pada tier nano, YOLOv11n menang tipis di mAP@0.5 (0,7855 berbanding 0,7814) tetapi kalah di mAP@0.5:0.95 (0,4463 berbanding 0,4497), sedangkan YOLO26n paling ringan di antara ketiganya (5,4 G; YOLOv11n 6,5 G; YOLOv10n 6,7 G). YOLO26s satu tier di atas ketiganya, dengan 9,5 juta parameter dan 20,7 GFLOPs berbanding 2,4 juta dan 5,4 G (Jocher dkk., 2026), sehingga dilaporkan sebagai konfigurasi lanjutan ketika akurasi diprioritaskan."
+"Pada tier nano, YOLOv11n menang tipis di mAP@0.5 (0,7855 berbanding 0,7814) tetapi kalah di mAP@0.5:0.95 (0,4463 berbanding 0,4497), sedangkan YOLO26n menjadi model paling ringan di antara ketiganya dengan 2,50 juta parameter dan 5,8 GFLOPs, dibandingkan 2,59 juta dan 6,4 G pada YOLOv11n serta 2,71 juta dan 8,4 G pada YOLOv10n. YOLO26s berada satu tier di atas ketiganya dengan 9,95 juta parameter dan 22,5 GFLOPs, sehingga dilaporkan sebagai konfigurasi lanjutan ketika akurasi diprioritaskan."
 
 K3 — penutup §4.1.2 (menggantikan kalimat pemilihan konfigurasi):
 
