@@ -141,11 +141,13 @@ Catatan kaki untuk tabel: "Parameter dan FLOPs diukur pada bobot hasil fine-tuni
 
 **Kalimat pengganti untuk paragraf §4.1** (versi pendek, tiga kalimat jadi dua blok). Ambil yang ini.
 
-K1+K2 — pembuka §4.1.1 sekaligus paragraf trade-off (menggantikan potongan "Berdasarkan Table 1," yang menggantung di PDF v3):
+K1+K2 — paragraf §4.1.1 (menggantikan potongan "Berdasarkan Table 1," yang menggantung di PDF v3). Struktur mengikuti pola Bab IV: angka → perbandingan → interpretasi → konsekuensi pemilihan, dengan rujukan tabel diselipkan di tengah:
 
-"Hasil fine-tuning keempat arsitektur, dipisahkan menurut tier, ditampilkan pada Table 1. Pada tier nano, YOLOv11n unggul tipis pada mAP@0.5 (0,7855 berbanding 0,7814) tetapi berada di bawah YOLO26n pada mAP@0.5:0.95 (0,4463 berbanding 0,4497). YOLO26n juga yang paling ringan di tier tersebut, yaitu 2,50 juta parameter dan 5,8 GFLOPs; YOLOv11n 2,59 juta dan 6,4 G; YOLOv10n 2,71 juta dan 8,4 G. YOLO26s berada di tier di atasnya dengan 9,95 juta parameter dan 22,5 GFLOPs, sehingga dilaporkan sebagai konfigurasi lanjutan ketika akurasi diprioritaskan."
+"Perbandingan antarvarian pada kelas ukuran yang sama, sebagaimana dirangkum pada Tabel 1, menunjukkan pertukaran yang tidak seragam antara akurasi dan biaya komputasi. Pada kelas nano, YOLOv11n mencatat mAP@0,5 tertinggi, yaitu 0,7855, sedangkan YOLO26n berada 0,0041 di bawahnya pada 0,7814. Arah yang berlawanan muncul pada mAP@0,5:0,95, dengan YOLO26n mencapai 0,4497 dan YOLOv11n 0,4463, sehingga keunggulan pada ambang IoU rendah tidak diikuti ketepatan lokalisasi yang lebih baik.
 
-Catatan gaya: jangan menjadikan tabel sebagai subjek kalimat ("Table 1 memisahkan hasil..."). Yang benar: hasilnya yang dilaporkan, tabel disebut sebagai tempatnya ("... ditampilkan pada Table 1"). Hindari juga menumpuk pembuka adverbial ("Berdasarkan Table 1, Pada tier nano, ...") dan merangkai lebih dari satu penghubung dalam satu kalimat. Daftar angka dipisah titik koma, bukan koma.
+Keunggulan YOLO26n yang konsisten terletak pada biaya komputasi, yaitu 2,50 juta parameter dan 5,8 GFLOPs, lebih rendah dibandingkan YOLOv11n (2,59 juta parameter; 6,4 GFLOPs) dan YOLOv10n (2,71 juta parameter; 8,4 GFLOPs). YOLO26s berada satu kelas ukuran di atasnya dengan 9,95 juta parameter dan 22,5 GFLOPs, sehingga varian tersebut relevan bila akurasi menjadi prioritas dan anggaran komputasi masih memadai; YOLOv10n dan YOLOv11n tidak dilanjutkan karena tidak menyediakan jalur kelas ukuran setara, dan YOLOv11s tidak di-fine-tune di sini sehingga perbandingan kelas tersebut memakai benchmark vendor (48,6 AP dibandingkan 47,0 AP)."
+
+Catatan gaya: jangan menjadikan tabel sebagai subjek kalimat ("Table 1 memisahkan hasil..."); selipkan rujukan tabel di dalam kalimat topik. Hindari penilaian tanpa angka ("unggul tipis", "lebih baik" tanpa nilai) dan konsistenkan satuan setiap penyebutan GFLOPs. Kata "berbanding" tetap dipakai untuk pasangan tetap seperti "berbanding lurus"; untuk perbandingan dua nilai pakai "dibandingkan".
 
 K3 — penutup §4.1.2 (menggantikan kalimat pemilihan konfigurasi):
 
