@@ -118,7 +118,28 @@ tidak tumbuh tanpa batas pada video berdurasi panjang. Komponen inilah yang memb
 yang menghitung objek per bingkai [21].
 
 ```mermaid
-{ARCH}
+flowchart TB
+    subgraph R1[" "]
+        direction LR
+        A0(["Video masukan"]) --> A1["Preprocessing<br/>resize 640 x 640,<br/>format tensor"] --> A2["Deteksi Objek<br/>YOLO26 head NMS-free"]
+    end
+    subgraph R2[" "]
+        direction LR
+        A3["Pelacakan utama<br/>Deep-OC-SORT"] --> A5["Logika Penghitungan<br/>RoI polygon, garis<br/>virtual, validasi arah"]
+        A4["Pelacakan ringan<br/>OC-SORT"] --> A5
+        A5 --> A6["ID State Memory<br/>TRACKING / COOLDOWN<br/>cooldown 30 bingkai"]
+        A6 --> A7(["Keluaran<br/>video beranotasi,<br/>CSV per bingkai, JSON"])
+    end
+    R1 --> R2
+
+    classDef deteksi fill:#ebf5fb,stroke:#2874a6
+    classDef lacak fill:#eafaf1,stroke:#1e8449
+    classDef hitung fill:#fef5e7,stroke:#d68910
+    class A2 deteksi
+    class A3,A4 lacak
+    class A5,A6 hitung
+    style R1 fill:#ffffff,stroke:#ffffff
+    style R2 fill:#ffffff,stroke:#ffffff
 ```
 
 Gambar 1. Arsitektur sistem RANCAGE.
@@ -148,7 +169,32 @@ metrik ini mengukur sensitifitas logika terhadap ketidaksempurnaan lintasan, buk
 lokasi.
 
 ```mermaid
-{TAH}
+flowchart TB
+    subgraph S1["1. Arsitektur Sistem, Persiapan Eksperimen, Koleksi Data"]
+        direction LR
+        A0(["Mulai"]) --> A1["Perancangan arsitektur,<br/>persiapan perangkat"] --> A2[/"CrowdHuman, MOT20,<br/>DanceTrack"/]
+    end
+    subgraph S2["2. Persiapan Data"]
+        direction LR
+        B1["Anotasi fbox amodal"] --> B2[/"Data Latih"/] --> B4["Augmentasi Data"]
+        B1 --> B3[/"Data Validasi"/]
+    end
+    subgraph S3["3. Pelatihan Model"]
+        direction LR
+        C1{{"YOLO26s"}}
+        C1 ~~~ C2
+        C2{{"YOLO26n"}}
+    end
+    subgraph S4["4. Evaluasi"]
+        direction LR
+        D1["OC-SORT, Deep-OC-SORT,<br/>DiffMOT, LightTrack-ReID"] --> D2["Logika Penghitungan<br/>Lintasan"] --> D3["Benchmarking FPS<br/>dan Latensi"] --> D4(["Selesai"])
+    end
+    S1 --> S2 --> S3 --> S4
+
+    style S1 fill:#fdecea,stroke:#c0392b
+    style S2 fill:#fef5e7,stroke:#d68910
+    style S3 fill:#eafaf1,stroke:#1e8449
+    style S4 fill:#ebf5fb,stroke:#2874a6
 ```
 
 Gambar 2. Tahapan penelitian.
@@ -163,7 +209,55 @@ Berkas `src/detector.py`. Katalog memisahkan model per tier ukuran agar perbandi
 tercampur dengan perbedaan kapasitas model. Kolom `nms_free` mencatat fakta arsitektural, bukan klaim kinerja.
 
 ```python
-{CODE_DETECTOR}
+DETECTOR_CATALOGUE: dict[str, dict] = {
+    # ---- NANO tier (apples-to-apples comparison) ----
+    "yolov10n": {
+        "model": "yolov10n.pt",
+        "source_id": "S003",
+        "description": "YOLOv10 nano (NeurIPS 2024). Tier-N anchor for NMS-free YOLO.",
+        "size": "nano",
+        "tier": "N",
+        "nms_free": True,
+    },
+    "yolov11n": {
+        "model": "yolo11n.pt",
+        "source_id": None,
+        "description": "YOLOv11 nano (Ultralytics 2024). Tier-N baseline.",
+        "size": "nano",
+        "tier": "N",
+        "nms_free": False,
+    },
+    "yolo26n": {
+        "model": "yolo26n.pt",
+        "source_id": "S001/S002",
+        "description": "YOLO26 nano. S001 preprint, S002 vendor doc.",
+        "size": "nano",
+        "tier": "N",
+        "nms_free": True,
+    },
+    # ---- SMALL tier (apples-to-apples comparison) ----
+    "yolo26s": {
+        "model": "yolo26s.pt",
+        "source_id": "S001/S002",
+        "description": "YOLO26 small.",
+        "size": "small",
+        "tier": "S",
+        "nms_free": True,
+    },
+    # ---- TRANSFORMER alternative ----
+    "rtdetr-l": {
+        "model": "rtdetr-l.pt",
+        "source_id": "S004",
+        "description": "RT-DETR large (CVPR 2024). NOT tier-comparable to YOLO nano/small.",
+        "size": "large",
+        "tier": "L-transformer",
+        "nms_free": True,
+    },
+}
+
+def detectors_by_tier(tier: str) -> list[str]:
+    """Return aliases for a given tier: 'N', 'S', 'M', or 'L-transformer'."""
+    return sorted(k for k, v in DETECTOR_CATALOGUE.items() if v.get("tier") == tier)
 ```
 
 **Mesin Status Penghitungan**
@@ -173,7 +267,63 @@ hitungan berulang melalui keadaan COOLDOWN. Uji perpotongan dan penentuan arah a
 `core/counting/detector.py`, memakai tes counterclockwise [31].
 
 ```python
-{CODE_COUNTER}
+class PeopleCounter:
+    """Manages tracking history and counts people crossing a virtual line using a
+    robust State Machine."""
+
+    def __init__(self, virtual_line: Line, cooldown_threshold: int = 30,
+                 roi: Polygon = None) -> None:
+        self.virtual_line = virtual_line
+        self.cooldown_threshold = cooldown_threshold
+        self.roi = roi
+        self.count_in = 0
+        self.count_out = 0
+        self._tracks: dict[int, TrackedObject] = {}
+
+    def update(self, track_id: int, current_centroid: Point) -> None:
+        """Update the position of a tracked object, advancing its state machine."""
+        # Jika ROI didefinisikan, abaikan centroid di luar ROI
+        if self.roi is not None:
+            if not PolygonDetector.is_inside(self.roi, current_centroid):
+                return
+
+        if track_id not in self._tracks:
+            self._tracks[track_id] = TrackedObject(id=track_id)
+
+        track = self._tracks[track_id]
+
+        # Simpan lintasan, batasi 10 titik agar RAM tidak bocor
+        track.history.append(current_centroid)
+        if len(track.history) > 10:
+            track.history.pop(0)
+
+        if len(track.history) < 2:
+            return
+
+        # 1. State: COOLDOWN (Debouncing)
+        if track.state == TrackState.COOLDOWN:
+            track.cooldown_frames -= 1
+            if track.cooldown_frames <= 0:
+                track.state = TrackState.TRACKING
+            return
+
+        # 2. State: TRACKING (evaluasi lintasan)
+        previous_centroid = track.history[-2]
+        trajectory = Line(start=previous_centroid, end=current_centroid)
+
+        intersects, direction = LineCrossDetector.check_crossing(
+            self.virtual_line, trajectory
+        )
+
+        if intersects:
+            if direction == "IN":
+                self.count_in += 1
+            elif direction == "OUT":
+                self.count_out += 1
+
+            # Setelah memotong garis, identitas masuk masa pendinginan
+            track.state = TrackState.COOLDOWN
+            track.cooldown_frames = self.cooldown_threshold
 ```
 
 **Pipeline End-to-End**
@@ -182,7 +332,91 @@ Berkas `src/pipeline.py`. Pipeline membaca video, menjalankan deteksi per bingka
 mencatat metrik per bingkai ke CSV, dan merangkum FPS serta latensi persentil ke JSON.
 
 ```python
-{CODE_PIPELINE}
+def run_smoke_test(
+    video_path: str | Path,
+    output_dir: str | Path,
+    detector_name: str = "yolov10s",
+    confidence_threshold: float = 0.25,
+    iou_threshold: float = 0.45,
+    max_frames: int | None = None,
+    device: str | None = None,
+) -> SmokeTestSummary:
+    """Run detector over a video and write annotated video + CSV + summary JSON."""
+    video_path = Path(video_path)
+    output_dir = Path(output_dir)
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    meta = probe_video(video_path)
+    detector = PeopleDetector(
+        detector_name=detector_name,
+        confidence_threshold=confidence_threshold,
+        iou_threshold=iou_threshold,
+        device=device,
+        person_only=True,
+    )
+
+    annotated_path = output_dir / f"annotated_{detector_name}.mp4"
+    csv_path = output_dir / f"per_frame_{detector_name}.csv"
+
+    latencies: list[float] = []
+    counts: list[int] = []
+    max_count = 0
+    max_count_frame = 0
+    total_person_detections = 0
+
+    def annotated_stream():
+        nonlocal max_count, max_count_frame, total_person_detections
+        with csv_path.open("w", newline="") as f:
+            writer = csv.writer(f)
+            writer.writerow(["frame_index", "person_count", "latency_ms", "fps_instant"])
+            for idx, frame in iter_frames(video_path):
+                t0 = time.perf_counter()
+                fd = detector.detect_frame(frame, frame_index=idx)
+                wall = (time.perf_counter() - t0) * 1000.0
+                boxes = [d.bbox_xyxy for d in fd.detections]
+                labels = [f"person {d.confidence:.2f}" for d in fd.detections]
+                annotated = draw_boxes(frame, boxes, labels=labels)
+                annotated = put_text(
+                    annotated,
+                    f"{detector_name} | frame {idx} | persons: {fd.person_count}",
+                )
+                writer.writerow([idx, fd.person_count, f"{fd.latency_ms:.3f}",
+                                 f"{1000.0 / wall:.2f}" if wall > 0 else "0"])
+                latencies.append(fd.latency_ms)
+                counts.append(fd.person_count)
+                total_person_detections += fd.person_count
+                if fd.person_count > max_count:
+                    max_count = fd.person_count
+                    max_count_frame = idx
+                if max_frames is not None and idx + 1 >= max_frames:
+                    break
+                yield annotated
+
+    fps_write = meta.fps if meta.fps > 0 else 25.0
+    write_video(annotated_path, annotated_stream(), fps=fps_write,
+                width=meta.width, height=meta.height)
+    processed_frames = len(counts)
+
+    summary = SmokeTestSummary(
+        detector=detector_name,
+        source_id=DETECTOR_CATALOGUE[detector_name]["source_id"],
+        video_path=str(video_path),
+        fps_video=meta.fps,
+        fps_processed=fps_write,
+        fps_avg=processed_frames / (sum(latencies) / 1000.0) if sum(latencies) > 0 else 0.0,
+        latency_mean_ms=float(np.mean(latencies)),
+        latency_p50_ms=float(np.percentile(latencies, 50)),
+        latency_p95_ms=float(np.percentile(latencies, 95)),
+        total_frames=processed_frames,
+        total_person_detections=total_person_detections,
+        mean_persons_per_frame=float(np.mean(counts)),
+        max_persons_in_frame=max_count,
+        max_persons_frame_index=max_count_frame,
+    )
+
+    summary_path = output_dir / f"summary_{detector_name}.json"
+    summary_path.write_text(json.dumps(asdict(summary), indent=2))
+    return summary
 ```
 
 **Hasil**
