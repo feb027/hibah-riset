@@ -1,0 +1,24 @@
+flowchart TB
+    A0(["Video masukan"])
+    A1["Preprocessing<br/>capture, resize 640 x 640, format tensor"]
+    A2["Deteksi Objek<br/>YOLO26 head NMS-free"]
+    A3["Pelacakan<br/>Deep-OC-SORT sebagai jalur utama"]
+    A4["Pelacakan ringan<br/>OC-SORT untuk sumber daya terbatas"]
+    A5["Logika Penghitungan<br/>RoI polygon + garis virtual + validasi arah"]
+    A6["ID State Memory<br/>TRACKING / COOLDOWN, cooldown 30 bingkai"]
+    A7(["Keluaran<br/>video beranotasi, CSV per bingkai, JSON ringkasan"])
+
+    A0 --> A1 --> A2
+    A2 --> A3
+    A2 --> A4
+    A3 --> A5
+    A4 --> A5
+    A5 --> A6
+    A6 -.->|"mencegah double counting"| A5
+    A6 --> A7
+
+    style A2 fill:#ebf5fb,stroke:#2874a6
+    style A3 fill:#eafaf1,stroke:#1e8449
+    style A4 fill:#eafaf1,stroke:#1e8449
+    style A5 fill:#fef5e7,stroke:#d68910
+    style A6 fill:#fef5e7,stroke:#d68910
