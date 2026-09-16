@@ -203,10 +203,7 @@ Gambar 2. Tahapan penelitian.
 
 ## KODE PROGRAM
 
-**Detektor dan Inferensi per Bingkai**
-
-Berkas `src/detector.py`. Katalog memisahkan model per tier ukuran agar perbandingan antar-arsitektur tidak
-tercampur dengan perbedaan kapasitas model. Kolom `nms_free` mencatat fakta arsitektural, bukan klaim kinerja.
+**Model**
 
 ```python
 DETECTOR_CATALOGUE: dict[str, dict] = {
@@ -259,12 +256,6 @@ def detectors_by_tier(tier: str) -> list[str]:
     """Return aliases for a given tier: 'N', 'S', 'M', or 'L-transformer'."""
     return sorted(k for k, v in DETECTOR_CATALOGUE.items() if v.get("tier") == tier)
 ```
-
-**Mesin Status Penghitungan**
-
-Berkas `core/counting/counter.py`. Kelas `PeopleCounter` mengelola riwayat lintasan tiap identitas dan menahan
-hitungan berulang melalui keadaan COOLDOWN. Uji perpotongan dan penentuan arah ada di
-`core/counting/detector.py`, memakai tes counterclockwise [31].
 
 ```python
 class PeopleCounter:
@@ -325,11 +316,6 @@ class PeopleCounter:
             track.state = TrackState.COOLDOWN
             track.cooldown_frames = self.cooldown_threshold
 ```
-
-**Pipeline End-to-End**
-
-Berkas `src/pipeline.py`. Pipeline membaca video, menjalankan deteksi per bingkai, menulis video beranotasi,
-mencatat metrik per bingkai ke CSV, dan merangkum FPS serta latensi persentil ke JSON.
 
 ```python
 def run_smoke_test(
@@ -419,59 +405,33 @@ def run_smoke_test(
     return summary
 ```
 
-**Hasil**
+**Hasil Training Model**
 
-Hasil fine-tuning empat arsitektur YOLO pada CrowdHuman. Konfigurasi YOLO26s mencapai mAP@0.5:0.95 sebesar
-0,4974 dan menjadi dasar pemilihan detektor operasional pada perangkat GPU.
+![Hasil Training Model](../../runs/detect/yolo26s_crowdhuman/results.png)
 
-![Gambar 3. Kurva hasil pelatihan YOLO26s pada CrowdHuman](../../runs/detect/yolo26s_crowdhuman/results.png)
+**Hasil Confusion Matrix**
 
-Gambar 3. Hasil pelatihan model.
+![Hasil Confusion Matrix](../../runs/detect/yolo26s_crowdhuman/confusion_matrix.png)
 
-![Gambar 4. Confusion matrix hasil pelatihan pada CrowdHuman](../../runs/detect/yolo26s_crowdhuman/confusion_matrix.png)
+**Hasil Perbandingan**
 
-Gambar 4. Hasil confusion matrix saat pelatihan.
+![Hasil Perbandingan](../../experiments/journal_figs/fig9_tracking_metrics.png)
 
-Perbandingan empat tracker pada luaran deteksi yang identik. Pada MOT20 yang berisi rata-rata 179 deteksi per
-bingkai dengan puncak 272 deteksi, DiffMOT menghasilkan HOTA 44,37, MOTA 60,91, dan IDF1 53,86 dengan IDSW
-terendah sebesar 6.905, sedangkan OC-SORT mencatat MOTA 55,98 tetapi menghasilkan 14.293 IDSW dan 27.646
-fragmentasi.
+**Hasil Validate**
 
-![Gambar 5. Perbandingan metrik pelacakan empat tracker](../../experiments/journal_figs/fig9_tracking_metrics.png)
+![Hasil Validate](../../experiments/journal_figs/fig5_counting_error.png)
 
-Gambar 5. Hasil perbandingan tracker.
+**Hasil Sensitivitas Cooldown dan Confidence**
 
-Galat hitung pada 29 sekuens. State machine dengan cooldown menurunkan galat dari rentang 88,7 sampai 155,1
-persen pada naive line crossing menjadi 13,08 persen pada jalur DiffMOT dan 16,71 persen pada jalur Deep-OC-SORT.
+![Hasil Sensitivitas Cooldown dan Confidence](../../experiments/journal_figs/fig4ab_cooldown_conf.png)
 
-![Gambar 6. Galat penghitungan per jalur pelacakan](../../experiments/journal_figs/fig5_counting_error.png)
+**Hasil Latensi**
 
-Gambar 6. Hasil validate, galat hitung per jalur pelacakan.
+![Hasil Latensi](../../experiments/journal_figs/fig8_latency_breakdown.png)
 
-Pola berbentuk U terlihat pada galat terhadap panjang cooldown, dengan MAE terendah 6,34 pada cooldown 30
-bingkai. Pada sisi confidence threshold, galat terendah 1,67 persen terjadi pada ambang 0,20, sedangkan rentang
-0,25 sampai 0,30 memberi performa lebih stabil dengan throughput di atas 40 FPS.
+**Hasil Detect**
 
-![Gambar 7. Sensitivitas cooldown dan confidence threshold](../../experiments/journal_figs/fig4ab_cooldown_conf.png)
-
-Gambar 7. Hasil uji sensitifitas cooldown dan confidence threshold.
-
-Dekomposisi latensi end-to-end pada RTX 4090. Total latensi 24,61 ms atau setara 40,6 FPS, masih di bawah
-anggaran 33,3 ms. Deteksi YOLO26 menyumbang 14,20 ms sebesar 57,7 persen, disusul tracker dan Re-ID 9,45 ms
-sebesar 38,4 persen. Preprocessing memerlukan 0,85 ms dan logika penghitungan hanya 0,11 ms.
-
-![Gambar 8. Dekomposisi latensi end-to-end per perangkat](../../experiments/journal_figs/fig8_latency_breakdown.png)
-
-Gambar 8. Hasil uji latensi end-to-end.
-
-Cuplikan kualitatif pada sekuens MOT20-02 yang memuat 34 sampai 38 orang per bingkai. DiffMOT dan OC-SORT
-sama-sama melacak 38 orang pada satu bingkai, sedangkan ground truth mencatat 59 orang. Selisih terbesar berada
-di area kerumunan padat, sehingga perbedaan tracker lebih tepat dinilai dari kestabilan identitas lintas waktu
-daripada satu bingkai.
-
-![Gambar 9. Cuplikan kualitatif hasil pelacakan](../../experiments/journal_figs/fig10_demo_qualitative.png)
-
-Gambar 9. Hasil detect.
+![Hasil Detect](../../experiments/journal_figs/fig10_demo_qualitative.png)
 
 ---
 
