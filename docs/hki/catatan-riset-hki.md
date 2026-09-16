@@ -212,6 +212,7 @@ Cara menutupnya:
 | `diagram-peta-metode-deteksi-tracking.mmd` + `.png` | Sumber dan hasil render Gambar 2, rasio 1,76. |
 | `diagram-tahapan-penelitian.mmd` + `.png` | Sumber dan hasil render Gambar 3, rasio 1,32. |
 | `catatan-riset-hki.md` | Dokumen ini. |
+| `prompt-image-generator.md` | Riset dan prompt untuk membuat diagram memakai generator gambar AI. Alternatif, bukan pengganti. |
 | `gambar/` | Gambar 4 sampai 7 hasil ekstraksi PDF referensi. Tidak di-commit. |
 | `../scripts/render_hki_diagrams.sh` | Render ulang ketiga diagram. |
 | `../scripts/extract_hki_reference_figures.py` | Ekstrak ulang gambar 4 sampai 7 dari PDF sumber. |
