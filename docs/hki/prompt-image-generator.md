@@ -303,6 +303,192 @@ bisa dipakai.
 Jadi jalur generator gambar masuk akal kalau hasilnya dipakai sebagai acuan komposisi, bukan sebagai gambar
 akhir. Untuk gambar akhir di dokumen HKI dan naskah jurnal, Mermaid dan draw.io adalah jalur pendek.
 
+## 8. Tiga prompt siap copas
+
+Setiap blok di bawah berdiri sendiri. Tidak perlu langkah penyusun struktur lagi, karena isi, urutan, relasi,
+dan warnanya sudah disebut eksplisit. Tempel satu blok, generate.
+
+Semua prompt ini ditulis untuk **GPT-image-2**. Kalau memakai **Nano Banana Pro** atau Flow, tambahkan dua baris
+ini di bagian STYLE:
+
+```text
+- Preserve the layout exactly as specified. Do not recompose, do not reinterpret, do not add visual storytelling.
+- Keep the composition quiet and editorial. No cinematic lighting, no depth of field, no scene-like framing.
+```
+
+### 8.1 Diagram arsitektur sistem (rasio 21:9)
+
+```text
+You are drawing one figure for a printed academic paper. Output a single flat vector-style diagram. It must look like it was drawn in draw.io by the author, not like an infographic.
+
+FIGURE: system architecture of a real-time people counting pipeline, arranged as two horizontal rows read left to right.
+
+ROW 1 (three nodes, left to right):
+1. "Video masukan" - terminator shape (rounded capsule)
+2. "Preprocessing" with second line "resize 640 x 640, format tensor" - rectangle
+3. "Deteksi Objek" with second line "YOLO26 head NMS-free" - rectangle, light blue fill #EBF5FB, border #2874A6
+
+ROW 2 (five nodes):
+4. "Pelacakan utama" with second line "Deep-OC-SORT" - rectangle, light green fill #EAFAF1, border #1E8449
+5. "Pelacakan ringan" with second line "OC-SORT" - rectangle, same light green
+6. "Logika Penghitungan" with second line "RoI polygon, garis virtual, validasi arah" - rectangle, light orange fill #FEF5E7, border #D68910
+7. "ID State Memory" with second line "TRACKING / COOLDOWN" and third line "cooldown 30 bingkai" - rectangle, same light orange
+8. "Keluaran" with second line "video beranotasi, CSV per bingkai, JSON" - terminator shape (rounded capsule)
+
+ARROWS (exactly these, no others):
+- 1 -> 2
+- 2 -> 3
+- one arrow from 3 down into row 2, splitting into two: 3 -> 4 and 3 -> 5
+- 4 -> 6
+- 5 -> 6
+- 6 -> 7
+- 7 -> 8
+- one dashed arrow from 7 looping back up to 6, with the label "cegah double counting" placed on the dashed line
+
+STYLE
+- Plain white background. No texture, no grain, no gradient.
+- Flat outlines, 1 pt black, 2 px corner radius on rectangles.
+- No drop shadow, no glow, no 3D, no glassmorphism.
+- Neutral sans-serif. All node labels the same size. Nothing larger than the labels.
+- Nodes 1 and 8 are capsules; every other node is a rectangle.
+- Arrowheads small and solid.
+- Generous whitespace. Large empty areas are correct and expected.
+- The whole figure must read as two clean horizontal rows.
+
+TEXT RULES
+- Reproduce every label exactly as written above, letter for letter, including the Indonesian words, hyphens and digits. Do not translate. Do not abbreviate. Do not correct spelling.
+- Render "Deep-OC-SORT", "OC-SORT", "YOLO26", "TRACKING / COOLDOWN", "RoI", "CSV", "JSON" exactly.
+- No title, no legend, no footer, no page number, no watermark, no signature.
+
+HARD BANS
+- Do not fill empty space with decoration, icons, patterns or accent lines.
+- Do not add any node, label or arrow that is not listed above.
+- Do not use rainbow colours. Only the three tint fills named above plus black text.
+- Do not draw a legend or a colour key.
+
+CANVAS: aspect ratio 21:9, high resolution, clean lines suitable for placement at 16 cm width in a Word document.
+```
+
+### 8.2 Diagram peta metode deteksi dan tracking (rasio 16:9)
+
+```text
+You are drawing one figure for a printed academic paper: a taxonomy chart. Output a single flat vector-style diagram. It must look like it was drawn in draw.io by the author, not like an infographic.
+
+FIGURE: a map of object detection and multi-object tracking methods, arranged as FOUR vertical groups side by side, read left to right. There are NO arrows in this figure. Do not draw any arrow.
+
+GROUP 1 - heading "Detektor - Pendekatan Klasik", light red fill #FDF2F0, border #C0392B
+- "Background Subtraction" with second line "Otsu, GMM, ViBE"
+- "Inter-frame Subtraction"
+Both nodes are rounded rectangles, white fill, thin grey border.
+
+GROUP 2 - heading "Tracker - Pendekatan Klasik", light red fill #FDF2F0, border #C0392B
+- "Optical Flow"
+- "Kalman Filter"
+- "Particle Filter"
+- "KCF"
+
+GROUP 3 - heading "Detektor - Deep Learning", light blue fill #EEF6FD, border #2874A6
+- "R-CNN, Fast R-CNN, Faster R-CNN, Mask R-CNN, SPPNet"
+- "SSD"
+- "YOLO v3 - v11" with second line "berbasis NMS"
+- "YOLO26" with second line "NMS-free" - HIGHLIGHTED: fill #D5F5E3, border #1E8449, 2 px stroke
+- "RT-DETR, D-FINE, DEIM, RF-DETR"
+
+GROUP 4 - heading "Tracker - Deep Learning", light blue fill #EEF6FD, border #2874A6
+- "SORT, DeepSORT, StrongSORT, BoT-SORT"
+- "ByteTrack"
+- "OC-SORT" - HIGHLIGHTED: fill #D5F5E3, border #1E8449, 2 px stroke
+- "Deep-OC-SORT" - HIGHLIGHTED: fill #D5F5E3, border #1E8449, 2 px stroke
+- "DiffMOT" - HIGHLIGHTED: fill #D5F5E3, border #1E8449, 2 px stroke
+- "LightTrack-ReID" - HIGHLIGHTED: fill #D5F5E3, border #1E8449, 2 px stroke
+- "MOTIP, Sentinel, DragonTrack"
+
+LAYOUT
+- Four groups side by side, in the order listed, read left to right.
+- Inside each group the nodes stack vertically in the order listed.
+- Each group is enclosed by a thin rectangle. The group heading sits inside that rectangle at the top, on one line, top-left.
+- Groups 1 and 2 are the left half, groups 3 and 4 the right half.
+- The five highlighted nodes are the components actually used in the paper being illustrated.
+
+STYLE
+- Plain white background outside the four group rectangles.
+- Flat 1 pt outlines, 2 px corner radius on nodes. Nodes are rounded rectangles.
+- No drop shadow, no glow, no gradient, no 3D, no glassmorphism.
+- Neutral sans-serif, same size for every node label. Group headings one step larger and bold.
+- Generous whitespace between groups.
+
+TEXT RULES
+- Reproduce every label exactly as written, letter for letter, including hyphens, commas and the mixed Indonesian and English words. Do not translate. Do not correct spelling. Do not reorder the method names inside a label.
+- Render "Deep-OC-SORT", "LightTrack-ReID", "YOLO26", "RT-DETR", "D-FINE", "DEIM", "RF-DETR", "BoT-SORT", "MOTIP", "ViBE", "KCF" exactly.
+- No title, no legend, no footer, no watermark.
+
+HARD BANS
+- Draw NO arrows and no connector lines between or inside groups. This is a classification chart, not a flow.
+- Do not add any node, label or group that is not listed above.
+- Do not fill empty space with decoration, icons, patterns or accent lines.
+- Do not use rainbow colours. Only the fills named above.
+
+CANVAS: aspect ratio 16:9, high resolution, suitable for placement at 16 cm width in a Word document.
+```
+
+### 8.3 Diagram tahapan penelitian (rasio 4:3)
+
+```text
+You are drawing one figure for a printed academic paper: a research stage flowchart, arranged as FOUR horizontal bands stacked top to bottom, each band read left to right.
+
+BAND 1 - heading "1. Arsitektur Sistem, Persiapan Eksperimen, Koleksi Data", light red fill #FDECEA, border #C0392B
+- "Mulai" - terminator capsule
+- "Perancangan arsitektur," with second line "persiapan perangkat" - rectangle
+- "CrowdHuman, MOT20, DanceTrack" - parallelogram (data node)
+Arrows inside: Mulai -> Perancangan -> CrowdHuman
+
+BAND 2 - heading "2. Persiapan Data", light orange fill #FEF5E7, border #D68910
+- "Anotasi fbox amodal" - rectangle
+- "Data Latih" - parallelogram
+- "Augmentasi Data" - rectangle
+- "Data Validasi" - parallelogram
+Arrows inside: Anotasi -> Data Latih -> Augmentasi Data, and Anotasi -> Data Validasi
+
+BAND 3 - heading "3. Pelatihan Model", light green fill #EAFAF1, border #1E8449
+- "YOLO26s" - hexagon
+- "YOLO26n" - hexagon
+No arrows inside this band. Place the two hexagons side by side in the same row.
+
+BAND 4 - heading "4. Evaluasi", light blue fill #EBF5FB, border #2874A6
+- "OC-SORT, Deep-OC-SORT, DiffMOT, LightTrack-ReID" - rectangle
+- "Logika Penghitungan" with second line "Lintasan" - rectangle
+- "Benchmarking FPS" with second line "dan Latensi" - rectangle
+- "Selesai" - terminator capsule
+Arrows inside: trackers -> Logika -> Benchmarking -> Selesai
+
+ARROWS BETWEEN BANDS (one per boundary, drawn vertically):
+- from the last node of band 1 down into the first node of band 2
+- from the last nodes of band 2 down into band 3
+- from band 3 down into the first node of band 4
+
+STYLE
+- Every band is a thin-bordered rectangle with its heading inside, top-left.
+- Terminators are capsules, processes are rectangles, data nodes are parallelograms, model nodes are hexagons.
+- Plain white background, flat 1 pt outlines, no drop shadow, no glow, no gradient, no 3D.
+- Neutral sans-serif, one size for every node label. Band headings one step larger.
+- No colour anywhere except the four band fills and their borders named above. Node shapes stay white with a thin grey border.
+- The four bands stack with even vertical spacing and all have the same width.
+
+TEXT RULES
+- Reproduce every label exactly, including the Indonesian words, the leading numbers and the commas. Do not translate. Do not correct spelling.
+- Render "CrowdHuman", "MOT20", "DanceTrack", "YOLO26s", "YOLO26n", "Deep-OC-SORT", "LightTrack-ReID", "DiffMOT", "fbox amodal", "FPS" exactly.
+- Keep the heading numbers "1." "2." "3." "4." at the start of each band heading.
+- No title, no legend, no sub-caption, no footer, no watermark.
+
+HARD BANS
+- Do not add any node, label or arrow that is not listed above.
+- Do not fill empty space with decoration, icons, patterns or accent lines.
+- Do not draw a legend or a colour key.
+- Do not merge the four bands into a single continuous flow.
+
+CANVAS: aspect ratio 4:3, high resolution, suitable for placement at 16 cm width, or 11 cm if it has to shrink, in a Word document.
+```
+
 ---
 
 ## Sumber (diakses 16 September 2026)
