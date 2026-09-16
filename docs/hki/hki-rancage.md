@@ -453,13 +453,13 @@ def run_smoke_test(
     return summary
 ```
 
-**Hasil Training Model**
+**Hasil Training Model YOLO26s**
 
-![Hasil Training Model](../../runs/detect/yolo26s_crowdhuman/results.png)
+![Hasil Training Model YOLO26s](../../runs/detect/yolo26s_crowdhuman/results.png)
 
-**Hasil Confusion Matrix**
+**Hasil Confusion Matrix Empat Model**
 
-![Hasil Confusion Matrix](../../runs/detect/yolo26s_crowdhuman/confusion_matrix.png)
+![Hasil Confusion Matrix Empat Model](../../experiments/journal_figs/fig_confusion_matrix_grid.png)
 
 **Hasil Perbandingan**
 
