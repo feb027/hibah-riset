@@ -107,14 +107,19 @@ Hasil akhir: arsitektur 2,21, tahapan 1,32, peta metode 1,76. Ketiganya diperiks
 ### Gambar dari paper referensi
 
 PDF sumber 33 paper tersedia di `docs/research/papers/`, jadi gambar metode bisa diambil dari publikasi aslinya
-dan tidak perlu digambar ulang. Empat yang dipakai pada dokumen HKI:
+dan tidak perlu digambar ulang. Empat yang berhasil diekstrak:
 
 | Gambar | Paper | Halaman | Isi |
 | --- | --- | --- | --- |
-| Gambar 4 | S024 OC-SORT [4] | 4 | diagram alur pipeline, tiga bingkai berurutan |
-| Gambar 5 | S021 DiffMOT [7] | 3 | arsitektur DiffMOT, alur deteksi sampai asosiasi |
-| Gambar 6 | S014 LightTrack-ReID [9] | 3 | ikhtisar arsitektur model |
-| Gambar 7 | S036 MOT20 [10] | 2 | ikhtisar dataset, delapan sekuens tiga skena |
+| OC-SORT | S024 [4] | 4 | diagram alur pipeline, tiga bingkai berurutan |
+| DiffMOT | S021 [7] | 3 | arsitektur DiffMOT, alur deteksi sampai asosiasi |
+| LightTrack-ReID | S014 [9] | 3 | ikhtisar arsitektur model |
+| MOT20 | S036 [10] | 2 | ikhtisar dataset, delapan sekuens tiga skena |
+
+**Status pada naskah.** Keempatnya sudah tidak dipakai di `hki-rancage.md` setelah naskah diratakan, karena
+versi datar hanya memuat dua gambar di METODE. Tetap tersedia di `gambar/` kalau nanti diperlukan, dan
+prompt-nya ada di `prompt-image-generator.md`. Diagram peta metode dan diagram tahapan yang lebih panjang juga
+masih ada sebagai berkas `.mmd`, hanya tidak lagi disisipkan ke naskah.
 
 Cara ekstraksinya ada di `scripts/extract_hki_reference_figures.py`. Pendekatannya: cari bbox caption dengan
 `page.search_for`, ambil gabungan bbox gambar raster dan gambar vektor di atasnya lewat `get_image_info()` dan
@@ -207,13 +212,13 @@ Cara menutupnya:
 
 | Berkas | Isi |
 | --- | --- |
-| `hki-rancage.md` | Dokumen utama, siap disalin ke Word. Cover dibuat manual. |
+| `hki-rancage.md` | Dokumen utama, siap disalin ke Word. Bentuk datar: PENDAHULUAN, METODE, KODE PROGRAM, DAFTAR PUSTAKA. Cover dibuat manual. |
 | `diagram-arsitektur-sistem.mmd` + `.png` | Sumber dan hasil render Gambar 1, rasio 2,21. |
-| `diagram-peta-metode-deteksi-tracking.mmd` + `.png` | Sumber dan hasil render Gambar 2, rasio 1,76. |
-| `diagram-tahapan-penelitian.mmd` + `.png` | Sumber dan hasil render Gambar 3, rasio 1,32. |
+| `diagram-peta-metode-deteksi-tracking.mmd` + `.png` | Sumber dan hasil render. Tidak dipakai di naskah datar; disimpan untuk cadangan. |
+| `diagram-tahapan-penelitian.mmd` + `.png` | Sumber dan hasil render Gambar 2, rasio 1,32. |
 | `catatan-riset-hki.md` | Dokumen ini. |
 | `prompt-image-generator.md` | Riset dan prompt untuk membuat diagram memakai generator gambar AI. Alternatif, bukan pengganti. |
-| `gambar/` | Gambar 4 sampai 7 hasil ekstraksi PDF referensi. Tidak di-commit. |
+| `gambar/` | Empat gambar metode dari PDF referensi. Tidak dipakai di naskah, tidak di-commit. |
 | `../scripts/render_hki_diagrams.sh` | Render ulang ketiga diagram. |
 | `../scripts/extract_hki_reference_figures.py` | Ekstrak ulang gambar 4 sampai 7 dari PDF sumber. |
 
