@@ -25,7 +25,7 @@ json.dump({"args": ["--no-sandbox", "--disable-setuid-sandbox"],
            "executablePath": chrome}, open(out, "w"))
 PY
 
-for name in diagram-arsitektur-sistem diagram-tahapan-penelitian; do
+for name in diagram-arsitektur-sistem diagram-peta-metode-deteksi-tracking diagram-tahapan-penelitian; do
   echo "rendering $name"
   npx -y @mermaid-js/mermaid-cli@11 -p "$PUPPETEER_CFG" -b white -s 3 \
     -i "$OUT_DIR/$name.mmd" -o "$OUT_DIR/$name.png"

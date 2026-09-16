@@ -1,24 +1,22 @@
 flowchart TB
-    A0(["Video masukan"])
-    A1["Preprocessing<br/>capture, resize 640 x 640, format tensor"]
-    A2["Deteksi Objek<br/>YOLO26 head NMS-free"]
-    A3["Pelacakan<br/>Deep-OC-SORT sebagai jalur utama"]
-    A4["Pelacakan ringan<br/>OC-SORT untuk sumber daya terbatas"]
-    A5["Logika Penghitungan<br/>RoI polygon + garis virtual + validasi arah"]
-    A6["ID State Memory<br/>TRACKING / COOLDOWN, cooldown 30 bingkai"]
-    A7(["Keluaran<br/>video beranotasi, CSV per bingkai, JSON ringkasan"])
+    subgraph R1[" "]
+        direction LR
+        A0(["Video masukan"]) --> A1["Preprocessing<br/>resize 640 x 640,<br/>format tensor"] --> A2["Deteksi Objek<br/>YOLO26 head NMS-free"]
+    end
+    subgraph R2[" "]
+        direction LR
+        A3["Pelacakan utama<br/>Deep-OC-SORT"] --> A5["Logika Penghitungan<br/>RoI polygon, garis<br/>virtual, validasi arah"]
+        A4["Pelacakan ringan<br/>OC-SORT"] --> A5
+        A5 --> A6["ID State Memory<br/>TRACKING / COOLDOWN<br/>cooldown 30 bingkai"]
+        A6 --> A7(["Keluaran<br/>video beranotasi,<br/>CSV per bingkai, JSON"])
+    end
+    R1 --> R2
 
-    A0 --> A1 --> A2
-    A2 --> A3
-    A2 --> A4
-    A3 --> A5
-    A4 --> A5
-    A5 --> A6
-    A6 -.->|"mencegah double counting"| A5
-    A6 --> A7
-
-    style A2 fill:#ebf5fb,stroke:#2874a6
-    style A3 fill:#eafaf1,stroke:#1e8449
-    style A4 fill:#eafaf1,stroke:#1e8449
-    style A5 fill:#fef5e7,stroke:#d68910
-    style A6 fill:#fef5e7,stroke:#d68910
+    classDef deteksi fill:#ebf5fb,stroke:#2874a6
+    classDef lacak fill:#eafaf1,stroke:#1e8449
+    classDef hitung fill:#fef5e7,stroke:#d68910
+    class A2 deteksi
+    class A3,A4 lacak
+    class A5,A6 hitung
+    style R1 fill:#ffffff,stroke:#ffffff
+    style R2 fill:#ffffff,stroke:#ffffff

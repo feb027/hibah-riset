@@ -62,3 +62,6 @@ docs/*.pdf
 
 # salinan lokal PDF/docx untuk ekstraksi teks (jangan pernah ikut ter-push)
 docs/_extracted/
+
+# Gambar referensi hasil ekstraksi PDF (hak cipta penerbit, jangan di-commit)
+docs/hki/gambar/

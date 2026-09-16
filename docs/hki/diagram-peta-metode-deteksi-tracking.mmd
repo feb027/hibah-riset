@@ -1,0 +1,31 @@
+flowchart TB
+    subgraph DT["Tracker - Deep Learning"]
+        direction LR
+        DT1(["SORT, DeepSORT,<br/>StrongSORT, BoT-SORT"])
+        DT2(["ByteTrack"]); DT3(["OC-SORT"]); DT4(["Deep-OC-SORT"])
+        DT5(["DiffMOT"]); DT6(["LightTrack-ReID"]); DT7(["MOTIP, Sentinel,<br/>DragonTrack"])
+    end
+    subgraph DD["Detektor - Deep Learning"]
+        direction LR
+        DD1(["R-CNN, Fast R-CNN, Faster R-CNN,<br/>Mask R-CNN, SPPNet"])
+        DD2(["SSD"])
+        DD3(["YOLO v3 - v11<br/>berbasis NMS"])
+        DD4(["YOLO26<br/>NMS-free"])
+        DD5(["RT-DETR, D-FINE,<br/>DEIM, RF-DETR"])
+    end
+    subgraph KT["Tracker - Pendekatan Klasik"]
+        direction LR
+        KT1(["Optical Flow"]); KT2(["Kalman Filter"]); KT3(["Particle Filter"]); KT4(["KCF"])
+    end
+    subgraph KD["Detektor - Pendekatan Klasik"]
+        direction LR
+        KD1(["Background Subtraction<br/>Otsu, GMM, ViBE"])
+        KD2(["Inter-frame Subtraction"])
+    end
+
+    classDef dipakai fill:#d5f5e3,stroke:#1e8449,stroke-width:2px
+    class DD4,DT3,DT4,DT5,DT6 dipakai
+    style KD fill:#fdf2f0,stroke:#c0392b
+    style KT fill:#fdf2f0,stroke:#c0392b
+    style DD fill:#eef6fd,stroke:#2874a6
+    style DT fill:#eef6fd,stroke:#2874a6

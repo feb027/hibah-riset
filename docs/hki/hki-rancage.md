@@ -122,29 +122,27 @@ sendiri-sendiri.
 
 ```mermaid
 flowchart TB
-    A0(["Video masukan"])
-    A1["Preprocessing<br/>capture, resize 640 x 640, format tensor"]
-    A2["Deteksi Objek<br/>YOLO26 head NMS-free"]
-    A3["Pelacakan<br/>Deep-OC-SORT sebagai jalur utama"]
-    A4["Pelacakan ringan<br/>OC-SORT untuk sumber daya terbatas"]
-    A5["Logika Penghitungan<br/>RoI polygon + garis virtual + validasi arah"]
-    A6["ID State Memory<br/>TRACKING / COOLDOWN, cooldown 30 bingkai"]
-    A7(["Keluaran<br/>video beranotasi, CSV per bingkai, JSON ringkasan"])
+    subgraph R1[" "]
+        direction LR
+        A0(["Video masukan"]) --> A1["Preprocessing<br/>resize 640 x 640,<br/>format tensor"] --> A2["Deteksi Objek<br/>YOLO26 head NMS-free"]
+    end
+    subgraph R2[" "]
+        direction LR
+        A3["Pelacakan utama<br/>Deep-OC-SORT"] --> A5["Logika Penghitungan<br/>RoI polygon, garis<br/>virtual, validasi arah"]
+        A4["Pelacakan ringan<br/>OC-SORT"] --> A5
+        A5 --> A6["ID State Memory<br/>TRACKING / COOLDOWN<br/>cooldown 30 bingkai"]
+        A6 --> A7(["Keluaran<br/>video beranotasi,<br/>CSV per bingkai, JSON"])
+    end
+    R1 --> R2
 
-    A0 --> A1 --> A2
-    A2 --> A3
-    A2 --> A4
-    A3 --> A5
-    A4 --> A5
-    A5 --> A6
-    A6 -.->|"mencegah double counting"| A5
-    A6 --> A7
-
-    style A2 fill:#ebf5fb,stroke:#2874a6
-    style A3 fill:#eafaf1,stroke:#1e8449
-    style A4 fill:#eafaf1,stroke:#1e8449
-    style A5 fill:#fef5e7,stroke:#d68910
-    style A6 fill:#fef5e7,stroke:#d68910
+    classDef deteksi fill:#ebf5fb,stroke:#2874a6
+    classDef lacak fill:#eafaf1,stroke:#1e8449
+    classDef hitung fill:#fef5e7,stroke:#d68910
+    class A2 deteksi
+    class A3,A4 lacak
+    class A5,A6 hitung
+    style R1 fill:#ffffff,stroke:#ffffff
+    style R2 fill:#ffffff,stroke:#ffffff
 ```
 
 Gambar 1. Arsitektur sistem RANCAGE.
@@ -153,70 +151,103 @@ Sumber kode diagram arsitektur ada di `docs/hki/diagram-arsitektur-sistem.mmd`. 
 agar terlihat bahwa jalur ringan dipakai ketika perangkat tidak memiliki GPU memadai, bukan sebagai pembanding
 kualitas.
 
-### 2.2 Tahapan Penelitian
+### 2.2 Peta Metode Deteksi dan Pelacakan
+
+Pemetaan pada Gambar 2 menempatkan RANCAGE pada dua sumbu. Sumbu pertama memisahkan detektor dari tracker,
+sumbu kedua memisahkan pendekatan klasik dari pendekatan deep learning. Kotak berlatar hijau menandai komponen
+yang benar-benar dipakai pada implementasi ini.
+
+Pendekatan klasik mengandalkan pengurangan latar dan pengurangan antar-bingkai untuk deteksi, lalu optical flow,
+Kalman filter, particle filter, atau KCF untuk pelacakan. Rangkaian itu ringan dan tidak memerlukan pelatihan,
+tetapi rapuh begitu pencahayaan berubah, latar bergerak, atau objek saling menutupi. Pendekatan deep learning
+menggantikan keduanya. Di sisi detektor, keluarga R-CNN dan SSD membuka jalan, seri YOLO mengambil alih karena
+rasio kecepatan terhadap akurasi yang lebih baik, dan gelombang terbaru bergerak ke arsitektur NMS-free seperti
+YOLO26 serta jalur transformer seperti RT-DETR, D-FINE, DEIM, dan RF-DETR. Di sisi tracker, SORT dan keluarganya
+bertumpu pada Kalman filter dan metrik asosiasi sederhana, ByteTrack ikut memanfaatkan kotak deteksi berkeyakinan
+rendah, sedangkan gelombang confidence-aware dan occlusion-aware menambahkan informasi penampilan seperti yang
+dilakukan Deep-OC-SORT, DiffMOT, dan LightTrack-ReID.
+
+```mermaid
+flowchart TB
+    subgraph DT["Tracker - Deep Learning"]
+        direction LR
+        DT1(["SORT, DeepSORT,<br/>StrongSORT, BoT-SORT"])
+        DT2(["ByteTrack"]); DT3(["OC-SORT"]); DT4(["Deep-OC-SORT"])
+        DT5(["DiffMOT"]); DT6(["LightTrack-ReID"]); DT7(["MOTIP, Sentinel,<br/>DragonTrack"])
+    end
+    subgraph DD["Detektor - Deep Learning"]
+        direction LR
+        DD1(["R-CNN, Fast R-CNN, Faster R-CNN,<br/>Mask R-CNN, SPPNet"])
+        DD2(["SSD"])
+        DD3(["YOLO v3 - v11<br/>berbasis NMS"])
+        DD4(["YOLO26<br/>NMS-free"])
+        DD5(["RT-DETR, D-FINE,<br/>DEIM, RF-DETR"])
+    end
+    subgraph KT["Tracker - Pendekatan Klasik"]
+        direction LR
+        KT1(["Optical Flow"]); KT2(["Kalman Filter"]); KT3(["Particle Filter"]); KT4(["KCF"])
+    end
+    subgraph KD["Detektor - Pendekatan Klasik"]
+        direction LR
+        KD1(["Background Subtraction<br/>Otsu, GMM, ViBE"])
+        KD2(["Inter-frame Subtraction"])
+    end
+
+    classDef dipakai fill:#d5f5e3,stroke:#1e8449,stroke-width:2px
+    class DD4,DT3,DT4,DT5,DT6 dipakai
+    style KD fill:#fdf2f0,stroke:#c0392b
+    style KT fill:#fdf2f0,stroke:#c0392b
+    style DD fill:#eef6fd,stroke:#2874a6
+    style DT fill:#eef6fd,stroke:#2874a6
+```
+
+Gambar 2. Peta metode deteksi dan pelacakan.
+
+Sumber kode diagram ada di `docs/hki/diagram-peta-metode-deteksi-tracking.mmd`.
+
+### 2.3 Tahapan Penelitian
 
 Alur pengembangan ciptaan ini dibagi menjadi empat fase, yaitu studi literatur, metodologi, eksperimen, dan
 kesimpulan. Fase eksperimen memuat enam langkah berurutan: perancangan arsitektur dan persiapan lingkungan,
 koleksi dataset, anotasi dan pembagian data, augmentasi data latih, pelatihan model, serta evaluasi. Diagram
-lengkapnya ada pada Gambar 2.
+lengkapnya ada pada Gambar 3.
 
 ```mermaid
 flowchart TB
-    subgraph FASE[" "]
-        direction TB
-        L1["Studi Literatur"] --> L2["Metodologi"]
-        L2 --> L3["Eksperimen"]
-        L3 --> L4["Kesimpulan"]
-    end
-
     subgraph S1["1. Arsitektur Sistem, Persiapan Eksperimen, Koleksi Data"]
-        direction TB
-        A0(["Mulai"]) --> A1["Perancangan arsitektur sistem<br/>persiapan perangkat keras dan perangkat lunak"]
-        A1 --> A2[/"CrowdHuman, MOT20, DanceTrack"/]
+        direction LR
+        A0(["Mulai"]) --> A1["Perancangan arsitektur,<br/>persiapan perangkat"] --> A2[/"CrowdHuman, MOT20,<br/>DanceTrack"/]
     end
-
     subgraph S2["2. Persiapan Data"]
-        direction TB
-        B1["Anotasi fbox amodal"] --> B2[/"Data Latih"/]
+        direction LR
+        B1["Anotasi fbox amodal"] --> B2[/"Data Latih"/] --> B4["Augmentasi Data"]
         B1 --> B3[/"Data Validasi"/]
-        B2 --> B4["Augmentasi Data"]
     end
-
     subgraph S3["3. Pelatihan Model"]
-        direction TB
+        direction LR
         C1{{"YOLO26s"}}
+        C1 ~~~ C2
         C2{{"YOLO26n"}}
     end
-
     subgraph S4["4. Evaluasi"]
-        direction TB
-        D1["OC-SORT / Deep-OC-SORT<br/>DiffMOT / LightTrack-ReID"] --> D2["Logika Penghitungan Lintasan"]
-        D2 --> D3["Benchmarking FPS dan Latensi"]
-        D3 --> D4(["Selesai"])
+        direction LR
+        D1["OC-SORT, Deep-OC-SORT,<br/>DiffMOT, LightTrack-ReID"] --> D2["Logika Penghitungan<br/>Lintasan"] --> D3["Benchmarking FPS<br/>dan Latensi"] --> D4(["Selesai"])
     end
+    S1 --> S2 --> S3 --> S4
 
-    A2 --> B1
-    B4 --> C1
-    B3 --> C2
-    C1 --> D1
-    C2 --> D1
-    L2 -.-> A0
-    L3 -.-> D3
-
-    style FASE fill:#f2f2f2,stroke:#7f8c8d
     style S1 fill:#fdecea,stroke:#c0392b
     style S2 fill:#fef5e7,stroke:#d68910
     style S3 fill:#eafaf1,stroke:#1e8449
     style S4 fill:#ebf5fb,stroke:#2874a6
 ```
 
-Gambar 2. Tahapan penelitian.
+Gambar 3. Tahapan penelitian.
 
 Sumber kode diagram di atas ada di `docs/hki/diagram-tahapan-penelitian.mmd`. Untuk hasil cetak, diagram
 diekspor lewat draw.io (menu Arrange, Insert, Advanced, Mermaid) agar simpulnya memakai bentuk standar ANSI/ISO,
 jalurnya ortogonal, dan ukuran kotaknya seragam.
 
-### 2.3 Konfigurasi Deteksi dan Pelacakan
+### 2.4 Konfigurasi Deteksi dan Pelacakan
 
 Detektor yang dibandingkan mencakup dua arsitektur NMS-free (YOLOv10 dan YOLO26) dan satu arsitektur berbasis NMS
 (YOLOv11). Seluruh model di-fine-tune pada CrowdHuman [27] memakai anotasi fbox amodal, dengan konfigurasi
@@ -230,7 +261,24 @@ logika penghitungan tidak bergantung pada implementasi tracker tertentu. Karena 
 detektor dan protokol berbeda, angka absolut pada bagian hasil tidak merepresentasikan capaian yang dilaporkan
 penelitian asli dari masing-masing tracker.
 
-### 2.4 Logika Penghitungan Berbasis Lintasan
+
+![Gambar 4. Diagram alur pipeline OC-SORT](gambar/ocsort-fig2-pipeline.png)
+
+Gambar 4. Diagram alur pipeline OC-SORT. Sumber: Cao dkk. [4].
+
+![Gambar 5. Arsitektur DiffMOT](gambar/diffmot-fig2-arch.png)
+
+Gambar 5. Arsitektur DiffMOT. Sumber: Lv dkk. [7].
+
+![Gambar 6. Ikhtisar arsitektur model LightTrack-ReID](gambar/lighttrack-fig2-overview.png)
+
+Gambar 6. Ikhtisar arsitektur model LightTrack-ReID. Sumber: Baz dkk. [9].
+
+Gambar 4 sampai Gambar 6 dikutip dari publikasi aslinya untuk menjelaskan mekanisme tracker yang diuji, dengan
+rujukan lengkap pada DAFTAR PUSTAKA. Ketiga berkas gambar tidak ikut disimpan di repositori publik ini, tetapi
+dapat dihasilkan ulang dari PDF sumber memakai `scripts/extract_hki_reference_figures.py`.
+
+### 2.5 Logika Penghitungan Berbasis Lintasan
 
 Dua model penghitungan dibandingkan. Model A (naive line crossing) mencatat objek begitu lintasannya memotong
 garis virtual, tanpa memori status. Model ini rentan terhadap getaran posisi deteksi di sekitar garis dan
@@ -255,7 +303,7 @@ pada video berdurasi panjang.
 Penyaringan RoI tersedia pada implementasi, namun tidak diaktifkan pada konfigurasi eksperimen. Konfigurasi
 operasional yang dipakai adalah YOLO26s, Deep-OC-SORT, cooldown 30 bingkai, dan confidence threshold 0,30.
 
-### 2.5 Dataset dan Skenario Evaluasi
+### 2.6 Dataset dan Skenario Evaluasi
 
 Tiga dataset publik dipakai sesuai karakteristiknya. CrowdHuman dipakai untuk mengevaluasi kinerja deteksi
 manusia pada citra statis yang tidak membawa informasi identitas temporal [27], dengan 4.370 citra validation set
@@ -263,6 +311,10 @@ dan 103.115 kotak anotasi full body. MOT20 dipakai untuk mengukur kinerja pelaca
 kerumunan padat [10]. DanceTrack dipakai untuk menguji ketahanan tracker terhadap gerakan non-linear dan objek
 dengan penampilan seragam [11]. Gabungan MOT20-train (4 sekuens) dan DanceTrack-val (25 sekuens) menghasilkan 29
 sekuens uji.
+
+![Gambar 7. Ikhtisar dataset MOT20](gambar/mot20-fig1-overview.png)
+
+Gambar 7. Ikhtisar dataset MOT20, delapan sekuens dari tiga skena. Sumber: Dendorfer dkk. [10].
 
 Evaluasi dibagi menjadi empat skenario. S1 mengukur kinerja detektor dari sisi akurasi dan latensi, termasuk
 perbandingan antara konfigurasi zero-shot dan fine-tuned. S2 membandingkan tracker memakai kerangka TrackEval
@@ -737,59 +789,59 @@ class LineDrawerState:
 Hasil fine-tuning empat arsitektur YOLO pada CrowdHuman. Konfigurasi YOLO26s mencapai mAP@0.5:0.95 sebesar
 0,4974 dan menjadi dasar pemilihan detektor operasional pada perangkat GPU.
 
-![Gambar 3. Kurva hasil pelatihan YOLO26s pada CrowdHuman](../../runs/detect/yolo26s_crowdhuman/results.png)
+![Gambar 8. Kurva hasil pelatihan YOLO26s pada CrowdHuman](../../runs/detect/yolo26s_crowdhuman/results.png)
 
-Gambar 3. Kurva hasil pelatihan YOLO26s pada CrowdHuman.
+Gambar 8. Kurva hasil pelatihan YOLO26s pada CrowdHuman.
 
-![Gambar 4. Confusion matrix hasil pelatihan pada CrowdHuman](../../runs/detect/yolo26s_crowdhuman/confusion_matrix.png)
+![Gambar 9. Confusion matrix hasil pelatihan pada CrowdHuman](../../runs/detect/yolo26s_crowdhuman/confusion_matrix.png)
 
-Gambar 4. Confusion matrix hasil pelatihan pada CrowdHuman.
+Gambar 9. Confusion matrix hasil pelatihan pada CrowdHuman.
 
-![Gambar 5. Kurva precision-recall hasil pelatihan](../../experiments/journal_figs/fig1_pr_curve.png)
+![Gambar 10. Kurva precision-recall hasil pelatihan](../../experiments/journal_figs/fig1_pr_curve.png)
 
-Gambar 5. Kurva precision-recall hasil pelatihan.
+Gambar 10. Kurva precision-recall hasil pelatihan.
 
 Perbandingan empat tracker pada luaran deteksi yang identik. Pada MOT20 yang berisi rata-rata 179 deteksi per
 bingkai dengan puncak 272 deteksi, DiffMOT menghasilkan HOTA 44,37, MOTA 60,91, dan IDF1 53,86 dengan IDSW
 terendah sebesar 6.905. OC-SORT mencatat MOTA 55,98 tetapi menghasilkan 14.293 IDSW dan 27.646 fragmentasi.
 
-![Gambar 6. Perbandingan metrik pelacakan empat tracker](../../experiments/journal_figs/fig9_tracking_metrics.png)
+![Gambar 11. Perbandingan metrik pelacakan empat tracker](../../experiments/journal_figs/fig9_tracking_metrics.png)
 
-Gambar 6. Perbandingan metrik pelacakan empat tracker pada 29 sekuens.
+Gambar 11. Perbandingan metrik pelacakan empat tracker pada 29 sekuens.
 
 Galat hitung pada 29 sekuens. State machine dengan cooldown menurunkan galat dari rentang 88,7 sampai 155,1
 persen pada naive line crossing menjadi 13,08 persen pada jalur DiffMOT dan 16,71 persen pada jalur
 Deep-OC-SORT.
 
-![Gambar 7. Galat penghitungan per jalur pelacakan](../../experiments/journal_figs/fig5_counting_error.png)
+![Gambar 12. Galat penghitungan per jalur pelacakan](../../experiments/journal_figs/fig5_counting_error.png)
 
-Gambar 7. MAE dan galat hitung rata-rata per jalur pelacakan pada 29 sekuens.
+Gambar 12. MAE dan galat hitung rata-rata per jalur pelacakan pada 29 sekuens.
 
 Sensitivitas dua parameter operasional. Pola berbentuk U terlihat pada galat terhadap panjang cooldown, dengan
 MAE terendah 6,34 pada cooldown 30 bingkai. Pada sisi confidence threshold, galat terendah 1,67 persen terjadi
 pada ambang 0,20, sedangkan rentang 0,25 sampai 0,30 memberi performa lebih stabil dengan throughput di atas
 40 FPS.
 
-![Gambar 8. Sensitivitas cooldown dan confidence threshold](../../experiments/journal_figs/fig4ab_cooldown_conf.png)
+![Gambar 13. Sensitivitas cooldown dan confidence threshold](../../experiments/journal_figs/fig4ab_cooldown_conf.png)
 
-Gambar 8. Sensitivitas cooldown dan confidence threshold terhadap galat hitung dan throughput.
+Gambar 13. Sensitivitas cooldown dan confidence threshold terhadap galat hitung dan throughput.
 
 Dekomposisi latensi end-to-end pada RTX 4090. Total latensi 24,61 ms atau setara 40,6 FPS, masih di bawah
 anggaran 33,3 ms. Deteksi YOLO26 menyumbang 14,20 ms (57,7 persen), disusul tracker dan Re-ID 9,45 ms (38,4
 persen). Preprocessing memerlukan 0,85 ms dan logika penghitungan hanya 0,11 ms.
 
-![Gambar 9. Dekomposisi latensi end-to-end per perangkat](../../experiments/journal_figs/fig8_latency_breakdown.png)
+![Gambar 14. Dekomposisi latensi end-to-end per perangkat](../../experiments/journal_figs/fig8_latency_breakdown.png)
 
-Gambar 9. Dekomposisi latensi end-to-end per perangkat.
+Gambar 14. Dekomposisi latensi end-to-end per perangkat.
 
 Cuplikan kualitatif pada sekuens MOT20-02, yang memuat 34 sampai 38 orang per bingkai. DiffMOT dan OC-SORT
 sama-sama melacak 38 orang pada satu bingkai, sedangkan ground truth mencatat 59 orang. Selisih terbesar berada
 di area kerumunan padat, sehingga perbedaan tracker lebih tepat dinilai dari kestabilan identitas lintas waktu
 daripada satu bingkai.
 
-![Gambar 10. Cuplikan kualitatif hasil pelacakan](../../experiments/journal_figs/fig10_demo_qualitative.png)
+![Gambar 15. Cuplikan kualitatif hasil pelacakan](../../experiments/journal_figs/fig10_demo_qualitative.png)
 
-Gambar 10. Cuplikan kualitatif hasil pelacakan dan penghitungan.
+Gambar 15. Cuplikan kualitatif hasil pelacakan dan penghitungan.
 
 ---
 

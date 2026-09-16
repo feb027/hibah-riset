@@ -85,12 +85,55 @@ ortogonal. Kedua berkas `.mmd` di folder ini disiapkan untuk alur kerja tersebut
 - Alur dibaca dari atas ke bawah, teks di dalam simbol berupa kata kerja operasional yang pendek.
   Penjelasan panjang ditaruh di paragraf bawah gambar, bukan di dalam kotak.
 
-### Catatan hasil render
+### Catatan hasil render dan aspect ratio
 
-Kedua diagram sudah di-render dan diperiksa secara visual. Diagram tahapan berbentuk empat band horizontal
-berwarna sesuai contoh yang diberikan, dengan kolom fase di sisi kanan. Diagram arsitektur berbentuk alur
-vertikal dengan satu percabangan simetris. Kalau kolom fase ingin dipindah ke kiri seperti contoh, geser saja
-di draw.io; posisi itu ditentukan mesin tata letak Mermaid, bukan oleh kode.
+Diagram yang terlalu tinggi jelek di Word dan sulit dipindai mata. Ukuran yang enak ditaruh pada lebar teks A4
+sekitar 16 cm adalah rasio lebar terhadap tinggi antara 1,3 dan 2,5. Di bawah 0,8 diagram jadi kolom panjang.
+Di atas 4 teks di dalam kotak mengecil sampai tidak terbaca pada lebar cetak itu.
+
+Dua hal yang membuat Mermaid membandel, sudah diuji langsung:
+
+1. **`direction` di dalam subgraph dibatalkan** kalau ada simpul di subgraph itu yang punya edge ke simpul di
+   luar. Jadi `flowchart TB` dengan `direction LR` di dalamnya tetap keluar vertikal kalau rantai antar-band
+   dihubungkan lewat simpul.
+2. **Edge antar-cluster tidak membatalkan `direction`.** Menghubungkan `S1 --> S2` pada level subgraph, bukan
+   antar simpul, membuat tiap band dihormati sebagai baris horizontal. Ini yang dipakai pada diagram tahapan.
+3. **Urutan deklarasi subgraph dibalik** oleh mesin tata letak pada `flowchart TB`. Untuk mendapat urutan kiri
+   ke kanan Detektor Klasik, Tracker Klasik, Detektor Deep Learning, Tracker Deep Learning, keempat subgraph
+   dideklarasikan dengan urutan terbalik.
+
+Hasil akhir: arsitektur 2,21, tahapan 1,32, peta metode 1,76. Ketiganya diperiksa secara visual setelah render.
+
+### Gambar dari paper referensi
+
+PDF sumber 33 paper tersedia di `docs/research/papers/`, jadi gambar metode bisa diambil dari publikasi aslinya
+dan tidak perlu digambar ulang. Empat yang dipakai pada dokumen HKI:
+
+| Gambar | Paper | Halaman | Isi |
+| --- | --- | --- | --- |
+| Gambar 4 | S024 OC-SORT [4] | 4 | diagram alur pipeline, tiga bingkai berurutan |
+| Gambar 5 | S021 DiffMOT [7] | 3 | arsitektur DiffMOT, alur deteksi sampai asosiasi |
+| Gambar 6 | S014 LightTrack-ReID [9] | 3 | ikhtisar arsitektur model |
+| Gambar 7 | S036 MOT20 [10] | 2 | ikhtisar dataset, delapan sekuens tiga skena |
+
+Cara ekstraksinya ada di `scripts/extract_hki_reference_figures.py`. Pendekatannya: cari bbox caption dengan
+`page.search_for`, ambil gabungan bbox gambar raster dan gambar vektor di atasnya lewat `get_image_info()` dan
+`get_drawings()`, render region itu pada 300 dpi, lalu potong margin putih memakai `PIL.Image.getbbox()`.
+Banyak gambar di paper ini vektor, bukan raster, jadi render per halaman jauh lebih andal daripada
+`extract_image()`.
+
+**Soal hak cipta.** Keempat gambar itu milik penerbitnya (IEEE, Springer, PLOS, MDPI). Memakainya di dokumen HKI
+dengan sitasi adalah praktik akademik yang wajar, tetapi menaruhnya di repositori publik adalah redistribusi.
+Karena itu `docs/hki/gambar/` masuk `.gitignore`, dan gambar dihasilkan ulang secara lokal dari PDF yang sudah
+ada di repo. Kalau nanti mau dihapus dan digambar ulang sendiri, sumber Mermaid untuk dua diagram pertama sudah
+ada, sedangkan tiga diagram arsitektur tracker tidak perlu digambar sendiri karena sudah ada versi resminya.
+
+### Alternatif kalau mau menggambar sendiri
+
+Kalau nanti butuh diagram alur yang presisi dan tidak mau bergantung tata letak otomatis, Graphviz `dot` dengan
+`rank=same` memberi kontrol penuh atas baris dan kolom. Graphviz tidak terpasang di mesin ini pada September 2026
+(`dot` tidak ada di PATH, `graphviz` python juga tidak), jadi Mermaid lebih murah karena renderer-nya sudah ada.
+
 
 ---
 
@@ -165,13 +208,17 @@ Cara menutupnya:
 | Berkas | Isi |
 | --- | --- |
 | `hki-rancage.md` | Dokumen utama, siap disalin ke Word. Cover dibuat manual. |
-| `diagram-arsitektur-sistem.mmd` | Sumber Mermaid Gambar 1. |
-| `diagram-tahapan-penelitian.mmd` | Sumber Mermaid Gambar 2. |
-| `diagram-arsitektur-sistem.png` | Hasil render skala 3, siap tempel. |
-| `diagram-tahapan-penelitian.png` | Hasil render skala 3, siap tempel. |
+| `diagram-arsitektur-sistem.mmd` + `.png` | Sumber dan hasil render Gambar 1, rasio 2,21. |
+| `diagram-peta-metode-deteksi-tracking.mmd` + `.png` | Sumber dan hasil render Gambar 2, rasio 1,76. |
+| `diagram-tahapan-penelitian.mmd` + `.png` | Sumber dan hasil render Gambar 3, rasio 1,32. |
+| `catatan-riset-hki.md` | Dokumen ini. |
+| `gambar/` | Gambar 4 sampai 7 hasil ekstraksi PDF referensi. Tidak di-commit. |
+| `../scripts/render_hki_diagrams.sh` | Render ulang ketiga diagram. |
+| `../scripts/extract_hki_reference_figures.py` | Ekstrak ulang gambar 4 sampai 7 dari PDF sumber. |
 
-Gambar 3 sampai Gambar 10 memakai berkas yang sudah ada di repositori, bukan gambar baru. Jalurnya relatif
-terhadap `docs/hki/`, jadi bila berkas dipindah, perbaiki jalurnya atau tempel gambarnya langsung ke Word.
+Gambar 3 dan seterusnya yang berasal dari eksperimen memakai berkas yang sudah ada di repositori, bukan gambar
+baru. Jalurnya relatif terhadap `docs/hki/`, jadi bila berkas dipindah, perbaiki jalurnya atau tempel gambarnya
+langsung ke Word.
 
 ---
 
