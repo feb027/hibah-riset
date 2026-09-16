@@ -453,9 +453,9 @@ def run_smoke_test(
     return summary
 ```
 
-**Hasil Training Model YOLO26s**
+**Hasil Training Model Empat Model**
 
-![Hasil Training Model YOLO26s](../../runs/detect/yolo26s_crowdhuman/results.png)
+![Hasil Training Model Empat Model](../../experiments/journal_figs/fig_training_curves_grid.png)
 
 **Hasil Confusion Matrix Empat Model**
 
