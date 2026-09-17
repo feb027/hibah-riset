@@ -219,10 +219,21 @@ Catatan presisi untuk #14: `reaches over 700 FPS` menyembunyikan perangkat dan p
 
 ### 4.7 Ringkasan jumlah
 
-- Titik edit ber-nomor: **45** (Abstract 5 · Introduction 4 · Related Works 5 · Method 11 · Results 18 · Discussion/Conclusions 2).
-- Dari jumlah itu, **41 adalah perubahan tense** (Abstract 5, Related Works 5, Method 11, Results 18, Discussion 2).
-- **4 murni presisi** (semuanya di Introduction: #6–#9). Selain itu **3 edit tense yang sekaligus membawa perbaikan presisi**: #14 (`reaches over 700 FPS` → atribusi + perangkat), #18 (`outputs in tlwh` → `output boxes in tlwh`), #23 (`guarantees` → `allows at most`).
-- Semua terletak di satu file: `docs/journal/en/jestec-manuscript-en.md` (350 baris).
+- Titik edit ber-nomor di audit: **45**. Saat implementasi ditemukan **5 sisa present yang belum masuk daftar**, jadi total yang diterapkan ke naskah: **50 titik edit + 1 catatan kebijakan tense di header**.
+- Dari jumlah itu, **46 adalah perubahan tense** (Abstract 5, Related Works 5, Method 14, Results 20, Discussion 2) dan **4 murni presisi** (Introduction: #6–#9).
+- **3 edit tense yang sekaligus membawa perbaikan presisi**: #14 (`reaches over 700 FPS` → atribusi + perangkat), #18 (`outputs in tlwh` → `output boxes in tlwh`), #23 (`guarantees` → `allows at most`).
+- **5 temuan tambahan saat implementasi** (audit awal luput, ditemukan saat menyisir ulang sisa present di §3–§4):
+
+| Lokasi | Sebelum | Sesudah |
+| --- | --- | --- |
+| §3.3 | `Two models are compared.` | `Two models were compared.` |
+| §3.3 | `Model B addresses this through RoI validation` | `Model B addressed this through RoI validation` |
+| §3.3 | `which is fixed once in the configuration file and applied consistently across all sequences` | `which was fixed once in the configuration file and applied consistently across all sequences` |
+| §4.1.1 | `while YOLO26n is reserved for resource-constrained devices.` | `while YOLO26n was reserved for resource-constrained devices.` |
+| §4.2 | `The gap falls mainly in the dense crowd area` | `The gap fell mainly in the dense crowd area` |
+
+- Semua terletak di satu file: `docs/journal/en/jestec-manuscript-en.md` (350 baris sebelum, 353 sesudah).
+- Verifikasi kebocoran angka: 642 angka di naskah sebelum dan sesudah, **tidak ada satu angka pun yang berubah/hilang/bertambah** (2 angka tambahan berasal dari baris catatan kebijakan tense di header).
 - Yang **tidak** diubah dan sengaja dibiarkan present: 4 kategori pengecualian §1.3, tersebar di §3 dan §4.
 
 ---
@@ -357,9 +368,11 @@ Dokumen pendamping yang sudah ada di repo: `docs/journal/en/english-writing-rese
 
 ---
 
-## 9. Yang saya belum kerjakan (menunggu keputusan)
+## 9. Status implementasi
 
-Sesuai alur kerja audit → daftar → persetujuan → implementasi, saya **belum mengubah naskah apa pun**. Dua hal yang menunggu:
+**Sudah dikerjakan (17 Sep 2026):** 50 titik edit diterapkan ke `docs/journal/en/jestec-manuscript-en.md` + 1 baris catatan kebijakan tense di header naskah. Verifikasi: 642 angka di naskah identik sebelum dan sesudah edit — tidak ada angka yang berubah, hilang, atau bertambah.
 
-1. **Terapkan 45 titik edit ke `jestec-manuscript-en.md`** — mekanis, bisa langsung jalan begitu disetujui.
-2. **Perbaiki docx** (header tabel + 107 sel angka) — perlu keputusan: docx inilah yang dibaca reviewer, sedangkan repo menyimpan .md. Kalau docx akan dikirim ulang, perbaikannya harus di docx, bukan hanya di .md.
+**Menunggu keputusan:**
+
+1. **Docx** (header tabel + 107 sel angka masih konvensi Indonesia, §5). Docx inilah yang dibaca reviewer, sedangkan repo menyimpan .md — dua-duanya harus disinkronkan. Belum saya sentuh: mengedit prosa docx berisiko merusak field sitasi Mendeley, jadi perlu keputusan apakah (a) perbaiki hanya tabelnya di docx, lalu prosa ditempel ulang dari .md ke template JESTEC, atau (b) saya kerjakan keduanya sekaligus di docx.
+2. **Reformat 31 entri referensi ke gaya JESTEC** + AI-use declaration di depan References — masih terbuka dari catatan sebelumnya, dan ini termasuk syarat submission JESTEC.
