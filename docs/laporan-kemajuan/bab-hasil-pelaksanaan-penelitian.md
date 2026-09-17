@@ -81,7 +81,21 @@ Sisi operasional dari hasil ini terlihat pada kurva F1-*confidence*, di mana amb
 
 Analisis efisiensi pelatihan juga memberi hasil yang dapat dipakai untuk perencanaan tahap berikutnya. Keempat model mencapai 99% performa akhirnya pada epoch 44–55, sedangkan tambahan dari epoch 50 ke 100 hanya menaikkan mAP sebesar 0,0019–0,0075. Setengah anggaran komputasi, sekitar tujuh jam GPU, tidak membeli peningkatan yang terukur. Untuk pelatihan lanjutan, 60 epoch memadai.
 
-### 3.2 Efisiensi Komputasi
+### 3.2 Dinamika Pelatihan dan Analisis Galat Klasifikasi
+
+Kurva pelatihan keempat model disajikan pada Gambar 7. Pada keempatnya, *box loss*, *classification loss*, dan *distribution focal loss* turun secara bertahap dan kurva validasi mengikuti kurva pelatihan tanpa jarak yang melebar, sehingga tidak ada indikasi *overfitting*. Ketiga komponen *loss* mencapai dataran pada rentang epoch yang sama dengan titik konvergensi akurasi, yaitu epoch 44–55. Bentuk kurva antar model serupa karena arsitekturnya berasal dari keluarga yang sama; yang membedakan hanya tinggi *loss* awal, sejalan dengan kapasitas masing-masing model.
+
+![Gambar 7](../../experiments/journal_figs/fig_training_curves_grid.png)
+
+**Gambar 7.** Kurva pelatihan empat model pada CrowdHuman. Susunan panel: YOLO26n (kiri atas), YOLO26s (kanan atas), YOLOv10n (kiri bawah), YOLOv11n (kanan bawah).
+
+Gambar 8 menyajikan *confusion matrix* keempat model pada *validation set*. Untuk YOLO26s, matriks mencatat 97.662 orang terdeteksi benar dan 5.453 terlewat dari 103.115 anotasi. Angka *false positive* yang besar pada matriks, yaitu 641.871 untuk YOLO26s, bukan tingkat kesalahan operasional. Ultralytics membangun matriks ini pada ambang *confidence* 0,001 agar perhitungan mAP mencakup seluruh kurva, dan pada ambang serendah itu model memang mengeluarkan ratusan kotak spekulatif per citra yang tidak akan dipakai dalam operasi nyata. Nilai *false positive* di sini sepenuhnya bergantung pada ambang dan tidak bermakna tanpa menyebutkan ambangnya. Yang bermakna adalah kolom pertama, yaitu 5,3% orang tidak terdeteksi bahkan pada ambang 0,001. Angka itu konsisten dengan batas atas *recall* 0,9000–0,9262 pada Tabel 3 dan menegaskan bahwa lantai *under-count* sistem memang terbentuk di lapisan deteksi.
+
+![Gambar 8](../../experiments/journal_figs/fig_confusion_matrix_grid.png)
+
+**Gambar 8.** *Confusion matrix* empat model pada *validation set* CrowdHuman; susunan panel sama dengan Gambar 7. Nilai dibaca pada ambang *confidence* 0,001.
+
+### 3.3 Efisiensi Komputasi
 
 Keunggulan arsitektur *NMS-free* terukur pada latensi *post-processing*, bukan pada akurasi (Tabel 4). Distribusi kedua kelompok terpisah sepenuhnya: persentil ke-50 model ber-NMS masih lebih dari dua kali persentil ke-95 model *NMS-free*. Biaya *post-processing* model *NMS-free* juga datar terhadap kepadatan kerumunan. YOLO26s menghasilkan 199 deteksi per citra dan YOLO26n 167 deteksi, tetapi keduanya membayar biaya yang sama. Sifat ini bernilai bagi sistem *real-time* karena latensi tetap dapat diprediksi justru ketika kerumunan memuncak.
 
@@ -126,9 +140,9 @@ Empat tracker dibandingkan pada deteksi yang sama: OC-SORT [4] sebagai baseline 
 | DanceTrack | **DiffMOT** | **39,05** | 70,72 | **43,39** | **2.784** | 6.765 |
 | DanceTrack | LightTrack | 22,53 | 32,72 | 18,91 | 6.697 | 4.405 |
 
-![Gambar 7](../../experiments/journal_figs/fig9_tracking_metrics.png)
+![Gambar 9](../../experiments/journal_figs/fig9_tracking_metrics.png)
 
-**Gambar 7.** HOTA, MOTA, dan IDF1 untuk empat tracker pada deteksi yang sama, di MOT20-*train* (kiri) dan DanceTrack-*val* (kanan).
+**Gambar 9.** HOTA, MOTA, dan IDF1 untuk empat tracker pada deteksi yang sama, di MOT20-*train* (kiri) dan DanceTrack-*val* (kanan).
 
 Pada kerumunan padat MOT20, OC-SORT mencatat MOTA 55,98 yang menunjukkan deteksi sudah menutupi mayoritas orang, tetapi 14.293 ID *switch* dan 27.646 fragmentasi menandakan asosiasi berbasis IoU dan Kalman mudah putus saat orang saling menutupi. IDF1 42,88 berarti sekitar 57% bobot identitas tidak cocok dengan *ground truth*. Bagi penghitungan orang, ketidakcocokan itu berarti orang yang tertutup beberapa *frame* lalu terdeteksi ulang berpotensi dihitung sebagai orang baru.
 
@@ -138,9 +152,9 @@ Dua kesimpulan ditarik dari tabel ini. Pertama, pembatas sistem berpindah dari d
 
 Penilaian kualitatif pada satu *frame* tidak memperlihatkan perbedaan itu. Pada frame tengah sekuens MOT20-02, OC-SORT dan DiffMOT sama-sama melacak 38 orang sementara *ground truth* mencatat 59. Selisih 21 orang terkonsentrasi pada kerumunan padat di latar tengah, dan perbedaan kualitas antar tracker baru terbaca dari kestabilan ID lintas waktu.
 
-![Gambar 8](../../experiments/journal_figs/fig10_demo_qualitative.png)
+![Gambar 10](../../experiments/journal_figs/fig10_demo_qualitative.png)
 
-**Gambar 8.** *Frame* MOT20-02 dengan hasil pelacakan (a) OC-SORT, (b) DiffMOT, dan (c) anotasi *ground truth*. Kotak berwarna menandai identitas terlacak.
+**Gambar 10.** *Frame* MOT20-02 dengan hasil pelacakan (a) OC-SORT, (b) DiffMOT, dan (c) anotasi *ground truth*. Kotak berwarna menandai identitas terlacak.
 
 ## 5. Hasil Perancangan dan Evaluasi Logika Penghitungan
 
@@ -156,9 +170,9 @@ Logika hitung diuji pada lintasan yang dihasilkan keempat tracker di seluruh 29 
 | OC-SORT | Baseline awal | 44,62 | 45,00 | 6,66 | 22,38 | 4,31 | 54,0+ |
 | LightTrack | Eksplorasi | 44,62 | 57,76 | 13,62 | 53,03 | 9,57 | 49,3 |
 
-![Gambar 9](../../experiments/journal_figs/fig5_counting_error.png)
+![Gambar 11](../../experiments/journal_figs/fig5_counting_error.png)
 
-**Gambar 9.** MAE dan galat hitung rata-rata per jalur pelacakan pada 29 sekuens.
+**Gambar 11.** MAE dan galat hitung rata-rata per jalur pelacakan pada 29 sekuens.
 
 Dua hal terbaca langsung dari Tabel 7. Pertama, logika hitung tidak menambah galat pada lintasan ideal; *state machine* pada lintasan *ground truth* menghasilkan galat nol, sehingga galat pada baris lainnya terutama berasal dari ketidaksempurnaan deteksi dan pelacakan di hulunya. Kedua, peringkat akurasi hitungan mengikuti kualitas asosiasi tracker. DiffMOT yang IDF1-nya tertinggi juga menghasilkan galat hitung terendah, sedangkan LightTrack yang IDF1-nya terendah menghasilkan galat terbesar dengan kecenderungan *over-count* yang kuat (prediksi rata-rata 57,76 melawan 44,62). Galat 13,08–16,71% pada jalur utama mencakup lantai deteksi 7,4–10,0% yang tidak dapat diperbaiki di lapisan hilir.
 
@@ -193,9 +207,9 @@ Dua hiperparameter diuji pada seluruh 29 sekuens dengan konfigurasi YOLO26s, Dee
 | 90 | 8,62 | 20,94 | −7,59 | *Under-count* |
 | 120 | 9,45 | 23,96 | −8,41 | *Under-count* berat |
 
-![Gambar 10](../../experiments/journal_figs/fig6_cooldown_sensitivity.png)
+![Gambar 12](../../experiments/journal_figs/fig6_cooldown_sensitivity.png)
 
-**Gambar 10.** MAE dan galat hitung terhadap panjang *cooldown* pada Deep-OC-SORT; titik CD=0 adalah model *naive* tanpa *debounce*.
+**Gambar 12.** MAE dan galat hitung terhadap panjang *cooldown* pada Deep-OC-SORT; titik CD=0 adalah model *naive* tanpa *debounce*.
 
 Tanpa *debounce*, galat *over-counting* mencapai 101,99% karena osilasi kotak deteksi di sekitar garis memicu *event* palsu berulang. Galat menurun sampai CD=45 dan baru naik kembali melewati nilai itu. MAE terendah tercatat pada *cooldown* 30 *frame* (6,34) sedangkan galat persentase terendah pada 45 *frame* (14,64%), keduanya berada di piringan lebar 20–45 *frame*. Nilai yang terlalu besar mengabaikan pejalan kaki yang bergerak berdekatan sehingga berganti menjadi *under-counting* hingga 23,96% pada CD=120. Bias melintasi nol pada rentang 15–20 *frame* (dari +1,17 menjadi −0,17), menandai transisi dari *over-counting* ke *under-counting* sebagai dua galat berlawanan arah yang saling mengompensasi di sekitar titik optimal. Pola ini berlaku pada tiga tracker yang diuji beserta lintasan *ground truth*, meskipun letak optimumnya bergeser; DiffMOT terendah pada CD=30, Deep-OC-SORT pada CD=45, dan OC-SORT pada CD=60. Panjang *cooldown* karena itu perlu disesuaikan dengan kepadatan tempat sistem ditempatkan, bukan ditetapkan sekali untuk semua lokasi.
 
@@ -214,9 +228,9 @@ Tanpa *debounce*, galat *over-counting* mencapai 101,99% karena osilasi kotak de
 | 0,50 | 7,74 | 17,36 | 42,2 | *False negative* tinggi |
 | 0,60 | 11,34 | 25,43 | 43,0 | *Under-counting* parah |
 
-![Gambar 11](../../experiments/journal_figs/fig7_conf_sensitivity.png)
+![Gambar 13](../../experiments/journal_figs/fig7_conf_sensitivity.png)
 
-**Gambar 11.** Galat hitung dan *throughput* terhadap *confidence threshold* detektor; pita hijau menandai rentang operasional 0,25–0,30.
+**Gambar 13.** Galat hitung dan *throughput* terhadap *confidence threshold* detektor; pita hijau menandai rentang operasional 0,25–0,30.
 
 Galat bergerak dua arah di dua sisi ambang. Di bawah 0,20, derau latar belakang membanjiri sistem dengan *false positive*; di atas 0,40, orang di kejauhan berhenti terdeteksi dan galat merambat sampai 25,43% pada ambang 0,60. Titik galat terendah berada pada 0,20 (1,67%), dengan rentang operasional praktis pada 0,25–0,30 di mana *throughput* tetap stabil di atas 40 FPS. Setelan *deployment* yang dipakai, yaitu 0,30, berada di dalam rentang itu. *Throughput* nyaris tidak sensitif terhadap ambang (39,2–43,0 FPS) karena beban komputasi detektor tidak bergantung pada jumlah deteksi yang dibuang.
 
@@ -248,9 +262,9 @@ Pada perangkat *edge* tanpa GPU, jalur OC-SORT masih lolos ambang *real-time* pa
 
 Stabilitas sistem diukur dari distribusi latensi pada RTX 4090. Persentil ke-90 berada pada 29,50 ms, persentil ke-95 pada 32,10 ms, dan persentil ke-99 pada 36,40 ms. Artinya 95% *frame* diproses di bawah anggaran 33,3 ms sehingga aliran video bebas patahan pada beban normal. Lonjakan maksimum melampaui anggaran hingga 42,10 ms per *frame*, dan lonjakan itu hanya muncul pada *frame* dengan lebih dari 50 orang sekaligus, ketika asosiasi Hungarian harus memproses matriks berukuran besar.
 
-![Gambar 12](../../experiments/journal_figs/fig8_latency_breakdown.png)
+![Gambar 14](../../experiments/journal_figs/fig8_latency_breakdown.png)
 
-**Gambar 12.** Dekomposisi latensi *end-to-end* per perangkat; garis putus-putus merah menandai anggaran *real-time* 33,3 ms.
+**Gambar 14.** Dekomposisi latensi *end-to-end* per perangkat; garis putus-putus merah menandai anggaran *real-time* 33,3 ms.
 
 ## 8. Pembahasan
 
