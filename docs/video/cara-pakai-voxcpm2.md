@@ -96,7 +96,7 @@ Jalan keluarnya: buat **satu** paragraf contoh dengan deskripsi **berbahasa Ingg
 !cd /content && mkdir -p acuan && python render_narasi.py \
   "/content/drive/MyDrive/video-puu/naskah-tts.txt" \
   --out acuan --only 1 \
-  --voice-desc "(a middle-aged male narrator with a warm, slightly husky low register and audible breath, measured pace, as if explaining the work to one colleague in a quiet room)" \
+  --voice-desc "(an energetic Indonesian male narrator, bright and confident with a low warm register, brisk delivery, driving forward)" \
   --steps 25 --cfg 1.7
 ```
 
@@ -247,8 +247,10 @@ Kalau muncul galat `403 Invalid response status`, versi `edge-tts` di mesin terl
 | `edge-tts` mengembalikan 403 | Versi lama. `pipx upgrade edge-tts`. |
 | Semua paragraf terdengar seperti orang berbeda | Kamu memakai `--voice-desc` sendirian. Voice Design dari teks memang berganti suara tiap pemanggilan. Pakai `--reference-wav` dengan satu berkas acuan (lihat Sel 4 dan 5). |
 | Suara terdengar seperti AI, rata dan tanpa napas | Tiga sebab berurutan: deskripsi suara tanpa tekstur, acuan hasil Voice Design, dan `--steps` masih 10. Ikuti bagian 6. |
+| Suara lemas, lambat, seperti orang kelelahan | Deskripsi berisi kata turun-energi (`calm`, `quiet`, `composed`, `measured pace`, `as if explaining in a quiet room`). Ganti dengan `energetic, confident, brisk`, dan buang semua kata tenang. Bagian 6.6 |
+| Aksennya terdengar bukan penutur Indonesia | Penuturnya tidak pernah disebut. Tambahkan `Indonesian` pada `--voice-desc`, atau kloning penutur Indonesia asli supaya aksennya ikut terbawa. Bagian 6.6 |
 | Hasil kloning tidak pernah bernapas, seperti membaca tanpa jeda | Audio acuanmu bersih dari napas. Rekam ulang 20–30 detik dan biarkan napas ikut masuk, lalu jangan di-denoise. Model belajar "tanpa napas" sebagai keadaan normal. |
-| Suara tidak sesuai deskripsi, pria diminta keluar perempuan | Deskripsi ditulis dalam Bahasa Indonesia. Instruksi VoxCPM2 hanya mendukung **Bahasa Inggris dan Mandarin**. Tulis ulang dalam Bahasa Inggris, mis. `(a young male narrator, calm and clear, brisk pace)`. |
+| Suara tidak sesuai deskripsi, pria diminta keluar perempuan | Deskripsi ditulis dalam Bahasa Indonesia. Instruksi VoxCPM2 hanya mendukung **Bahasa Inggris dan Mandarin**. Tulis ulang dalam Bahasa Inggris, mis. `(an energetic Indonesian male narrator, brisk delivery)`. |
 | Render jalan terus padahal cuma mau satu paragraf | Kamu memakai `--start 1`, yang artinya "dari paragraf 1 sampai habis". Untuk satu paragraf saja pakai `--only 1`. |
 | Suara terasa lambat | Tambahkan `brisk pace` atau `faster pace` pada `--voice-desc` di samping `--reference-wav`. Mengubah gaya, bukan timbre. Untuk mode hi-fi, instruksi diabaikan, jadi acuannya sendiri harus sudah lebih cepat. |
 | Hasil kloning berbunyi berdengung atau berisik | Turunkan `--cfg` dari 2.0 ke sekitar 1,5–1,6. Dokumentasi menyebut nilai lebih rendah lebih stabil pada masukan sulit. |
@@ -283,14 +285,14 @@ Dokumentasi VoxCPM2 menyebut tiga bahan yang harus ada di `--voice-desc`: **iden
 Terjemahan pola itu untuk video ini, dari yang paling berdampak:
 
 ```bash
-# 1. paling berpengaruh: tekstur + napas + situasi
---voice-desc "(a middle-aged male narrator with a warm, slightly husky low register and audible breath, measured pace, as if explaining the work to one colleague in a quiet room)"
+# 1. pilihan utama: energi + kebangsaan + tekstur
+--voice-desc "(an energetic Indonesian male narrator, bright and confident with a low warm register, brisk delivery, driving forward)"
 
-# 2. tanpa penanda situasi
---voice-desc "(a man in his forties, low-pitched and slightly raspy, unhurried, dry and matter-of-fact)"
+# 2. setengah energi lebih, tapi tetap bertenaga
+--voice-desc "(a confident Indonesian male narrator, warm low register, steady brisk pace)"
 
-# 3. paling dekat ke deskripsi lama, hanya ditambah tekstur
---voice-desc "(calm male narrator, low warm register, quiet and composed, unhurried)"
+# 3. versi paling sederhana yang masih berenergi
+--voice-desc "(energetic Indonesian male narrator, warm and confident, brisk pace)"
 ```
 
 Kata yang dibuang dan alasannya:
@@ -300,9 +302,12 @@ Kata yang dibuang dan alasannya:
 | `clear`, `crystal clear` | Mendeskripsikan hasil akhir, bukan suara. Tidak bisa diikuti model |
 | `documentary style` | Gaya bawaan semua narator. Nol daya pembeda |
 | `professional`, `perfect audio quality` | Deskripsi kualitas rekaman, bukan suara |
-| `brisk pace` | Bawaan video ini memang sudah cepat; menyebutnya hanya menambah kerataan |
+| `calm`, `composed`, `quiet`, `measured pace`, `unhurried` | **Perintah turun-energi.** Model menuruti kata-kata ini secara harfiah, dan hasilnya lemas |
+| `as if explaining in a quiet room` | Kalimat ini meminta volume rendah. Ini penyebab paling sering suara keluar seperti orang kelelahan |
 
-Tiga kata tekstur yang benar-benar mengubah keluaran: `husky`, `breathy`, `low register`. Satu penanda situasi seperti `explaining to one colleague` membuat tempo tidak rata sendiri, tanpa perlu menyebut tempo.
+Kata energi yang benar-benar mengubah keluaran: `energetic`, `confident`, `bright`, `driving forward`. Kata tekstur: `husky`, `breathy`, `low register`. Untuk tempo, sebut `brisk pace` atau `fast`. Pada video penelitian, lambat bukan pilihan yang aman: kalau terlalu cepat masih bisa dipotong, kalau lemas tidak ada yang bisa ditambal di editor.
+
+**Sebut kebangsaan penuturnya.** Model ini 30 bahasa dan tidak punya penanda bahasa wajib, jadi tanpa arahan model bisa jatuh ke aksen lintas bahasa. Dokumentasi VoxCPM2 memakai pola ini untuk dialek Tionghoa: cukup tulis nama variasinya, misalnya `Cantonese`, tanpa menambahi instruksi rumit. Pola yang sama berlaku di sini dengan kata `Indonesian`.
 
 ### 6.2 Akar masalahnya: jangan mengkloning hasil Voice Design
 
@@ -349,6 +354,30 @@ Untuk video laporan resmi, saya tidak akan memakainya sama sekali. Satu `[sigh]`
 
 Naskahnya sendiri sudah ditulis untuk telinga: kalimat pendek dengan panjang yang bervariasi, tanpa em dash, angka sebagai kata, enumerasi eksplisit. Kerataan yang kamu dengar datang dari suaranya, bukan dari tulisannya. Membongkar naskah untuk memperbaiki masalah suara hanya memindahkan masalahnya.
 
+### 6.6 Suara lemas, dan aksen yang tidak terdengar Indonesia
+
+Dua keluhan ini bukan soal model, keduanya berasal dari instruksi yang tidak lengkap.
+
+**Lemas dan lambat.** Deskripsi yang saya sarankan di revisi pertama berisi `calm`, `quiet`, `composed`, `measured pace`, dan `as if explaining in a quiet room`. Semuanya perintah turun-energi, dan model menuruti harfiah. Sudah diperbaiki di bagian 6.1. Selain itu, sumber kedua: **mode kloning meniru tempo berkas acuan**, jadi acuan yang lambat menghasilkan 16 paragraf yang lambat. Gaya tetap bisa ditambahi di samping acuan, dan dokumentasi VoxCPM2 memberi contoh resminya:
+
+```bash
+# gaya ditambahi pada saat kloning, timbre tetap dari acuan
+--reference-wav acuan/narasi_01.wav --voice-desc "(speaking fast, bright and full)"
+```
+
+Jangan mempercepat audio di editor sebagai penambal; narasi yang dipercepat terdengar tidak wajar. Perbaiki di instruksi atau di berkas acuan.
+
+**Aksen bukan penutur Indonesia, misalnya "Se-" pada kata "Setiap" keluar melenceng.** Model ini mendukung 30 bahasa tanpa penanda bahasa yang wajib, sehingga tanpa arahan penutur model bisa berhenti di aksen lintas bahasa. Dua jalan keluar:
+
+1. Sebut kebangsaannya di instruksi, seperti pola dokumentasi untuk dialek Tionghoa yang cukup menulis `Cantonese`. Di sini: `Indonesian`.
+2. Yang paling pasti, kloning penutur Indonesia asli. Timbre **dan** aksen datang dari berkas acuan, jadi rekaman suara sendiri langsung menghapus masalahnya. Ini alasan kedua untuk jalur bagian 6.2.
+
+Uji satu paragraf saja sebelum render 16, dan cek paragraf 1 karena di situlah aksen paling terdengar:
+
+```bash
+--only 1 --force
+```
+
 ---
 
 ## Ringkasan Perintah
@@ -362,7 +391,7 @@ python scripts/video/render_narasi.py naskah-tts.txt --engine edge --out out_dra
 
 # LANGKAH 1: buat satu paragraf acuan, ulangi sampai suaranya cocok
 python scripts/video/render_narasi.py naskah-tts-v2.txt --out acuan --only 1 \
-  --voice-desc "(a middle-aged male narrator with a warm, slightly husky low register and audible breath, measured pace, as if explaining the work to one colleague in a quiet room)" \
+  --voice-desc "(an energetic Indonesian male narrator, bright and confident with a low warm register, brisk delivery, driving forward)" \
   --steps 25 --cfg 1.7
 
 # JALUR LEBIH BAIK: rekam suara sendiri 20-30 detik, pakai sebagai acuan semua paragraf
