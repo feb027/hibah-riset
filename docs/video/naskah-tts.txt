@@ -1,0 +1,29 @@
+Setiap hari, stasiun kereta, kampus, dan pusat perbelanjaan dipenuhi orang yang bergerak masuk dan keluar. Pengelola tempat itu perlu tahu berapa banyak orang yang ada di dalam, dan perlu tahu sekarang juga. Angka itu dipakai untuk mengatur kapasitas, menjaga keamanan, dan mengambil keputusan.
+
+Selama ini pemantauan dilakukan secara manual. Petugas mengamati layar kamera pengawas lalu menghitung sendiri. Cara ini bergantung penuh pada manusia. Begitu jumlah orang dalam layar bertambah, hasil hitungannya sulit dijaga tetap konsisten.
+
+Kamera pengawas juga tidak selalu dipasang di tempat yang ideal. Jarak kamera membuat tubuh manusia tampak kecil. Sebagian tubuh tertutup oleh orang lain. Pencahayaan berubah sepanjang hari. Orang juga tidak selalu berjalan lurus, dan kadang bergerak bolak-balik di dekat garis hitung.
+
+Kondisi itu memunculkan tiga kesalahan yang khas. Orang yang sama terdeteksi ulang setelah terhalang, lalu dihitung dua kali. Identitas dua orang tertukar saat jalurnya berdekatan. Orang yang hanya berdiri di sekitar garis bisa memicu hitungan palsu berulang.
+
+Penelitian ini membangun Rancage, sebuah pipeline penghitungan orang yang bekerja secara riil taim. Sistem ini menyatukan tiga komponen, yaitu deteksi objek, pelacakan multi objek, dan logika penghitungan yang membaca lintasan.
+
+Komponen pertama adalah detektor. Empat arsitektur Yolo dilatih pada dataset Kraud Hyuman, yang memuat lebih dari seratus ribu anotasi orang. Arsitektur terbaik, Yolo dua puluh enam varian smol, mencapai em A P sebesar nol koma empat sembilan tujuh empat.
+
+Dari pengujian deteksi ada dua temuan penting. Pertama, arsitektur en em es fri memangkas waktu post prosesing menjadi sepertiga, dan biayanya tidak bertambah ketika kerumunan memadat. Kedua, ada batas atas yang tidak bisa dilewati. Sekitar tujuh sampai sepuluh persen orang tidak akan pernah terdeteksi pada ambang keyakinan mana pun. Batas ini terbentuk di lapisan deteksi dan tidak bisa diperbaiki oleh komponen mana pun di hilirnya.
+
+Komponen kedua adalah pelacak. Empat pelacak dibandingkan pada keluaran deteksi yang sama, supaya perbandingannya adil. Hasilnya jelas. Pelacak berbasis difusi mencapai Hota empat puluh empat koma tiga tujuh pada Em O Te dua puluh. Nilai I D F satunya lima puluh tiga koma delapan enam. Angka itu jauh di atas ketiga pembandingnya.
+
+Namun pelacak paling akurat belum tentu pelacak yang dipakai. Pelacak berbasis difusi hanya berjalan dua puluh frame per detik pada perangkat uji. Itu di bawah syarat sistem yang menuntut tiga puluh frame per detik. Karena itu sistem memakai Dip Ok Sort sebagai jalur utama. Galat hitungnya sedikit lebih tinggi, tetapi kecepatannya dua kali lipat dan masih bisa berjalan pada perangkat tanpa kartu grafis.
+
+Komponen ketiga adalah logika penghitungan. Di sini kontribusi desainnya paling terlihat. Tanpa mekanisme pengunci status, galat hitung melonjak sampai seratus satu koma sembilan sembilan persen. Orang yang berdiri di dekat garis terhitung berkali-kali. Dengan mesin status yang mengingat status setiap identitas, galat itu turun menjadi enam belas koma tujuh satu persen.
+
+Sistem juga diuji pada rentang nilai pengaturan. Masa tunggu yang terlalu pendek memicu hitungan berlebih. Yang terlalu panjang justru melewatkan orang yang berjalan berdampingan. Rentang aman berada di antara dua puluh sampai empat puluh lima frame. Untuk ambang keyakinan detektor, rentang amannya nol koma dua lima sampai nol koma tiga nol.
+
+Untuk kelayakan riil taim, seluruh pipeline diukur lapis per lapis. Total waktunya dua puluh empat koma enam satu milidetik per frame. Itu setara empat puluh koma enam frame per detik pada ar te eks empat ribu sembilan puluh. Waktu itu berada di bawah anggaran tiga puluh tiga koma tiga milidetik. Yang menarik, modul penghitungan hanya memakan nol koma empat persen dari total. Seluruh logika hitung berjalan hampir tanpa biaya tambahan.
+
+Penelitian ini berjalan dalam peta jalan lima tahun. Tahun pertama membangun arsitektur awal. Tahun kedua memperkuat ketahanan terhadap oklusi dan perubahan cahaya. Tahun ketiga menambahkan fitur atensi untuk membaca pola gerak yang kompleks. Tahun keempat memampatkan model agar ringan di perangkat tepi. Tahun kelima mengarah pada penerapan di infrastruktur kota cerdas.
+
+Kesimpulannya, akurasi penghitungan orang tidak ditentukan oleh satu komponen tunggal. Yang menentukan adalah keselarasan seluruh lapisan pada pengaturan yang tepat. Rancage menunjukkan bahwa hal itu bisa dicapai, dan tetap bisa berjalan pada kecepatan riil taim.
+
+Terima kasih.
