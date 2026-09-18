@@ -188,8 +188,8 @@ mkdir -p ~/video-puu/out
 cd ~/video-puu
 python /path/ke/hibah-riset/scripts/video/render_narasi.py naskah-tts.txt \
   --out out \
-  --voice-desc "(a young male narrator, calm and clear, brisk pace, documentary style)" \
-  --seed 42
+  --voice-desc "(an energetic Indonesian male narrator, bright and confident with a low warm register, brisk delivery)" \
+  --steps 25 --cfg 1.7
 ```
 
 Pada 4090, RTF sekitar 0,3 berarti narasi 5 menit selesai dalam sekitar 1,5 menit setelah model termuat.
