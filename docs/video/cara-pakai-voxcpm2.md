@@ -39,7 +39,19 @@ wc -w naskah-asli.txt
 
 ## 1. Jalur A — Google Colab (paling praktis, tanpa pasang apa pun)
 
-Buka `colab.research.google.com` → *New notebook* → *Runtime* → *Change runtime type* → **T4 GPU**.
+Buka `colab.research.google.com` → *New notebook* → *Runtime* → *Change runtime type*.
+
+Di dialog itu isi begini:
+
+| Kolom | Nilai |
+| :--- | :--- |
+| *Runtime type* | Python 3 |
+| *Hardware accelerator* | **T4 GPU** |
+| *Runtime version* | **Latest (recommended)** |
+
+T4 punya 16 GB VRAM, cukup untuk kebutuhan VoxCPM2 sekitar 8 GB. Kalau akunmu menawarkan **L4 GPU** atau **A100 GPU**, ambil itu, hasilnya lebih cepat. Jangan pilih opsi TPU: VoxCPM2 memakai CUDA, bukan TPU.
+
+*Runtime version* dibiarkan di **Latest**. Versi terbaru saat ini adalah 2026.07 dengan Python 3.12.13, dan itu sudah masuk syarat VoxCPM. Pinning ke 2026.07 hanya perlu kalau suatu saat Latest berpindah ke Python 3.13, karena VoxCPM menolak versi 3.13 ke atas.
 
 ### Sel 1 — sambungkan Drive dan pasang VoxCPM
 
@@ -48,6 +60,8 @@ from google.colab import drive
 drive.mount('/content/drive')
 !pip install -q voxcpm soundfile
 ```
+
+Pemasangan ini tidak cepat. `voxcpm` menarik `modelscope`, `datasets`, `funasr`, `gradio`, dan `matplotlib` sekaligus, jadi sediakan beberapa menit. Selama prosesnya jalan dan tidak berhenti dengan `ERROR: Could not find a version`, biarkan saja. Baris peringatan `pip's dependency resolver` di akhir bukan tanda gagal; penjelasannya ada di tabel bagian 5.
 
 ### Sel 2 — ambil skrip render
 
@@ -164,6 +178,7 @@ Kalau muncul galat `403 Invalid response status`, versi `edge-tts` di mesin terl
 | Gejala | Sebab dan tindakan |
 | :--- | :--- |
 | `pip install voxcpm` gagal, menyebut versi Python | Colab perlu Python ≥3.10 dan <3.13. Pin runtime: *Runtime → Change runtime type → Runtime version → 2026.07*. |
+| `ERROR: pip's dependency resolver ... gcsfs requires fsspec==..., but you have fsspec ...` | **Bukan galat, abaikan saja.** `voxcpm` 2.0.3 mendeklarasikan `modelscope>=1.22.0` dan `datasets<4`, dan keduanya memin `fsspec` ke versi lama sehingga bertabrakan dengan `gcsfs` bawaan Colab. Yang terdampak hanya akses Google Cloud Storage, yang tidak dipakai di alur ini. Pengunduhan model memakai Hugging Face, dan Drive yang sudah termount tidak terpengaruh. Jangan ditambal dengan menaikkan `fsspec`, karena ModelScope akan rusak. |
 | Proses berhenti tanpa pesan, Colab memutus sesi | Sesi gratis punya batas waktu. Jalankan ulang Sel 1, 2, 4; hasil sebelumnya dilewati otomatis. |
 | Satu paragraf keluar kosong atau terpotong | Dokumentasi VoxCPM2 mengakui ketidakstabilan pada teks panjang. Potong paragraf itu jadi dua, tambahkan baris kosong di `naskah-tts.txt`, render ulang. |
 | Sebutir kata terucap salah | Perbaiki di `naskah-tts.txt` saja, lalu render ulang paragraf itu dengan `--start N --force`. Naskah asli tidak perlu disentuh. |

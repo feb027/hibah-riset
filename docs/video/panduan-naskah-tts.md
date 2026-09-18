@@ -116,6 +116,8 @@ Buat folder `video-puu/` di Google Drive, lalu unggah kedua berkas. Nama berkas 
 
 ### Langkah 2. Colab
 
+Runtime: ***Hardware accelerator* = T4 GPU**, ***Runtime version* = Latest**. Kalau tersedia L4 atau A100, pakai itu (lebih cepat). Jangan TPU, karena VoxCPM2 memakai CUDA.
+
 ```python
 # Sel 1
 from google.colab import drive
