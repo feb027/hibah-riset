@@ -40,6 +40,18 @@ def render_voxcpm(par: list[str], args, out: Path) -> None:
     from voxcpm import VoxCPM
     import soundfile as sf
 
+    # Mode suara. Voice Design dari teks TIDAK mengunci suara antar pemanggilan
+    # (dokumentasi resmi: "a bit like hiring a new voice actor each time"), jadi
+    # untuk narasi banyak paragraf wajib memakai audio referensi.
+    gen_kwargs = {}
+    if args.prompt_wav:
+        gen_kwargs["prompt_wav_path"] = args.prompt_wav
+        gen_kwargs["prompt_text"] = args.prompt_text
+        if args.reference_wav:
+            gen_kwargs["reference_wav_path"] = args.reference_wav
+    elif args.reference_wav:
+        gen_kwargs["reference_wav_path"] = args.reference_wav
+
     print("memuat openbmb/VoxCPM2 ...", flush=True)
     # optimize=False secara default: torch.compile justru 10-20x lebih lambat untuk
     # pemakaian sekali-sekali, dan di Tesla T4 kompilasi bfloat16 dilewati (tanpa efek).
@@ -60,6 +72,7 @@ def render_voxcpm(par: list[str], args, out: Path) -> None:
             text=teks,
             cfg_value=args.cfg,
             inference_timesteps=args.steps,
+            **gen_kwargs,
         )
         sf.write(target, wav, model.tts_model.sample_rate)
 
@@ -90,7 +103,14 @@ def main() -> int:
     ap.add_argument("--voice", default="id-ID-ArdiNeural", help="suara edge-tts")
     ap.add_argument("--rate", default="+0%", help="tempo edge-tts, mis. -10%%")
     ap.add_argument("--voice-desc", default="",
-                    help="deskripsi suara VoxCPM2, ikut disisipkan di awal tiap paragraf")
+                    help="kontrol gaya/deskripsi suara, disisipkan di awal tiap paragraf "
+                         "(mode voice design atau kloning referensi)")
+    ap.add_argument("--reference-wav", type=Path,
+                    help="audio acuan untuk mengunci timbre suara (WAJIB untuk narasi banyak paragraf)")
+    ap.add_argument("--prompt-wav", type=Path,
+                    help="audio acuan mode kloning hi-fi; butuh --prompt-text")
+    ap.add_argument("--prompt-text",
+                    help="transkrip persis dari --prompt-wav")
     ap.add_argument("--seed", type=int, default=42)
     ap.add_argument("--optimize", action="store_true",
                     help="aktifkan torch.compile VoxCPM (default mati: lebih lambat untuk sekali jalan)")
@@ -103,6 +123,14 @@ def main() -> int:
 
     if not args.naskah.is_file():
         sys.exit(f"naskah tidak ditemukan: {args.naskah}")
+    for label, p in (("--reference-wav", args.reference_wav),
+                     ("--prompt-wav", args.prompt_wav)):
+        if p and not p.is_file():
+            sys.exit(f"{label} tidak ditemukan: {p}")
+    if args.prompt_wav and not args.prompt_text:
+        sys.exit("--prompt-wav butuh --prompt-text (transkrip persis audio itu)")
+    if args.prompt_wav and args.voice_desc:
+        sys.exit("--voice-desc tidak bisa dipakai bersama --prompt-wav/--prompt-text")
 
     par = baca_paragraf(args.naskah)
     if not par:
@@ -120,6 +148,14 @@ def main() -> int:
     print(f"kata     : {total_kata}  (perkiraan {total_kata / 140:.1f} menit pada 140 kata/menit)")
     print(f"mesin    : {args.engine}"
           + (f" / {args.voice}" if args.engine == "edge" else ""))
+    if args.engine == "voxcpm":
+        if args.prompt_wav:
+            print("suara    : kloning hi-fi dari " + str(args.prompt_wav))
+        elif args.reference_wav:
+            print("suara    : kloning dari referensi " + str(args.reference_wav) + " (terkunci)")
+        else:
+            print("suara    : voice design dari teks "
+                  "PERINGATAN: tanpa --reference-wav, tiap paragraf jadi suara berbeda")
     print(f"keluaran : {args.out}/narasi_NN{ext}")
 
     if args.dry_run:
