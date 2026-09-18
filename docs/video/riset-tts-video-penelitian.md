@@ -29,7 +29,7 @@ Persyaratan yang dipakai untuk menyaring kandidat: dukungan Bahasa Indonesia asl
 | Keluaran audio | 48 kHz (masukan referensi 16 kHz di-*upscale* internal) |
 | Fitur | *Voice Design* (buat suara baru dari deskripsi teks), *Controllable Cloning*, *Ultimate Cloning* |
 | RTF di RTX 4090 | ~0,3 (klaim vendor); ~0,13 dengan Nano-vLLM |
-| VRAM | ~5,0 GB pada FP16; terukur 5,76 GB puncak pada benchmark independen |
+| VRAM | ~8 GB menurut tabel resmi repo; terukur 5,76 GB puncak pada benchmark independen |
 | Lisensi | Apache-2.0, bebas komersial |
 
 Bukti independen yang paling relevan datang dari repositori `paksopi/Text-to-Speech-Analysis` (Juli 2026, MIT). Repositori itu membandingkan **10 model TTS pada perangkat yang sama** (RTX 3050 Laptop, 6 GB VRAM) dengan kalimat uji yang sama, lalu menilainya dengan empat metrik objektif, bukan klaim pemasaran. Hasilnya:
@@ -126,7 +126,7 @@ Pocket TTS Indonesian pantas dibahas lebih detail karena sekilas cocok: dibangun
 
 | Kandidat | Gratis | Bahasa Indonesia | Kloning suara | Jalan di mana | Lisensi | Putusan |
 | :--- | :---: | :---: | :---: | :--- | :--- | :--- |
-| **VoxCPM2** | Ya (self-host) | Ya, native | Ya | 4090; RX 6600 dengan syarat | Apache-2.0 | **Pakai ini** |
+| **VoxCPM2** | Ya (self-host) | Ya, native | Ya | 4090, Colab T4, atau Space resmi; RX 6600 berisiko | Apache-2.0 | **Pakai ini** |
 | Google Chirp 3 HD | 1 jt karakter/bln | Ya (`id-ID`) | Fitur terpisah, berbayar | Cloud | Ketentuan vendor | **Cadangan terbaik** |
 | edge-tts | Ya | Ya (Gadis, Ardi) | Tidak | Klien mana pun | Tidak resmi | Untuk draft saja |
 | Piper / NusaVoice | Ya | Ya | Tidak | CPU | MIT/varies | Kalau tanpa GPU |
@@ -144,21 +144,91 @@ Catatan tentang tiga model yang sering muncul di daftar "TTS gratis terbaik": Me
 
 ## 3. Perangkat: RTX 4090 vs RX 6600
 
-**RTX 4090 (kampus).** VoxCPM2 butuh sekitar 5 GB VRAM pada FP16, jadi 24 GB jauh lebih dari cukup. Jalur ini tidak punya kendala berarti.
+**RTX 4090 (kampus).** VoxCPM2 tercatat ~8 GB VRAM pada tabel resmi repo, dengan pengukuran independen 5,76 GB puncak pada kalimat pendek. Pada 24 GB, jalur ini tidak punya kendala berarti.
 
-**RX 6600 (rumah).** Kartu ini berarsitektur `gfx1032` dan **tidak didukung resmi oleh ROCm**. Praktik yang berhasil dipakai banyak orang adalah memaksa ROCm memperlakukannya sebagai arsitektur terdekat yang didukung:
+**RX 6600 (rumah).** Dua masalah bertumpuk. Pertama, kartu ini berarsitektur `gfx1032` dan **tidak didukung resmi oleh ROCm**. Praktik yang berhasil dipakai banyak orang adalah memaksa ROCm memperlakukannya sebagai arsitektur terdekat yang didukung:
 
 ```bash
 export HSA_OVERRIDE_GFX_VERSION=10.3.0
 ```
 
-Dengan nilai itu, RX 6600 dan kartu RDNA 2 di bawah RX 6800 bisa menjalankan ROCm 6.2+. VoxCPM2 sendiri butuh PyTorch ≥2.5 dan CUDA ≥12.0; versi ROCm dari PyTorch tidak selalu setara fiturnya, sehingga jalur ini berstatus "mungkin bisa", bukan "pasti bisa". Kalau ternyata gagal, jangan buang waktu menambal: pakai bagian 1.4 (model CPU) untuk draft, lalu render final di 4090 kampus.
+Dengan nilai itu, RX 6600 dan kartu RDNA 2 di bawah RX 6800 bisa menjalankan ROCm 6.2+. VoxCPM2 sendiri butuh PyTorch ≥2.5 dan CUDA ≥12.0; versi ROCm dari PyTorch tidak selalu setara fiturnya, sehingga jalur ini berstatus "mungkin bisa", bukan "pasti bisa".
+
+Kedua, kapasitas memori. RX 6600 hanya punya 8 GB, sedangkan tabel resmi VoxCPM2 mencantumkan kebutuhan ~8 GB. Model sebesar 2B memang bisa dipaksa muat kalau angkanya ditekan, tetapi 8 GB persis di batas kebutuhan bukan tempat yang nyaman untuk bekerja. Kalau jalur ROCm gagal, jangan buang waktu menambal: pakai bagian 1.4 untuk draft, lalu render final di 4090 kampus atau di Colab.
 
 Satu hal yang perlu diingat: Pocket TTS **tidak mendapat percepatan dari GPU sama sekali**. Penulisnya menguji dan tidak melihat percepatan, karena modelnya kecil dan *batch size*-nya 1. Jadi kalau jatuh ke model ini, GPU tidak menolong.
 
 ---
 
-## 4. Yang Sebaiknya Dihindari
+## 4. Jalur Menjalankan: Colab dan Web
+
+Pertanyaan praktisnya: apakah harus memasang sendiri di komputer. Jawabannya tidak.
+
+### 4.1 Lewat web, tanpa memasang apa pun
+
+Ada demo resmi dari OpenBMB: **`openbmb/VoxCPM-Demo`** di Hugging Face Spaces. Space itu berjalan dengan Gradio, berlisensi Apache-2.0, dan statusnya *pinned*, artinya selalu aktif dan tidak perlu menunggu *cold start*. Isinya mencakup VoxCPM2 beserta antarmuka untuk *voice design* dan kloning. Untuk sekadar mencoba dan memilih warna suara, ini jalur tercepat.
+
+Halaman sampel audio resmi juga tersedia di `openbmb.github.io/voxcpm2-demopage` untuk mendengar hasilnya sebelum memutuskan.
+
+Yang perlu diperhatikan: Space publik adalah layanan bersama, jadi ada antrean dan batas durasi per permintaan. Untuk narasi 5 menit yang harus dirender utuh dan konsisten, jangan bergantung pada Space. Pakai Space untuk memilih suara, lalu render final di Colab atau di 4090.
+
+Selain itu ada `voxcpm.app`, yang bukan milik OpenBMB dan memakai sistem kredit evaluasi gratis. Untuk luaran penelitian, pakai yang resmi.
+
+### 4.2 Di Google Colab
+
+Bisa, dan ini jalur gratis paling praktis kalau 4090 kampus sedang dipakai orang lain.
+
+Runtime Colab saat ini memakai **Python 3.12.13** dengan **PyTorch 2.11.0** (runtime 2026.07). Keduanya masuk syarat VoxCPM, yaitu Python ≥3.10 dan <3.13 serta PyTorch ≥2.5. GPU gratisnya, T4 dengan 16 GB VRAM, cukup untuk kebutuhan ~8 GB.
+
+Isi satu sel dengan ini:
+
+```python
+!pip install -q voxcpm soundfile
+
+from voxcpm import VoxCPM
+import soundfile as sf
+
+model = VoxCPM.from_pretrained("openbmb/VoxCPM2", load_denoiser=False)
+
+wav = model.generate(
+    text="Pengelolaan ruang publik menuntut informasi jumlah orang yang cepat dan akurat.",
+    cfg_value=2.0,
+    inference_timesteps=10,
+    seed=42,
+)
+sf.write("narasi_01.wav", wav, model.tts_model.sample_rate)
+```
+
+Tiga hal yang harus diantisipasi:
+
+1. **Bobot diunduh ulang setiap sesi baru.** Colab gratis tidak menyimpan model antar sesi, jadi setiap kali membuka notebook ada unduhan beberapa GB sebelum bisa bicara. Jangan tutup sesi sebelum semua paragraf selesai dirender.
+2. **Sesi gratis bisa terputus.** Render per paragraf, simpan tiap hasil ke Google Drive dengan `from google.colab import drive; drive.mount('/content/drive')`, lalu tulis keluaran ke folder Drive. Kalau sesi mati di tengah, yang sudah jadi tidak hilang.
+3. **Kalau `pip install voxcpm` menolak karena versi Python**, pin runtime Colab ke versi 2026.07 lewat *Runtime → Change runtime type → Runtime version*, lalu ulangi.
+
+Notebook komunitas juga sudah ada, misalnya `SWAG456/voxcpm2-tools` yang menyertakan `VoxCPM2_Colab_Notebook.ipynb` untuk T4 gratis, dan notebook Gradio dari `TeamAIQ/Colab-notebooks`. Keduanya bukan keluaran resmi OpenBMB, jadi periksa isinya sebelum dipakai dan jangan jalankan sel yang tidak Anda pahami. Perintah `pip install` di atas sudah cukup; notebook komunitas hanya menambah antarmuka.
+
+### 4.3 Web demo lokal, tanpa Colab dan tanpa internet setelah model terunduh
+
+Repo VoxCPM menyertakan antarmuka web sendiri:
+
+```bash
+python app.py --port 8808
+```
+
+Lalu buka `http://localhost:8808`. Cocok kalau mau mengulang render berkali-kali tanpa mengunggah apa pun ke luar, asalkan 4090 kampus atau mesin dengan GPU yang cocok bisa diakses.
+
+### Ringkasan jalur
+
+| Cara | Perlu pasang | Gratis | Cocok untuk |
+| :--- | :---: | :---: | :--- |
+| Space `openbmb/VoxCPM-Demo` | Tidak | Ya | Memilih warna suara dan uji cepat |
+| Google Colab (T4, 16 GB) | Tidak | Ya | Render narasi final tanpa mengganggu 4090 |
+| `app.py` lokal | Ya | Ya | Render berulang, data tidak keluar dari mesin |
+| RTX 4090 kampus | Ya | Ya | Jalur tercepat dan paling stabil |
+
+---
+
+## 5. Yang Sebaiknya Dihindari
 
 **Kloning suara orang lain tanpa izin.** Semua model di atas bisa mengkloning suara dari beberapa detik rekaman. Untuk video penelitian yang dipublikasikan, jangan mengkloning suara anggota tim, dosen, atau narator apa pun tanpa izin tertulis. Pakai *Voice Design* VoxCPM2 supaya tidak menyerupai siapa pun, atau rekam sendiri suaranya dan kloning suara sendiri.
 
@@ -170,7 +240,7 @@ Satu hal yang perlu diingat: Pocket TTS **tidak mendapat percepatan dari GPU sam
 
 ---
 
-## 5. Menangani Pelafalan Istilah Teknis
+## 6. Menangani Pelafalan Istilah Teknis
 
 Ini bagian yang membuat hasil akhir terlihat profesional atau tidak, dan model sekelas apa pun tidak akan menyelesaikannya sendiri. Semua TTS membaca teks apa adanya, sedangkan naskah penelitian penuh singkatan yang tidak pernah ada di data pelatihan mana pun.
 
@@ -207,16 +277,17 @@ Tempo narasi juga lebih baik diatur di editor video daripada lewat parameter mod
 
 ---
 
-## 6. Rencana Eksekusi
+## 7. Rencana Eksekusi
 
 1. **Buat naskah 600–750 kata** terpisah dari bagian laporan, dibagi per paragraf.
-2. **Buat versi fonetis** memakai tabel bagian 5.
-3. **Pasang VoxCPM2 di 4090 kampus** dan render per paragraf dengan *seed* tetap supaya warna suara konsisten:
+2. **Buat versi fonetis** memakai tabel bagian 6.
+3. **Pilih warna suara di Space resmi** `openbmb/VoxCPM-Demo`, tanpa memasang apa pun. Simpan deskripsi suara yang terpilih.
+4. **Render final**, pilih salah satu jalur: 4090 kampus, Colab T4 (bagian 4.2), atau `app.py` lokal.
    ```bash
    pip install voxcpm soundfile
    ```
-4. **Bandingkan 2–3 hasil** dengan deskripsi suara berbeda di *Voice Design*, pilih satu, lalu kunci deskripsi dan *seed*-nya untuk semua paragraf.
-5. **Kalau 4090 tidak sempat dipakai**, render draft dengan `edge-tts --voice id-ID-ArdiNeural` sambil menyusun video, lalu ganti audio final setelah VoxCPM2 jalan. Timeline tetap sama, hanya audionya yang ditukar di akhir.
+   Render per paragraf dengan deskripsi suara dan `seed` yang sama untuk seluruh paragraf, supaya warnanya konsisten.
+5. **Kalau semua GPU sedang tidak bisa dipakai**, render draft dengan `edge-tts --voice id-ID-ArdiNeural` sambil menyusun video, lalu ganti audio final setelah VoxCPM2 jalan. Timeline tetap sama, hanya audionya yang ditukar di akhir.
 6. **Susun di editor**: audio, musik latar dengan level di bawah narasi, subtitle dari naskah asli (bukan versi fonetis), dan keterangan audio dihasilkan AI.
 
 ---
@@ -233,5 +304,9 @@ Tempo narasi juga lebih baik diatur di editor video daripada lewat parameter mod
 8. `rany2/edge-tts`, versi 7.2.7, 2025. https://github.com/rany2/edge-tts
 9. Resemble AI, *Chatterbox Multilingual V3*, MIT, 2026. https://github.com/resemble-ai/chatterbox
 10. Qwen Team, *Qwen3-TTS Technical Report*, arXiv:2601.15621, Januari 2026.
-11. Spheron, *VoxCPM2 VRAM Requirements* (kalkulator VRAM, estimasi 5,0 GB pada FP16). https://www.spheron.network/tools/gpu-recommender/openbmb/VoxCPM2/
+11. Spheron, *VoxCPM2 VRAM Requirements* (kalkulator VRAM, estimasi 5,0 GB pada FP16 — angka resmi repo menulis ~8 GB, lihat rujukan 1). https://www.spheron.network/tools/gpu-recommender/openbmb/VoxCPM2/
 12. RadeonOpenCompute, isu ROCm #1797 dan ROCm/ROCm #5069: penggunaan `HSA_OVERRIDE_GFX_VERSION=10.3.0` pada `gfx1032`. https://github.com/ROCm/ROCm/issues/5069
+13. OpenBMB, *VoxCPM Demo*, Hugging Face Spaces (Gradio, Apache-2.0, *pinned*). https://huggingface.co/spaces/openbmb/VoxCPM-Demo — sebutan VoxCPM2 dengan antarmuka *voice design* dan kloning, diakses 18 September 2026.
+14. OpenBMB, *VoxCPM2 Demo Page* (sampel audio resmi). https://openbmb.github.io/voxcpm2-demopage/
+15. Google Colab, *Past Runtime Versions* dan `googlecolab/backend-info`: runtime 2026.07 memakai Python 3.12.13, numpy 2.0.2, PyTorch 2.11.0. https://research.google.com/colaboratory/runtime-version-faq.html — diakses 18 September 2026.
+16. `SWAG456/voxcpm2-tools`, Hugging Face: `VoxCPM2_Colab_Notebook.ipynb` untuk T4 gratis dan skrip inferensi CPU. Bukan keluaran resmi OpenBMB. https://huggingface.co/SWAG456/voxcpm2-tools
