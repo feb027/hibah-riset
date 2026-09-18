@@ -13,9 +13,17 @@ Contoh:
   python scripts/video/render_narasi.py naskah-tts.txt \
       --engine edge --voice id-ID-ArdiNeural --out out_draft
 
-  # 3. Final dengan VoxCPM2 (butuh GPU)
-  python scripts/video/render_narasi.py naskah-tts.txt \
-      --voice-desc "(Pria muda, suara tenang, tempo sedang)"
+  # 3. Buat SATU paragraf acuan, ulangi sampai suaranya cocok
+  python scripts/video/render_narasi.py naskah-tts.txt --out acuan --only 1 \
+      --voice-desc "(Pria muda, suara tenang, tempo agak cepat)"
+
+  # 4. Render semua paragraf dengan suara terkunci dari acuan itu
+  python scripts/video/render_narasi.py naskah-tts.txt --out out \
+      --reference-wav acuan/narasi_01.wav
+
+  # 5. Render ulang satu paragraf saja
+  python scripts/video/render_narasi.py naskah-tts.txt --out out \
+      --reference-wav acuan/narasi_01.wav --only 4 --force
 """
 from __future__ import annotations
 
@@ -35,7 +43,7 @@ def baca_paragraf(path: Path) -> list[str]:
     return [p for p in par if p]
 
 
-def render_voxcpm(par: list[str], args, out: Path) -> None:
+def render_voxcpm(items: list[tuple[int, str]], args, out: Path) -> None:
     import torch
     from voxcpm import VoxCPM
     import soundfile as sf
@@ -60,13 +68,13 @@ def render_voxcpm(par: list[str], args, out: Path) -> None:
 
     # generate() versi 2.0.3 tidak punya parameter seed; determinisme diatur lewat
     # torch.manual_seed sebelum tiap paragraf.
-    for i, teks in enumerate(par, 1):
-        target = out / f"narasi_{i:02d}.wav"
+    for nomor, teks in items:
+        target = out / f"narasi_{nomor:02d}.wav"
         if target.exists() and not args.force:
-            print(f"[{i}/{len(par)}] lewati (sudah ada): {target.name}")
+            print(f"[{nomor}] lewati (sudah ada): {target.name}")
             continue
         teks = f"{args.voice_desc}{teks}" if args.voice_desc else teks
-        print(f"[{i}/{len(par)}] render: {target.name}", flush=True)
+        print(f"[{nomor}] render: {target.name}", flush=True)
         torch.manual_seed(args.seed)
         wav = model.generate(
             text=teks,
@@ -77,16 +85,16 @@ def render_voxcpm(par: list[str], args, out: Path) -> None:
         sf.write(target, wav, model.tts_model.sample_rate)
 
 
-def render_edge(par: list[str], args, out: Path) -> None:
+def render_edge(items: list[tuple[int, str]], args, out: Path) -> None:
     if not shutil.which("edge-tts"):
         sys.exit("edge-tts tidak ditemukan. Pasang dulu: pipx install edge-tts")
 
-    for i, teks in enumerate(par, 1):
-        target = out / f"narasi_{i:02d}.mp3"
+    for nomor, teks in items:
+        target = out / f"narasi_{nomor:02d}.mp3"
         if target.exists() and not args.force:
-            print(f"[{i}/{len(par)}] lewati (sudah ada): {target.name}")
+            print(f"[{nomor}] lewati (sudah ada): {target.name}")
             continue
-        print(f"[{i}/{len(par)}] render: {target.name}", flush=True)
+        print(f"[{nomor}] render: {target.name}", flush=True)
         subprocess.run(
             ["edge-tts", "--voice", args.voice, "--rate", args.rate,
              "--text", teks, "--write-media", str(target)],
@@ -116,7 +124,10 @@ def main() -> int:
                     help="aktifkan torch.compile VoxCPM (default mati: lebih lambat untuk sekali jalan)")
     ap.add_argument("--cfg", type=float, default=2.0)
     ap.add_argument("--steps", type=int, default=10)
-    ap.add_argument("--start", type=int, default=1, help="mulai dari paragraf ke-N")
+    ap.add_argument("--start", type=int, default=1,
+                    help="mulai dari paragraf ke-N sampai paragraf terakhir")
+    ap.add_argument("--only", type=int,
+                    help="render HANYA paragraf ke-N (untuk membuat audio acuan)")
     ap.add_argument("--force", action="store_true", help="timpa hasil yang sudah ada")
     ap.add_argument("--dry-run", action="store_true", help="cetak rencana saja")
     args = ap.parse_args()
@@ -132,19 +143,29 @@ def main() -> int:
     if args.prompt_wav and args.voice_desc:
         sys.exit("--voice-desc tidak bisa dipakai bersama --prompt-wav/--prompt-text")
 
-    par = baca_paragraf(args.naskah)
-    if not par:
+    semua = baca_paragraf(args.naskah)
+    if not semua:
         sys.exit("naskah kosong: tidak ada paragraf yang terbaca")
-    if not 1 <= args.start <= len(par):
-        sys.exit(f"--start di luar rentang 1..{len(par)}")
-    par = par[args.start - 1:]
+    n = len(semua)
+    if args.only is not None and args.start != 1:
+        sys.exit("--only dan --start tidak bisa dipakai bersamaan")
+    if args.only is not None:
+        if not 1 <= args.only <= n:
+            sys.exit(f"--only di luar rentang 1..{n}")
+        items = [(args.only, semua[args.only - 1])]
+    else:
+        if not 1 <= args.start <= n:
+            sys.exit(f"--start di luar rentang 1..{n}")
+        items = [(k, semua[k - 1]) for k in range(args.start, n + 1)]
 
-    total_kata = sum(len(p.split()) for p in par)
+    total_kata = sum(len(t.split()) for _, t in items)
     ext = EXT[args.engine]
     args.out.mkdir(parents=True, exist_ok=True)
 
     print(f"naskah   : {args.naskah}")
-    print(f"paragraf : {len(par)} (mulai dari nomor {args.start})")
+    print(f"paragraf : {len(items)} dari {n}"
+          + (f" (hanya nomor {items[0][0]})" if args.only is not None
+             else f" (mulai nomor {args.start})"))
     print(f"kata     : {total_kata}  (perkiraan {total_kata / 140:.1f} menit pada 140 kata/menit)")
     print(f"mesin    : {args.engine}"
           + (f" / {args.voice}" if args.engine == "edge" else ""))
@@ -160,18 +181,18 @@ def main() -> int:
 
     if args.dry_run:
         print("\n--dry-run, tidak ada model yang dimuat.\n")
-        for i, p in enumerate(par, args.start):
-            nama = f"narasi_{i:02d}{ext}"
+        for nomor, teks in items:
+            nama = f"narasi_{nomor:02d}{ext}"
             ada = " (sudah ada)" if (args.out / nama).exists() and not args.force else ""
-            print(f"  {nama}{ada}  {p[:70]}{'...' if len(p) > 70 else ''}")
+            print(f"  {nama}{ada}  {teks[:70]}{'...' if len(teks) > 70 else ''}")
         return 0
 
     if args.engine == "voxcpm":
-        render_voxcpm(par, args, args.out)
+        render_voxcpm(items, args, args.out)
     else:
-        render_edge(par, args, args.out)
+        render_edge(items, args, args.out)
 
-    print(f"\nselesai. {len(par)} paragraf di {args.out}/")
+    print(f"\nselesai. {len(items)} paragraf di {args.out}/")
     return 0
 
 

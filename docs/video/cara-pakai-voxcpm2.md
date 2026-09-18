@@ -92,7 +92,7 @@ Jalan keluarnya: buat **satu** paragraf contoh, dengarkan, kalau bagus simpan fi
 ```python
 !cd /content && mkdir -p acuan && python render_narasi.py \
   "/content/drive/MyDrive/video-puu/naskah-tts.txt" \
-  --out acuan --start 1 \
+  --out acuan --only 1 \
   --voice-desc "(Pria muda, suara tenang dan jelas, tempo agak cepat, gaya narasi dokumenter)"
 ```
 
@@ -138,10 +138,12 @@ Perbaiki paragraf itu di `naskah-tts.txt`, unggah ulang, lalu:
   "/content/drive/MyDrive/video-puu/naskah-tts.txt" \
   --out "/content/drive/MyDrive/video-puu/out" \
   --reference-wav "/content/acuan/narasi_01.wav" \
-  --start 4 --force
+  --only 4 --force
 ```
 
-`--start 4` artinya mulai dari paragraf keempat, dan `--force` menimpanya.
+`--only 4` artinya render paragraf keempat saja, dan `--force` menimpanya.
+
+Jangan tertukar: `--only N` me-render satu paragraf saja, sedangkan `--start N` me-render dari paragraf N sampai paragraf terakhir.
 
 ### Mode ketiga: kloning hi-fi, kalau masih kurang mirip
 
@@ -236,9 +238,10 @@ Kalau muncul galat `403 Invalid response status`, versi `edge-tts` di mesin terl
 | `ERROR: pip's dependency resolver ... gcsfs requires fsspec==..., but you have fsspec ...` | **Bukan galat, abaikan saja.** `voxcpm` 2.0.3 mendeklarasikan `modelscope>=1.22.0` dan `datasets<4`, dan keduanya memin `fsspec` ke versi lama sehingga bertabrakan dengan `gcsfs` bawaan Colab. Yang terdampak hanya akses Google Cloud Storage, yang tidak dipakai di alur ini. Pengunduhan model memakai Hugging Face, dan Drive yang sudah termount tidak terpengaruh. Jangan ditambal dengan menaikkan `fsspec`, karena ModelScope akan rusak. |
 | Proses berhenti tanpa pesan, Colab memutus sesi | Sesi gratis punya batas waktu. Jalankan ulang Sel 1, 2, 4; hasil sebelumnya dilewati otomatis. |
 | Satu paragraf keluar kosong atau terpotong | Dokumentasi VoxCPM2 mengakui ketidakstabilan pada teks panjang. Potong paragraf itu jadi dua, tambahkan baris kosong di `naskah-tts.txt`, render ulang. |
-| Sebutir kata terucap salah | Perbaiki di `naskah-tts.txt` saja, lalu render ulang paragraf itu dengan `--start N --force`. Naskah asli tidak perlu disentuh. |
+| Sebutir kata terucap salah | Perbaiki di `naskah-tts.txt` saja, lalu render ulang paragraf itu dengan `--only N --force`. Naskah asli tidak perlu disentuh. |
 | `edge-tts` mengembalikan 403 | Versi lama. `pipx upgrade edge-tts`. |
 | Semua paragraf terdengar seperti orang berbeda | Kamu memakai `--voice-desc` sendirian. Voice Design dari teks memang berganti suara tiap pemanggilan. Pakai `--reference-wav` dengan satu berkas acuan (lihat Sel 4 dan 5). |
+| Render jalan terus padahal cuma mau satu paragraf | Kamu memakai `--start 1`, yang artinya "dari paragraf 1 sampai habis". Untuk satu paragraf saja pakai `--only 1`. |
 | Suara terasa lambat | Tambahkan `--voice-desc "(tempo agak cepat)"` di samping `--reference-wav`. Mengubah gaya, bukan timbre. |
 | `TypeError: VoxCPM._generate() got an unexpected keyword argument 'seed'` | Versi skrip di Colab masih yang lama. `generate()` pada `voxcpm` 2.0.3 tidak punya parameter `seed`; versi terbaru skrip memakai `torch.manual_seed()`. Ambil ulang: `!wget -q -O /content/render_narasi.py https://raw.githubusercontent.com/feb027/hibah-riset/main/scripts/video/render_narasi.py` |
 | Render terasa sangat lambat di Colab | T4 memang jauh lebih lambat dari 4090, dan kompilasi bfloat16 dilewati. Pastikan `--optimize` tidak dipakai. Kalau tersedia L4 atau A100 di dialog runtime, pindah ke sana. |
@@ -266,7 +269,7 @@ python scripts/video/render_narasi.py naskah-tts.txt --dry-run
 python scripts/video/render_narasi.py naskah-tts.txt --engine edge --out out_draft
 
 # LANGKAH 1: buat satu paragraf acuan, ulangi sampai suaranya cocok
-python scripts/video/render_narasi.py naskah-tts.txt --out acuan --start 1 \
+python scripts/video/render_narasi.py naskah-tts.txt --out acuan --only 1 \
   --voice-desc "(Pria muda, suara tenang dan jelas, tempo agak cepat)"
 
 # LANGKAH 2: render semua paragraf dengan suara terkunci dari acuan
@@ -275,7 +278,7 @@ python scripts/video/render_narasi.py naskah-tts.txt --out out \
 
 # render ulang satu paragraf
 python scripts/video/render_narasi.py naskah-tts.txt --out out \
-  --reference-wav acuan/narasi_01.wav --start 4 --force
+  --reference-wav acuan/narasi_01.wav --only 4 --force
 
 # kloning hi-fi, kalau kloning referensi masih kurang mirip
 python scripts/video/render_narasi.py naskah-tts.txt --out out \

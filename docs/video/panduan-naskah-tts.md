@@ -136,7 +136,7 @@ drive.mount('/content/drive')
 # Sel 4 — buat satu paragraf acuan, ulangi sampai suaranya cocok
 !cd /content && python render_narasi.py \
   "/content/drive/MyDrive/video-puu/naskah-tts.txt" \
-  --out acuan --start 1 \
+  --out acuan --only 1 \
   --voice-desc "(Pria muda, suara tenang dan jelas, tempo agak cepat, gaya narasi dokumenter)"
 
 # Sel 5 — render semua paragraf dengan suara terkunci dari acuan
@@ -163,10 +163,10 @@ Jangan render semuanya. Perbaiki paragraf itu di `naskah-tts.txt`, unggah ulang,
 
 ```bash
 python render_narasi.py naskah-tts.txt --out out \
-  --voice-desc "(...)" --seed 42 --start 7 --force
+  --reference-wav acuan/narasi_01.wav --only 7 --force
 ```
 
-`--start 7` mulai dari paragraf ke-7, `--force` menimpanya.
+`--only 7` me-render paragraf ke-7 saja, `--force` menimpanya.
 
 ---
 
