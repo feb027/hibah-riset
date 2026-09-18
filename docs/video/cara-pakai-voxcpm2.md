@@ -97,7 +97,7 @@ Jalan keluarnya: buat **satu** paragraf contoh dengan deskripsi **berbahasa Ingg
   "/content/drive/MyDrive/video-puu/naskah-tts.txt" \
   --out acuan --only 1 \
   --voice-desc "(an energetic Indonesian male narrator, bright and confident with a low warm register, brisk delivery, driving forward)" \
-  --steps 25 --cfg 1.7
+  --steps 25
 ```
 
 Dengarkan `acuan/narasi_01.wav`. Dokumentasi menyarankan mencoba 1–3 kali untuk mendapat suara yang diinginkan. Bahan deskripsinya, semua dalam Bahasa Inggris:
@@ -189,7 +189,7 @@ cd ~/video-puu
 python /path/ke/hibah-riset/scripts/video/render_narasi.py naskah-tts.txt \
   --out out \
   --voice-desc "(an energetic Indonesian male narrator, bright and confident with a low warm register, brisk delivery)" \
-  --steps 25 --cfg 1.7
+  --steps 25
 ```
 
 Pada 4090, RTF sekitar 0,3 berarti narasi 5 menit selesai dalam sekitar 1,5 menit setelah model termuat.
@@ -328,7 +328,7 @@ Rekaman bersih yang napasnya sudah dibuang mengajarkan model bahwa "tanpa napas"
   "/content/drive/MyDrive/video-puu/naskah-tts-v2.txt" \
   --out "/content/drive/MyDrive/video-puu/out" \
   --reference-wav "/content/drive/MyDrive/video-puu/rekaman-saya.wav" \
-  --steps 25 --cfg 1.7
+  --steps 25
 ```
 
 Kalau memakai suara sendiri, tidak ada urusan izin. Kalau memakai suara orang lain, izin tertulis wajib untuk luaran yang dipublikasikan; keterangan narasi berbantuan AI tetap dicantumkan di deskripsi video.
@@ -337,12 +337,12 @@ Kalau memakai suara sendiri, tidak ada urusan izin. Kalau memakai suara orang la
 
 Skrip render sudah punya keduanya, tetapi keduanya belum diisi di panduan mana pun.
 
-| Parameter | Bawaan | Untuk natural | Alasan dari dokumentasi |
+| Parameter | Bawaan | Putusan | Alasan dari dokumentasi |
 | :--- | :---: | :---: | :--- |
-| `--steps` | 10 | **25** | `inference_timesteps` yang lebih tinggi menaikkan detail dan kenaturalan. Rentang yang dianjurkan 4–30; biaya waktunya linear dan pada 4090 tidak terasa |
-| `--cfg` | 2.0 | **1.7** | Rentang 1,0–2,0 disebut lebih rileks dan natural, sedangkan di atas 2,0 menambah risiko derau dan artefak |
+| `--steps` | 10 | **25** | `inference_timesteps` yang lebih tinggi menaikkan detail dan kenaturalan. Rentang 4–30; biayanya linear dan pada 4090 tidak terasa. Jangan lewat 30, hasilnya melandai |
+| `--cfg` | 2.0 | **biarkan 2.0** | Guidance scale mengatur seberapa ketat model mengikuti *conditioning*, dan instruksi suara di dalam tanda kurung termasuk di dalamnya. Menurunkannya melonggarkan ikatan itu, sehingga pada mode voice design model justru melayang ke suara bawaan latihannya. Turunkan ke 1,5–1,6 hanya kalau keluaran berdengung atau berderau, dan itu kasus teks panjang pada jalur kloning |
 
-Pengaruhnya nyata tetapi tidak sebesar dua tuas di atas. Jangan menaikkan `--steps` melewati 30; hasilnya melandai.
+**Koreksi penting.** Saran `--cfg 1.7` pada revisi pertama menyalahartikan tabel dokumentasi. Baris "1,0–2,0 lebih rileks dan natural" itu soal hasil akhir pada teks panjang, bukan soal memperoleh suara yang diinginkan. Pada jalur voice design, menurunkan `--cfg` membuat suara terdengar *lebih* seperti suara bawaan model, yaitu suara yang paling terdengar seperti AI.
 
 ### 6.4 Non-verbal tag, dan kenapa video ini sebaiknya tidak memakainya
 
@@ -378,6 +378,28 @@ Uji satu paragraf saja sebelum render 16, dan cek paragraf 1 karena di situlah a
 --only 1 --force
 ```
 
+### 6.7 Kalau tetap tidak mau merekam suara
+
+Voice Design VoxCPM2 punya plafon, dan plafon itu tertulis di dokumentasinya sendiri: hasil voice design berubah-ubah setiap pemanggilan, "a bit like hiring a new voice actor each time". Tidak ada audio manusia yang dijadikan acuan, jadi yang keluar adalah suara rata-rata ruang latih model. Menambah atau mengganti kata sifat hanya memindahkan hasil di dalam ruang rata-rata itu. Tiga revisi deskripsi sudah cukup untuk membuktikan hal itu.
+
+Karena itu ada dua jalan, dan tidak ada jalan ketiga.
+
+**Jalan 1, rekam suara sendiri.** 20–30 detik, satu paragraf naskah ini, napas dibiarkan, tanpa denoise. Ini satu-satunya cara memakai VoxCPM2 pada kekuatannya. Ingat: VoxCPM2 itu model kloning yang bagus, voice design-nya jalan yang paling lemah.
+
+**Jalan 2, ganti mesin untuk render final.** Kalau suara penutur asli Indonesia yang penting:
+
+| Mesin | Suara | Gratis | Catatan |
+| :--- | :--- | :---: | :--- |
+| edge-tts | `id-ID-ArdiNeural`, `id-ID-GadisNeural` | ya | Penutur Indonesia nyata, tanpa GPU, tanpa akun. Layanan tidak resmi, jadi untuk draft dan untuk memastikan masalahnya ada di mana |
+| Google Cloud Chirp 3 HD | locale `id-ID` | kuota 0–1 juta karakter/bulan | API resmi, narasi ini hanya ±5.100 karakter atau 0,5% kuota. Wajib mengaktifkan penagihan pada proyek Google Cloud. Rinciannya sudah ada di `riset-tts-video-penelitian.md` bagian 1.2 |
+
+**Uji pembeda, 30 detik, tanpa GPU.** Render paragraf 1 dengan dua mesin, lalu dengarkan berurutan. Kalau suara edge-tts terdengar seperti orang Indonesia membaca dan suara VoxCPM2 terdengar seperti AI, masalahnya ada di voice design, bukan di naskah, dan jalan keluarnya adalah jalan 1 atau jalan 2.
+
+```bash
+python scripts/video/render_narasi.py naskah-tts-v2.txt \
+  --engine edge --voice id-ID-ArdiNeural --out uji --only 1
+```
+
 ---
 
 ## Ringkasan Perintah
@@ -392,15 +414,15 @@ python scripts/video/render_narasi.py naskah-tts.txt --engine edge --out out_dra
 # LANGKAH 1: buat satu paragraf acuan, ulangi sampai suaranya cocok
 python scripts/video/render_narasi.py naskah-tts-v2.txt --out acuan --only 1 \
   --voice-desc "(an energetic Indonesian male narrator, bright and confident with a low warm register, brisk delivery, driving forward)" \
-  --steps 25 --cfg 1.7
+  --steps 25
 
 # JALUR LEBIH BAIK: rekam suara sendiri 20-30 detik, pakai sebagai acuan semua paragraf
 python scripts/video/render_narasi.py naskah-tts-v2.txt --out out \
-  --reference-wav rekaman-saya.wav --steps 25 --cfg 1.7
+  --reference-wav rekaman-saya.wav --steps 25
 
 # LANGKAH 2: render semua paragraf dengan suara terkunci dari acuan
 python scripts/video/render_narasi.py naskah-tts-v2.txt --out out \
-  --reference-wav acuan/narasi_01.wav --steps 25 --cfg 1.7
+  --reference-wav acuan/narasi_01.wav --steps 25
 
 # render ulang satu paragraf
 python scripts/video/render_narasi.py naskah-tts.txt --out out \

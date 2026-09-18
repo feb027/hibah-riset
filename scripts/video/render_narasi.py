@@ -15,8 +15,13 @@ Contoh:
 
   # 3. Buat SATU paragraf acuan, ulangi sampai suaranya cocok
   #    Deskripsi suara HARUS Bahasa Inggris atau Mandarin; Bahasa Indonesia diabaikan.
+  #    Jangan turunkan --cfg di sini: pada voice design itu melonggarkan ikatan ke
+  #    deskripsi dan suara melayang ke bawaan model (yang paling terdengar seperti AI).
+  #    Cara paling pasti: rekam suara sendiri 20-30 detik, pakai langsung sebagai
+  #    --reference-wav untuk semua paragraf.
   python scripts/video/render_narasi.py naskah-tts.txt --out acuan --only 1 \
-      --voice-desc "(a young male narrator, calm and clear, brisk pace)"
+      --voice-desc "(an energetic Indonesian male narrator, brisk delivery)" \
+      --steps 25
 
   # 4. Render semua paragraf dengan suara terkunci dari acuan itu
   python scripts/video/render_narasi.py naskah-tts.txt --out out \
