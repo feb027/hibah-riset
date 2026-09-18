@@ -36,6 +36,7 @@ def baca_paragraf(path: Path) -> list[str]:
 
 
 def render_voxcpm(par: list[str], args, out: Path) -> None:
+    import torch
     from voxcpm import VoxCPM
     import soundfile as sf
 
@@ -45,6 +46,8 @@ def render_voxcpm(par: list[str], args, out: Path) -> None:
     model = VoxCPM.from_pretrained("openbmb/VoxCPM2", load_denoiser=False,
                                    optimize=args.optimize)
 
+    # generate() versi 2.0.3 tidak punya parameter seed; determinisme diatur lewat
+    # torch.manual_seed sebelum tiap paragraf.
     for i, teks in enumerate(par, 1):
         target = out / f"narasi_{i:02d}.wav"
         if target.exists() and not args.force:
@@ -52,11 +55,11 @@ def render_voxcpm(par: list[str], args, out: Path) -> None:
             continue
         teks = f"{args.voice_desc}{teks}" if args.voice_desc else teks
         print(f"[{i}/{len(par)}] render: {target.name}", flush=True)
+        torch.manual_seed(args.seed)
         wav = model.generate(
             text=teks,
             cfg_value=args.cfg,
             inference_timesteps=args.steps,
-            seed=args.seed,
         )
         sf.write(target, wav, model.tts_model.sample_rate)
 

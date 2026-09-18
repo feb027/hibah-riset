@@ -51,15 +51,16 @@ pip install voxcpm soundfile
 
 ```python
 from voxcpm import VoxCPM
+import torch
 import soundfile as sf
 
-model = VoxCPM.from_pretrained("openbmb/VoxCPM2", load_denoiser=False)
+model = VoxCPM.from_pretrained("openbmb/VoxCPM2", load_denoiser=False, optimize=False)
 
+torch.manual_seed(42)
 wav = model.generate(
     text="Pengelolaan ruang publik menuntut informasi jumlah orang yang cepat dan akurat.",
     cfg_value=2.0,
     inference_timesteps=10,
-    seed=42,
 )
 sf.write("narasi_01.wav", wav, model.tts_model.sample_rate)
 ```
@@ -71,7 +72,6 @@ wav = model.generate(
     text="(Pria muda, suara tenang dan jelas, tempo sedang, gaya narasi dokumenter)Selamat pagi, semuanya.",
     cfg_value=2.0,
     inference_timesteps=10,
-    seed=42,
 )
 ```
 
@@ -186,15 +186,16 @@ Isi satu sel dengan ini:
 !pip install -q voxcpm soundfile
 
 from voxcpm import VoxCPM
+import torch
 import soundfile as sf
 
-model = VoxCPM.from_pretrained("openbmb/VoxCPM2", load_denoiser=False)
+model = VoxCPM.from_pretrained("openbmb/VoxCPM2", load_denoiser=False, optimize=False)
 
+torch.manual_seed(42)
 wav = model.generate(
     text="Pengelolaan ruang publik menuntut informasi jumlah orang yang cepat dan akurat.",
     cfg_value=2.0,
     inference_timesteps=10,
-    seed=42,
 )
 sf.write("narasi_01.wav", wav, model.tts_model.sample_rate)
 ```
@@ -205,6 +206,7 @@ Tiga hal yang harus diantisipasi:
 2. **Sesi gratis bisa terputus.** Render per paragraf, simpan tiap hasil ke Google Drive dengan `from google.colab import drive; drive.mount('/content/drive')`, lalu tulis keluaran ke folder Drive. Kalau sesi mati di tengah, yang sudah jadi tidak hilang.
 3. **Kalau `pip install voxcpm` menolak karena versi Python.** Jarang terjadi: metadata paket `voxcpm` 2.0.3 hanya mensyaratkan `>=3.10` tanpa batas atas, dan pemasangan pada Colab Python 3.13 sudah terbukti berhasil. Kalau tetap gagal, pin runtime Colab ke versi 2026.07 lewat *Runtime → Change runtime type → Runtime version*, lalu ulangi.
 4. **`optimize` defaultnya aktif.** `VoxCPM.from_pretrained(...)` memakai `optimize=True`, yang menyalakan `torch.compile`. Untuk pemakaian sekali-sekali itu merugikan, karena graf dikompilasi ulang untuk setiap panjang teks baru. Skrip pada repositori ini mematikan opsi itu secara default; pemanggilan manual sebaiknya menulis `optimize=False`.
+5. **Tidak ada parameter `seed`.** `generate()` pada `voxcpm` 2.0.3 menerima `text`, `cfg_value`, `inference_timesteps`, `prompt_wav_path`, `reference_wav_path`, dan beberapa opsi panjang keluaran. Untuk hasil yang dapat diulang, atur `torch.manual_seed(42)` sebelum tiap pemanggilan. Contoh README di GitHub menyebut `seed=42`, tetapi versi paket yang terpasang belum menerimanya.
 
 Notebook komunitas juga sudah ada, misalnya `SWAG456/voxcpm2-tools` yang menyertakan `VoxCPM2_Colab_Notebook.ipynb` untuk T4 gratis, dan notebook Gradio dari `TeamAIQ/Colab-notebooks`. Keduanya bukan keluaran resmi OpenBMB, jadi periksa isinya sebelum dipakai dan jangan jalankan sel yang tidak Anda pahami. Perintah `pip install` di atas sudah cukup; notebook komunitas hanya menambah antarmuka.
 
