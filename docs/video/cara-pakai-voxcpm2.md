@@ -6,9 +6,11 @@ Panduan langkah demi langkah. Tiga jalur, pilih satu. Siapkan dulu bahannya, kar
 
 ## 0. Siapkan Dua File Naskah
 
+> **Naskah yang dipakai sekarang adalah v3**, dari storyboard bertimecode dosen pembimbing. Ringkasannya di `storyboard-v3.md`. Berkas v1 dan v2 sudah tidak dipakai, tetapi sengaja dibiarkan di repositori sebagai pembanding.
+
 Buat folder `video-puu/` di Google Drive berisi dua file. Keduanya punya **jumlah paragraf yang sama persis**, hanya isinya berbeda.
 
-**`naskah-asli.txt`** — naskah normal, untuk subtitle. Paragraf dipisah satu baris kosong:
+**`naskah-asli-v3.txt`** — naskah normal, untuk subtitle. Paragraf dipisah satu baris kosong:
 
 ```
 Pengelolaan ruang publik modern memerlukan informasi mengenai jumlah dan
@@ -18,7 +20,7 @@ Sistem ini diberi nama RANCAGE, singkatan dari Real-Time Adaptive Neural
 Counting with Associative Group Estimation.
 ```
 
-**`naskah-tts.txt`** — versi yang dibaca mesin, untuk disintesis. Sudah ditulis ulang secara fonetis memakai tabel di `docs/video/riset-tts-video-penelitian.md` bagian 6:
+**`naskah-tts-v3.txt`** — versi yang dibaca mesin, untuk disintesis. Sudah ditulis ulang secara fonetis memakai tabel di `docs/video/riset-tts-video-penelitian.md` bagian 6:
 
 ```
 Pengelolaan ruang publik modern memerlukan informasi mengenai jumlah dan
@@ -32,7 +34,7 @@ Bedanya cuma di istilah teknis. Kalimat biasa tidak perlu diubah. Kalau ada isti
 Cek dulu panjangnya. Target 4–5 menit berarti 600–750 kata:
 
 ```bash
-wc -w naskah-asli.txt
+wc -w naskah-asli-v3.txt
 ```
 
 ---
@@ -77,7 +79,7 @@ Kalau sel ini menampilkan bantuan pemakaian, skripnya siap.
 
 ```python
 !cd /content && python render_narasi.py \
-  "/content/drive/MyDrive/video-puu/naskah-tts.txt" \
+  "/content/drive/MyDrive/video-puu/naskah-tts-v3.txt" \
   --out "/content/drive/MyDrive/video-puu/out" --dry-run
 ```
 
@@ -85,7 +87,7 @@ Lihat daftar paragraf dan perkiraan durasinya. Kalau jumlah paragrafnya sudah be
 
 ### Sel 4 — tentukan suara acuan (sekali saja)
 
-**Jangan langsung render 15 paragraf.** Dua hal dari dokumentasi resmi yang harus dipegang di sini:
+**Jangan langsung render 9 paragraf.** Dua hal dari dokumentasi resmi yang harus dipegang di sini:
 
 1. **Tanpa audio referensi, VoxCPM menghasilkan suara acak setiap kali.** Usage Guide menuliskannya apa adanya: *"If you do not provide a reference audio, VoxCPM generates a random voice each time."* Itu sebabnya paragraf 1 dan 2 kamu terdengar seperti dua orang berbeda.
 2. **Deskripsi suara hanya dipahami dalam Bahasa Inggris atau Bahasa Mandarin.** Kalimat aslinya: *"Chinese and English are both supported in the instruction."* Deskripsi berbahasa Indonesia diabaikan begitu saja, dan model jatuh ke suara acak. Ini penyebab suara pria yang kamu minta keluar sebagai suara perempuan.
@@ -94,7 +96,7 @@ Jalan keluarnya: buat **satu** paragraf contoh dengan deskripsi **berbahasa Ingg
 
 ```python
 !cd /content && mkdir -p acuan && python render_narasi.py \
-  "/content/drive/MyDrive/video-puu/naskah-tts.txt" \
+  "/content/drive/MyDrive/video-puu/naskah-tts-v3.txt" \
   --out acuan --only 1 \
   --voice-desc "(an energetic Indonesian male narrator, bright and confident with a low warm register, brisk delivery, driving forward)" \
   --steps 25
@@ -118,12 +120,12 @@ Kalau temponya terlalu lambat, tukar `measured pace` jadi `brisk pace` atau tamb
 
 ```python
 !cd /content && python render_narasi.py \
-  "/content/drive/MyDrive/video-puu/naskah-tts.txt" \
+  "/content/drive/MyDrive/video-puu/naskah-tts-v3.txt" \
   --out "/content/drive/MyDrive/video-puu/out" \
   --reference-wav "/content/acuan/narasi_01.wav"
 ```
 
-Sejak titik ini, timbre suara diambil dari `narasi_01.wav`, bukan dari deskripsi teks. Semua 15 paragraf akan terdengar sebagai orang yang sama.
+Sejak titik ini, timbre suara diambil dari `narasi_01.wav`, bukan dari deskripsi teks. Semua 9 paragraf akan terdengar sebagai orang yang sama.
 
 Dua hal yang berubah setelah ini:
 
@@ -132,11 +134,11 @@ Dua hal yang berubah setelah ini:
 
 ### Sel 6 — render ulang satu paragraf saja
 
-Perbaiki paragraf itu di `naskah-tts.txt`, unggah ulang, lalu:
+Perbaiki paragraf itu di `naskah-tts-v3.txt`, unggah ulang, lalu:
 
 ```python
 !cd /content && python render_narasi.py \
-  "/content/drive/MyDrive/video-puu/naskah-tts.txt" \
+  "/content/drive/MyDrive/video-puu/naskah-tts-v3.txt" \
   --out "/content/drive/MyDrive/video-puu/out" \
   --reference-wav "/content/acuan/narasi_01.wav" \
   --only 4 --force
@@ -152,7 +154,7 @@ Kalau hasil kloning referensi masih terasa belum pas, VoxCPM2 punya mode paling 
 
 ```python
 !cd /content && python render_narasi.py \
-  "/content/drive/MyDrive/video-puu/naskah-tts.txt" \
+  "/content/drive/MyDrive/video-puu/naskah-tts-v3.txt" \
   --out "/content/drive/MyDrive/video-puu/out" \
   --reference-wav "/content/acuan/narasi_01.wav" \
   --prompt-wav "/content/acuan/narasi_01.wav" \
@@ -171,7 +173,7 @@ Konsekuensinya praktis: **kalau ingin suara hi-fi yang lebih cepat, audio acuann
 
 Dua alasan kenapa narasi dipecah per paragraf:
 
-1. **Batas keras 8192 token** pada VoxCPM2, dengan audio maksimum sekitar 3 menit per pemanggilan. Satu paragraf di berkas ini saja memakai ratusan token, jadi 16 paragraf jauh melewatinya. (VoxCPM 1.x batasnya 4096; angka itu yang sering tersalin dari panduan lama.)
+1. **Batas keras 8192 token** pada VoxCPM2, dengan audio maksimum sekitar 3 menit per pemanggilan. Satu paragraf di berkas ini saja memakai ratusan token, jadi 9 paragraf jauh melewatinya. (VoxCPM 1.x batasnya 4096; angka itu yang sering tersalin dari panduan lama.)
 2. **Dokumentasi mengakui ketidakstabilan pada teks panjang.** Peramban CLI resmi VoxCPM2 sendiri, `voxcpm batch`, juga memecah masukan baris per baris, bukan sekali jalan.
 
 Setelah suara terkunci lewat berkas acuan, pemecahan ini tidak lagi merugikan konsistensi. Yang tersisa hanya pekerjaan menyambung 15 potongan di editor.
@@ -186,7 +188,7 @@ Samakan saja dengan Colab, hanya tanpa Drive.
 pip install voxcpm soundfile
 mkdir -p ~/video-puu/out
 cd ~/video-puu
-python /path/ke/hibah-riset/scripts/video/render_narasi.py naskah-tts.txt \
+python /path/ke/hibah-riset/scripts/video/render_narasi.py naskah-tts-v3.txt \
   --out out \
   --voice-desc "(an energetic Indonesian male narrator, bright and confident with a low warm register, brisk delivery)" \
   --steps 25
@@ -213,7 +215,7 @@ Pakai ini untuk menyusun video lebih dulu sambil menunggu GPU kosong. Kualitasny
 
 ```bash
 pipx install edge-tts
-python scripts/video/render_narasi.py naskah-tts.txt \
+python scripts/video/render_narasi.py naskah-tts-v3.txt \
   --engine edge --voice id-ID-ArdiNeural --out out_draft
 ```
 
@@ -227,7 +229,7 @@ Kalau muncul galat `403 Invalid response status`, versi `edge-tts` di mesin terl
 
 1. Periksa durasi total. Enam WAV dari paragraf 700 kata biasanya jatuh di 4,5–5,5 menit. Kalau lewat dari 5 menit, potong kalimat di naskah, bukan mempercepat audio di editor — audio yang dipercepat terdengar tidak wajar.
 2. Susun di editor: audio berurutan, musik latar di level sekitar −18 dB supaya tidak menutupi narasi.
-3. Subtitle dibuat dari **`naskah-asli.txt`**, bukan versi fonetis. Kalau versi fonetis yang dipakai, subtitle akan menampilkan "Riil Taim Adaptif" alih-alih "Real-Time Adaptive".
+3. Subtitle dibuat dari **`naskah-asli-v3.txt`**, bukan versi fonetis. Kalau versi fonetis yang dipakai, subtitle akan menampilkan "Riil Taim Adaptif" alih-alih "Real-Time Adaptive".
 4. Tambahkan keterangan kecil di deskripsi video bahwa narasi dihasilkan dengan bantuan AI. VoxCPM2 menyisipkan tanda air pada keluarannya dan dokumentasinya meminta hal ini.
 
 ---
@@ -242,8 +244,8 @@ Kalau muncul galat `403 Invalid response status`, versi `edge-tts` di mesin terl
 | `pip install voxcpm` gagal, menyebut versi Python | Sangat jarang. Metadata paket `voxcpm` 2.0.3 hanya mensyaratkan `>=3.10`, tanpa batas atas, dan pemasangan di Colab Python 3.13 sudah terbukti berhasil. Kalau tetap gagal, pin runtime: *Runtime → Change runtime type → Runtime version → 2026.07*. |
 | `ERROR: pip's dependency resolver ... gcsfs requires fsspec==..., but you have fsspec ...` | **Bukan galat, abaikan saja.** `voxcpm` 2.0.3 mendeklarasikan `modelscope>=1.22.0` dan `datasets<4`, dan keduanya memin `fsspec` ke versi lama sehingga bertabrakan dengan `gcsfs` bawaan Colab. Yang terdampak hanya akses Google Cloud Storage, yang tidak dipakai di alur ini. Pengunduhan model memakai Hugging Face, dan Drive yang sudah termount tidak terpengaruh. Jangan ditambal dengan menaikkan `fsspec`, karena ModelScope akan rusak. |
 | Proses berhenti tanpa pesan, Colab memutus sesi | Sesi gratis punya batas waktu. Jalankan ulang Sel 1, 2, 4; hasil sebelumnya dilewati otomatis. |
-| Satu paragraf keluar kosong atau terpotong | Dokumentasi VoxCPM2 mengakui ketidakstabilan pada teks panjang. Potong paragraf itu jadi dua, tambahkan baris kosong di `naskah-tts.txt`, render ulang. |
-| Sebutir kata terucap salah | Perbaiki di `naskah-tts.txt` saja, lalu render ulang paragraf itu dengan `--only N --force`. Naskah asli tidak perlu disentuh. |
+| Satu paragraf keluar kosong atau terpotong | Dokumentasi VoxCPM2 mengakui ketidakstabilan pada teks panjang. Potong paragraf itu jadi dua, tambahkan baris kosong di `naskah-tts-v3.txt`, render ulang. |
+| Sebutir kata terucap salah | Perbaiki di `naskah-tts-v3.txt` saja, lalu render ulang paragraf itu dengan `--only N --force`. Naskah asli tidak perlu disentuh. |
 | `edge-tts` mengembalikan 403 | Versi lama. `pipx upgrade edge-tts`. |
 | Semua paragraf terdengar seperti orang berbeda | Kamu memakai `--voice-desc` sendirian. Voice Design dari teks memang berganti suara tiap pemanggilan. Pakai `--reference-wav` dengan satu berkas acuan (lihat Sel 4 dan 5). |
 | Suara terdengar seperti AI, rata dan tanpa napas | Tiga sebab berurutan: deskripsi suara tanpa tekstur, acuan hasil Voice Design, dan `--steps` masih 10. Ikuti bagian 6. |
@@ -311,7 +313,7 @@ Kata energi yang benar-benar mengubah keluaran: `energetic`, `confident`, `brigh
 
 ### 6.2 Akar masalahnya: jangan mengkloning hasil Voice Design
 
-Selama berkas acuan berasal dari deskripsi teks, seluruh 16 paragraf mewarisi suara rata-rata model. Yang mengubah kualitas paling besar bukan deskripsi, melainkan **asal audio acuan**.
+Selama berkas acuan berasal dari deskripsi teks, seluruh 9 paragraf mewarisi suara rata-rata model. Yang mengubah kualitas paling besar bukan deskripsi, melainkan **asal audio acuan**.
 
 Rekam 20–30 detik suara sendiri, baca satu paragraf naskah ini, lalu pakai rekaman itu sebagai acuan untuk semua paragraf. Aturannya:
 
@@ -323,9 +325,9 @@ Rekam 20–30 detik suara sendiri, baca satu paragraf naskah ini, lalu pakai rek
 Rekaman bersih yang napasnya sudah dibuang mengajarkan model bahwa "tanpa napas" itu keadaan normal. Itulah sumber keluhan suara yang tidak pernah bernapas di tengah paragraf.
 
 ```python
-# satu rekaman dipakai untuk ke-16 paragraf, tanpa langkah acuan terpisah
+# satu rekaman dipakai untuk ke-9 paragraf, tanpa langkah acuan terpisah
 !cd /content && python render_narasi.py \
-  "/content/drive/MyDrive/video-puu/naskah-tts-v2.txt" \
+  "/content/drive/MyDrive/video-puu/naskah-tts-v3.txt" \
   --out "/content/drive/MyDrive/video-puu/out" \
   --reference-wav "/content/drive/MyDrive/video-puu/rekaman-saya.wav" \
   --steps 25
@@ -358,7 +360,7 @@ Naskahnya sendiri sudah ditulis untuk telinga: kalimat pendek dengan panjang yan
 
 Dua keluhan ini bukan soal model, keduanya berasal dari instruksi yang tidak lengkap.
 
-**Lemas dan lambat.** Deskripsi yang saya sarankan di revisi pertama berisi `calm`, `quiet`, `composed`, `measured pace`, dan `as if explaining in a quiet room`. Semuanya perintah turun-energi, dan model menuruti harfiah. Sudah diperbaiki di bagian 6.1. Selain itu, sumber kedua: **mode kloning meniru tempo berkas acuan**, jadi acuan yang lambat menghasilkan 16 paragraf yang lambat. Gaya tetap bisa ditambahi di samping acuan, dan dokumentasi VoxCPM2 memberi contoh resminya:
+**Lemas dan lambat.** Deskripsi yang saya sarankan di revisi pertama berisi `calm`, `quiet`, `composed`, `measured pace`, dan `as if explaining in a quiet room`. Semuanya perintah turun-energi, dan model menuruti harfiah. Sudah diperbaiki di bagian 6.1. Selain itu, sumber kedua: **mode kloning meniru tempo berkas acuan**, jadi acuan yang lambat menghasilkan 9 paragraf yang lambat. Gaya tetap bisa ditambahi di samping acuan, dan dokumentasi VoxCPM2 memberi contoh resminya:
 
 ```bash
 # gaya ditambahi pada saat kloning, timbre tetap dari acuan
@@ -372,7 +374,7 @@ Jangan mempercepat audio di editor sebagai penambal; narasi yang dipercepat terd
 1. Sebut kebangsaannya di instruksi, seperti pola dokumentasi untuk dialek Tionghoa yang cukup menulis `Cantonese`. Di sini: `Indonesian`.
 2. Yang paling pasti, kloning penutur Indonesia asli. Timbre **dan** aksen datang dari berkas acuan, jadi rekaman suara sendiri langsung menghapus masalahnya. Ini alasan kedua untuk jalur bagian 6.2.
 
-Uji satu paragraf saja sebelum render 16, dan cek paragraf 1 karena di situlah aksen paling terdengar:
+Uji satu paragraf saja sebelum render 9, dan cek paragraf 1 karena di situlah aksen paling terdengar:
 
 ```bash
 --only 1 --force
@@ -396,7 +398,7 @@ Karena itu ada dua jalan, dan tidak ada jalan ketiga.
 **Uji pembeda, 30 detik, tanpa GPU.** Render paragraf 1 dengan dua mesin, lalu dengarkan berurutan. Kalau suara edge-tts terdengar seperti orang Indonesia membaca dan suara VoxCPM2 terdengar seperti AI, masalahnya ada di voice design, bukan di naskah, dan jalan keluarnya adalah jalan 1 atau jalan 2.
 
 ```bash
-python scripts/video/render_narasi.py naskah-tts-v2.txt \
+python scripts/video/render_narasi.py naskah-tts-v3.txt \
   --engine edge --voice id-ID-ArdiNeural --out uji --only 1
 ```
 
@@ -406,32 +408,32 @@ python scripts/video/render_narasi.py naskah-tts-v2.txt \
 
 ```bash
 # lihat rencana
-python scripts/video/render_narasi.py naskah-tts.txt --dry-run
+python scripts/video/render_narasi.py naskah-tts-v3.txt --dry-run
 
 # draft tanpa GPU
-python scripts/video/render_narasi.py naskah-tts.txt --engine edge --out out_draft
+python scripts/video/render_narasi.py naskah-tts-v3.txt --engine edge --out out_draft
 
 # LANGKAH 1: buat satu paragraf acuan, ulangi sampai suaranya cocok
-python scripts/video/render_narasi.py naskah-tts-v2.txt --out acuan --only 1 \
+python scripts/video/render_narasi.py naskah-tts-v3.txt --out acuan --only 1 \
   --voice-desc "(an energetic Indonesian male narrator, bright and confident with a low warm register, brisk delivery, driving forward)" \
   --steps 25
 
 # JALUR LEBIH BAIK: rekam suara sendiri 20-30 detik, pakai sebagai acuan semua paragraf
-python scripts/video/render_narasi.py naskah-tts-v2.txt --out out \
+python scripts/video/render_narasi.py naskah-tts-v3.txt --out out \
   --reference-wav rekaman-saya.wav --steps 25
 
 # LANGKAH 2: render semua paragraf dengan suara terkunci dari acuan
-python scripts/video/render_narasi.py naskah-tts-v2.txt --out out \
+python scripts/video/render_narasi.py naskah-tts-v3.txt --out out \
   --reference-wav acuan/narasi_01.wav --steps 25
 
 # render ulang satu paragraf
-python scripts/video/render_narasi.py naskah-tts.txt --out out \
+python scripts/video/render_narasi.py naskah-tts-v3.txt --out out \
   --reference-wav acuan/narasi_01.wav --only 4 --force
 
 # kloning hi-fi, kalau kloning referensi masih kurang mirip
-python scripts/video/render_narasi.py naskah-tts.txt --out out \
+python scripts/video/render_narasi.py naskah-tts-v3.txt --out out \
   --reference-wav acuan/narasi_01.wav --prompt-wav acuan/narasi_01.wav \
   --prompt-text "transkrip kata per kata dari audio acuan"
 ```
 
-Ringkasnya: `--voice-desc` menentukan suara **sekali** untuk membuat acuan, lalu `--reference-wav` yang mengunci suara itu untuk sisanya. Jangan memakai `--voice-desc` sendirian untuk 15 paragraf, hasilnya akan berganti-ganti suara.
+Ringkasnya: `--voice-desc` menentukan suara **sekali** untuk membuat acuan, lalu `--reference-wav` yang mengunci suara itu untuk sisanya. Jangan memakai `--voice-desc` sendirian untuk 9 paragraf, hasilnya akan berganti-ganti suara.

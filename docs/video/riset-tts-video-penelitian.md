@@ -279,6 +279,30 @@ Karena itu, yang diumpankan ke mesin TTS sebaiknya bukan naskah asli, melainkan 
 | real-time | riil taim | |
 | dataset | de-ta-set | |
 | tracking | tre-king | |
+| YOLO26n | Yolo dua puluh enam en | Ditambahkan untuk naskah v3 |
+| YOLO26s | Yolo dua puluh enam es | |
+| YOLOv10n | Yolo vee sepuluh en | |
+| YOLOv11n | Yolo vee sebelas en | |
+| Multi-Object Tracking | Multi Objek Tre king | Spasi, bukan tanda hubung |
+| TrackEval | Trek Eval | |
+| RoI polygon | ar ou ai poligon | |
+| ID State Memory | I D steit memori | |
+| state machine | steit mesin | |
+| cooldown | masa tunggu | Lebih aman dibaca daripada "cooldown" |
+| naive line crossing | lain krosing naif | |
+| line counting | lain kaunting | |
+| counting logic | kaunting logik | |
+| end-to-end | end tu end | |
+| NVIDIA RTX 4090 | Envidia ar te eks empat ribu sembilan puluh | |
+| edge device | perangkat ej | |
+| Jetson | Jet son | |
+| pruning | pemangkasan | |
+| ground truth | graund trut | |
+| CCTV | si si ti vi | |
+| JESTEC | Jes tek | |
+| HKI | ha ka i | Di naskah v3 tertulis "Hak Cipta", jadi tidak dipakai |
+| identity switch | pergantian identitas | |
+| occlusion | oklusi | |
 
 Dua aturan umum yang berlaku untuk semua model di daftar ini: **tulis angka sebagai kata** (`lima ratus orang`, bukan `500 orang`), dan **hindari singkatan yang tidak diucapkan sebagai kata**.
 

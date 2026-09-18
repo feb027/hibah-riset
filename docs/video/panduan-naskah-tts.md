@@ -1,5 +1,7 @@
 # Naskah Video Penelitian + Panduan Menulis untuk Model TTS
 
+> **Sudah digantikan.** Berkas ini mendokumentasikan naskah v1, yang tidak lagi dipakai. Naskah yang berlaku sekarang adalah `naskah-asli-v3.txt` dan `naskah-tts-v3.txt`, hasil pecahan dari storyboard bertimecode dosen pembimbing, dan ringkasannya ada di `storyboard-v3.md`. Aturan penulisan di bawah masih berlaku seluruhnya; yang berganti hanya isi naskahnya.
+
 Dua berkas naskah sudah jadi, siap diunggah ke Google Drive:
 
 | Berkas | Isi | Dipakai untuk |
