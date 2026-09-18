@@ -43,7 +43,11 @@ Catatan penting soal angka di atas: itu n=1 per kondisi, jadi sah untuk melihat 
 
 **Keterbatasan yang perlu diketahui sebelum dipakai.** Dokumentasi VoxCPM2 mengakui stabilnya menurun pada teks panjang, sehingga narasi 5 menit harus dipotong per paragraf lalu disambung. `torch.compile` juga **tidak membantu** untuk pemakaian sekali-sekali: benchmark komunitas mengukur mode *compiled* justru 10–20 kali lebih lambat daripada *eager* karena grafnya dikompilasi ulang untuk setiap bentuk masukan baru. Untuk keperluan video ini, jalankan apa adanya tanpa `optimize=True`.
 
-Satu keterbatasan lagi yang paling mudah menjebak, dan tertulis di halaman *A Voice Chef's Guide*: **hasil *Voice Design* dari teks tidak konsisten antar pemanggilan.** Kalimat aslinya, *"Because of the model's creative nature, every generation can still have subtle, unique variations, a bit like hiring a new voice actor each time."* Artinya, membuat 15 paragraf dengan satu deskripsi suara yang sama tetap menghasilkan 15 suara yang berbeda-beda. Yang mengunci suara adalah **kloning dari berkas audio acuan**, bukan deskripsi teks dan bukan *seed*. Alur yang benar adalah membuat satu paragraf contoh, memilih hasil terbaik, lalu menjadikan berkas itu acuan `reference_wav_path` untuk seluruh paragraf sisanya. Rinciannya ada di `docs/video/cara-pakai-voxcpm2.md` Sel 4 dan 5.
+Satu keterbatasan lagi yang paling mudah menjebak, dan tertulis di halaman *A Voice Chef's Guide*: **hasil *Voice Design* dari teks tidak konsisten antar pemanggilan.** Kalimat aslinya, *"Because of the model's creative nature, every generation can still have subtle, unique variations, a bit like hiring a new voice actor each time."* Usage Guide malah menyatakannya lebih tegas: *"If you do not provide a reference audio, VoxCPM generates a random voice each time."* Artinya, membuat 15 paragraf dengan satu deskripsi suara yang sama tetap menghasilkan 15 suara yang berbeda-beda. Yang mengunci suara adalah **kloning dari berkas audio acuan**, bukan deskripsi teks dan bukan *seed*. Alur yang benar adalah membuat satu paragraf contoh, memilih hasil terbaik, lalu menjadikan berkas itu acuan `reference_wav_path` untuk seluruh paragraf sisanya.
+
+Satu hal kecil yang menentukan berhasil atau tidaknya deskripsi suara: **instruksinya hanya dipahami dalam Bahasa Inggris dan Bahasa Mandarin.** Usage Guide menuliskan, *"Chinese and English are both supported in the instruction."* Deskripsi berbahasa Indonesia dilewati begitu saja dan model kembali ke suara acak. Jadi tulis `(a young male narrator, calm and clear, brisk pace)`, bukan `(Pria muda, suara tenang, tempo agak cepat)`. Isi teks yang akan diucapkan tetap Bahasa Indonesia; hanya instruksi di dalam tanda kurung yang harus Bahasa Inggris.
+
+Rinciannya ada di `docs/video/cara-pakai-voxcpm2.md` Sel 4 dan 5.
 
 Perintah pemakaiannya:
 
@@ -71,7 +75,7 @@ Untuk membuat suara tanpa merekam siapa pun, pakai *Voice Design* dengan deskrip
 
 ```python
 wav = model.generate(
-    text="(Pria muda, suara tenang dan jelas, tempo sedang, gaya narasi dokumenter)Selamat pagi, semuanya.",
+    text="(a young male narrator, calm and clear, brisk pace)Selamat pagi, semuanya.",
     cfg_value=2.0,
     inference_timesteps=10,
 )
@@ -315,3 +319,6 @@ Tempo narasi juga lebih baik diatur di editor video daripada lewat parameter mod
 14. OpenBMB, *VoxCPM2 Demo Page* (sampel audio resmi). https://openbmb.github.io/voxcpm2-demopage/
 15. Google Colab, *Past Runtime Versions* dan `googlecolab/backend-info`: runtime 2026.07 memakai Python 3.12.13, numpy 2.0.2, PyTorch 2.11.0. https://research.google.com/colaboratory/runtime-version-faq.html — diakses 18 September 2026.
 16. `SWAG456/voxcpm2-tools`, Hugging Face: `VoxCPM2_Colab_Notebook.ipynb` untuk T4 gratis dan skrip inferensi CPU. Bukan keluaran resmi OpenBMB. https://huggingface.co/SWAG456/voxcpm2-tools
+17. OpenBMB, *Usage Guide*, VoxCPM 2.0 documentation — tiga mode generasi, *"Chinese and English are both supported in the instruction"*, *"If you do not provide a reference audio, VoxCPM generates a random voice each time"*, penalaan `cfg_value`. https://voxcpm.readthedocs.io/en/latest/usage_guide.html — diakses 18 September 2026.
+18. OpenBMB, *A Voice Chef's Guide to VoxCPM2* — contoh kombinasi deskripsi suara dan catatan variasi antar generasi. https://voxcpm.readthedocs.io/en/latest/cookbook.html
+19. OpenBMB/VoxCPM, issue #210, *Style control instructions ignored* — kontrol instruksi diabaikan pada mode kloning hi-fi, dikonfirmasi pengelola proyek; jalan keluar untuk tempo adalah audio acuan yang lebih cepat. https://github.com/OpenBMB/VoxCPM/issues/210 — dibuka 8 April 2026, diakses 18 September 2026 melalui `gh issue view 210`.

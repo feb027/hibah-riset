@@ -85,33 +85,37 @@ Lihat daftar paragraf dan perkiraan durasinya. Kalau jumlah paragrafnya sudah be
 
 ### Sel 4 — tentukan suara acuan (sekali saja)
 
-**Jangan langsung render 15 paragraf.** Voice Design dari teks tidak menghasilkan suara yang sama antar pemanggilan — dokumentasi resminya sendiri menyebut hasilnya *"a bit like hiring a new voice actor each time"*. Itu sebabnya paragraf 1 dan 2 kamu terdengar seperti dua orang berbeda.
+**Jangan langsung render 15 paragraf.** Dua hal dari dokumentasi resmi yang harus dipegang di sini:
 
-Jalan keluarnya: buat **satu** paragraf contoh, dengarkan, kalau bagus simpan filenya sebagai acuan, lalu semua paragraf lain mengkloning file itu.
+1. **Tanpa audio referensi, VoxCPM menghasilkan suara acak setiap kali.** Usage Guide menuliskannya apa adanya: *"If you do not provide a reference audio, VoxCPM generates a random voice each time."* Itu sebabnya paragraf 1 dan 2 kamu terdengar seperti dua orang berbeda.
+2. **Deskripsi suara hanya dipahami dalam Bahasa Inggris atau Bahasa Mandarin.** Kalimat aslinya: *"Chinese and English are both supported in the instruction."* Deskripsi berbahasa Indonesia diabaikan begitu saja, dan model jatuh ke suara acak. Ini penyebab suara pria yang kamu minta keluar sebagai suara perempuan.
+
+Jalan keluarnya: buat **satu** paragraf contoh dengan deskripsi **berbahasa Inggris**, dengarkan, kalau bagus simpan filenya sebagai acuan, lalu semua paragraf lain mengkloning file itu.
 
 ```python
 !cd /content && mkdir -p acuan && python render_narasi.py \
   "/content/drive/MyDrive/video-puu/naskah-tts.txt" \
   --out acuan --only 1 \
-  --voice-desc "(Pria muda, suara tenang dan jelas, tempo agak cepat, gaya narasi dokumenter)"
+  --voice-desc "(a young male narrator, calm and clear, brisk pace, documentary style)"
 ```
 
-Dengarkan `acuan/narasi_01.wav`. Belum cocok? Ulangi perintah yang sama dengan `--force` dan deskripsi suara yang disesuaikan. Dokumentasi VoxCPM2 menyarankan mencoba 1–3 kali untuk mendapat suara yang diinginkan. Deskripsi yang bisa dipakai:
+Dengarkan `acuan/narasi_01.wav`. Dokumentasi menyarankan mencoba 1–3 kali untuk mendapat suara yang diinginkan. Bahan deskripsinya, semua dalam Bahasa Inggris:
 
 | Bagian | Contoh |
 | :--- | :--- |
-| Identitas | `Pria muda`, `Wanita dewasa`, `Narator pria paruh baya` |
-| Tekstur | `suara tenang dan jelas`, `suara berat dan mantap` |
-| Tempo dan gaya | `tempo agak cepat`, `tempo sedang`, `gaya narasi dokumenter` |
-| Emosi | `tanpa emosi berlebih`, `hangat`, `tegas` |
+| Identitas | `a young male narrator`, `a middle-aged male broadcaster`, `an elderly woman` |
+| Tekstur | `calm and clear`, `low-pitched, raspy`, `warm and magnetic` |
+| Tempo dan gaya | `brisk pace`, `moderate pace`, `documentary style`, `news anchor style` |
+| Emosi | `neutral, no strong emotion`, `warm`, `assertive` |
 
 Beberapa variasi yang bisa dicoba:
 
-- `(Wanita muda, suara hangat, tempo sedang, gaya narasi dokumenter)`
-- `(Pria dewasa, suara berat dan mantap, tempo sedang, gaya berita)`
-- `(Suara netral, jelas, tempo agak cepat, tanpa emosi berlebih)`
+- `(a young male narrator, calm and clear, brisk pace, documentary style)`
+- `(a middle-aged male narrator, low-pitched and steady, moderate pace, formal documentary style)`
+- `(a female narrator, warm and clear, brisk pace, documentary style)`
+- `(assertive, crystal clear, sharp diction, faster pace)` — kombinasi ini dilaporkan pengguna lain sebagai yang paling berpengaruh pada tempo dan kejelasan
 
-Kalau ada yang lambat, tambahkan `tempo agak cepat`. Kalau terlalu datar, tambahkan `hangat` atau `tegas`.
+Kalau temponya terlalu lambat, tukar `moderate pace` jadi `brisk pace` atau tambahkan `faster pace`. Kalau terasa datar, tambahkan `warm` atau `assertive`.
 
 ### Sel 5 — render semua paragraf dengan suara terkunci
 
@@ -127,7 +131,7 @@ Sejak titik ini, timbre suara diambil dari `narasi_01.wav`, bukan dari deskripsi
 Dua hal yang berubah setelah ini:
 
 - **`--seed` tidak lagi perlu dipikirkan.** Yang mengunci suara adalah berkas acuan, bukan angka acak.
-- **Kontrol tempo masih bisa.** Tambahkan `--voice-desc "(tempo agak cepat)"` di samping `--reference-wav`. Ini mengubah gaya, bukan timbre, jadi suara tetap konsisten dengan acuan.
+- **Kontrol tempo masih bisa.** Tambahkan `--voice-desc "(brisk pace)"` di samping `--reference-wav`. Ini mengubah gaya, bukan timbre, jadi suara tetap konsisten dengan acuan. Ingat, deskripsi harus Bahasa Inggris.
 
 ### Sel 6 — render ulang satu paragraf saja
 
@@ -160,7 +164,9 @@ Kalau hasil kloning referensi masih terasa belum pas, VoxCPM2 punya mode paling 
 
 `--prompt-text` harus transkrip **kata per kata** dari audio acuan, tanpa dikoreksi. Kalau diisi sembarangan, hasilnya rusak.
 
-Satu batasan mode ini: `--voice-desc` tidak bisa dipakai bersamaan, karena dokumentasi VoxCPM2 melarang kontrol instruksi digabung dengan transkrip prompt. Jadi pilih salah satu, kontrol tempo atau kemiripan maksimum.
+Satu batasan mode ini, dan ini sudah dikonfirmasi pengelola VoxCPM2 di issue #210: **kontrol instruksi diabaikan total pada mode kloning hi-fi.** Model meniru persis tempo dan gaya audio acuan, tanpa memedulikan instruksi. Karena itu skrip menolak kombinasi `--voice-desc` dengan `--prompt-wav`, supaya tidak ada ilusi bahwa instruksinya bekerja.
+
+Konsekuensinya praktis: **kalau ingin suara hi-fi yang lebih cepat, audio acuannya harus sudah lebih cepat.** Bikin acuan dengan deskripsi `brisk pace` atau `faster pace`, simpan hasil itu, baru pakai sebagai `--prompt-wav`. Pengguna lain di issue yang sama menempuh jalan ini setelah melaporkan hasil hi-fi terlalu lambat untuk voiceover.
 
 ### Tidak ada opsi "render sekaligus"
 
@@ -183,7 +189,7 @@ mkdir -p ~/video-puu/out
 cd ~/video-puu
 python /path/ke/hibah-riset/scripts/video/render_narasi.py naskah-tts.txt \
   --out out \
-  --voice-desc "(Pria muda, suara tenang dan jelas, tempo sedang, gaya narasi dokumenter)" \
+  --voice-desc "(a young male narrator, calm and clear, brisk pace, documentary style)" \
   --seed 42
 ```
 
@@ -241,8 +247,10 @@ Kalau muncul galat `403 Invalid response status`, versi `edge-tts` di mesin terl
 | Sebutir kata terucap salah | Perbaiki di `naskah-tts.txt` saja, lalu render ulang paragraf itu dengan `--only N --force`. Naskah asli tidak perlu disentuh. |
 | `edge-tts` mengembalikan 403 | Versi lama. `pipx upgrade edge-tts`. |
 | Semua paragraf terdengar seperti orang berbeda | Kamu memakai `--voice-desc` sendirian. Voice Design dari teks memang berganti suara tiap pemanggilan. Pakai `--reference-wav` dengan satu berkas acuan (lihat Sel 4 dan 5). |
+| Suara tidak sesuai deskripsi, pria diminta keluar perempuan | Deskripsi ditulis dalam Bahasa Indonesia. Instruksi VoxCPM2 hanya mendukung **Bahasa Inggris dan Mandarin**. Tulis ulang dalam Bahasa Inggris, mis. `(a young male narrator, calm and clear, brisk pace)`. |
 | Render jalan terus padahal cuma mau satu paragraf | Kamu memakai `--start 1`, yang artinya "dari paragraf 1 sampai habis". Untuk satu paragraf saja pakai `--only 1`. |
-| Suara terasa lambat | Tambahkan `--voice-desc "(tempo agak cepat)"` di samping `--reference-wav`. Mengubah gaya, bukan timbre. |
+| Suara terasa lambat | Tambahkan `brisk pace` atau `faster pace` pada `--voice-desc` di samping `--reference-wav`. Mengubah gaya, bukan timbre. Untuk mode hi-fi, instruksi diabaikan, jadi acuannya sendiri harus sudah lebih cepat. |
+| Hasil kloning berbunyi berdengung atau berisik | Turunkan `--cfg` dari 2.0 ke sekitar 1,5–1,6. Dokumentasi menyebut nilai lebih rendah lebih stabil pada masukan sulit. |
 | `TypeError: VoxCPM._generate() got an unexpected keyword argument 'seed'` | Versi skrip di Colab masih yang lama. `generate()` pada `voxcpm` 2.0.3 tidak punya parameter `seed`; versi terbaru skrip memakai `torch.manual_seed()`. Ambil ulang: `!wget -q -O /content/render_narasi.py https://raw.githubusercontent.com/feb027/hibah-riset/main/scripts/video/render_narasi.py` |
 | Render terasa sangat lambat di Colab | T4 memang jauh lebih lambat dari 4090, dan kompilasi bfloat16 dilewati. Pastikan `--optimize` tidak dipakai. Kalau tersedia L4 atau A100 di dialog runtime, pindah ke sana. |
 
@@ -270,7 +278,7 @@ python scripts/video/render_narasi.py naskah-tts.txt --engine edge --out out_dra
 
 # LANGKAH 1: buat satu paragraf acuan, ulangi sampai suaranya cocok
 python scripts/video/render_narasi.py naskah-tts.txt --out acuan --only 1 \
-  --voice-desc "(Pria muda, suara tenang dan jelas, tempo agak cepat)"
+  --voice-desc "(a young male narrator, calm and clear, brisk pace)"
 
 # LANGKAH 2: render semua paragraf dengan suara terkunci dari acuan
 python scripts/video/render_narasi.py naskah-tts.txt --out out \

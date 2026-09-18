@@ -137,7 +137,7 @@ drive.mount('/content/drive')
 !cd /content && python render_narasi.py \
   "/content/drive/MyDrive/video-puu/naskah-tts.txt" \
   --out acuan --only 1 \
-  --voice-desc "(Pria muda, suara tenang dan jelas, tempo agak cepat, gaya narasi dokumenter)"
+  --voice-desc "(a young male narrator, calm and clear, brisk pace, documentary style)"
 
 # Sel 5 — render semua paragraf dengan suara terkunci dari acuan
 !cd /content && python render_narasi.py \

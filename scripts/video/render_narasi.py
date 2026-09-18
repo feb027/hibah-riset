@@ -14,8 +14,9 @@ Contoh:
       --engine edge --voice id-ID-ArdiNeural --out out_draft
 
   # 3. Buat SATU paragraf acuan, ulangi sampai suaranya cocok
+  #    Deskripsi suara HARUS Bahasa Inggris atau Mandarin; Bahasa Indonesia diabaikan.
   python scripts/video/render_narasi.py naskah-tts.txt --out acuan --only 1 \
-      --voice-desc "(Pria muda, suara tenang, tempo agak cepat)"
+      --voice-desc "(a young male narrator, calm and clear, brisk pace)"
 
   # 4. Render semua paragraf dengan suara terkunci dari acuan itu
   python scripts/video/render_narasi.py naskah-tts.txt --out out \
@@ -111,8 +112,8 @@ def main() -> int:
     ap.add_argument("--voice", default="id-ID-ArdiNeural", help="suara edge-tts")
     ap.add_argument("--rate", default="+0%", help="tempo edge-tts, mis. -10%%")
     ap.add_argument("--voice-desc", default="",
-                    help="kontrol gaya/deskripsi suara, disisipkan di awal tiap paragraf "
-                         "(mode voice design atau kloning referensi)")
+                    help="kontrol gaya/deskripsi suara, disisipkan di awal tiap paragraf. "
+                         "HARUS Bahasa Inggris atau Mandarin - instruksi Bahasa Indonesia diabaikan model")
     ap.add_argument("--reference-wav", type=Path,
                     help="audio acuan untuk mengunci timbre suara (WAJIB untuk narasi banyak paragraf)")
     ap.add_argument("--prompt-wav", type=Path,
