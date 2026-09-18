@@ -40,7 +40,10 @@ def render_voxcpm(par: list[str], args, out: Path) -> None:
     import soundfile as sf
 
     print("memuat openbmb/VoxCPM2 ...", flush=True)
-    model = VoxCPM.from_pretrained("openbmb/VoxCPM2", load_denoiser=False)
+    # optimize=False secara default: torch.compile justru 10-20x lebih lambat untuk
+    # pemakaian sekali-sekali, dan di Tesla T4 kompilasi bfloat16 dilewati (tanpa efek).
+    model = VoxCPM.from_pretrained("openbmb/VoxCPM2", load_denoiser=False,
+                                   optimize=args.optimize)
 
     for i, teks in enumerate(par, 1):
         target = out / f"narasi_{i:02d}.wav"
@@ -86,6 +89,8 @@ def main() -> int:
     ap.add_argument("--voice-desc", default="",
                     help="deskripsi suara VoxCPM2, ikut disisipkan di awal tiap paragraf")
     ap.add_argument("--seed", type=int, default=42)
+    ap.add_argument("--optimize", action="store_true",
+                    help="aktifkan torch.compile VoxCPM (default mati: lebih lambat untuk sekali jalan)")
     ap.add_argument("--cfg", type=float, default=2.0)
     ap.add_argument("--steps", type=int, default=10)
     ap.add_argument("--start", type=int, default=1, help="mulai dari paragraf ke-N")

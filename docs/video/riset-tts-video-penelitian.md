@@ -203,7 +203,8 @@ Tiga hal yang harus diantisipasi:
 
 1. **Bobot diunduh ulang setiap sesi baru.** Colab gratis tidak menyimpan model antar sesi, jadi setiap kali membuka notebook ada unduhan beberapa GB sebelum bisa bicara. Jangan tutup sesi sebelum semua paragraf selesai dirender.
 2. **Sesi gratis bisa terputus.** Render per paragraf, simpan tiap hasil ke Google Drive dengan `from google.colab import drive; drive.mount('/content/drive')`, lalu tulis keluaran ke folder Drive. Kalau sesi mati di tengah, yang sudah jadi tidak hilang.
-3. **Kalau `pip install voxcpm` menolak karena versi Python**, pin runtime Colab ke versi 2026.07 lewat *Runtime → Change runtime type → Runtime version*, lalu ulangi.
+3. **Kalau `pip install voxcpm` menolak karena versi Python.** Jarang terjadi: metadata paket `voxcpm` 2.0.3 hanya mensyaratkan `>=3.10` tanpa batas atas, dan pemasangan pada Colab Python 3.13 sudah terbukti berhasil. Kalau tetap gagal, pin runtime Colab ke versi 2026.07 lewat *Runtime → Change runtime type → Runtime version*, lalu ulangi.
+4. **`optimize` defaultnya aktif.** `VoxCPM.from_pretrained(...)` memakai `optimize=True`, yang menyalakan `torch.compile`. Untuk pemakaian sekali-sekali itu merugikan, karena graf dikompilasi ulang untuk setiap panjang teks baru. Skrip pada repositori ini mematikan opsi itu secara default; pemanggilan manual sebaiknya menulis `optimize=False`.
 
 Notebook komunitas juga sudah ada, misalnya `SWAG456/voxcpm2-tools` yang menyertakan `VoxCPM2_Colab_Notebook.ipynb` untuk T4 gratis, dan notebook Gradio dari `TeamAIQ/Colab-notebooks`. Keduanya bukan keluaran resmi OpenBMB, jadi periksa isinya sebelum dipakai dan jangan jalankan sel yang tidak Anda pahami. Perintah `pip install` di atas sudah cukup; notebook komunitas hanya menambah antarmuka.
 
@@ -286,7 +287,7 @@ Tempo narasi juga lebih baik diatur di editor video daripada lewat parameter mod
    ```bash
    pip install voxcpm soundfile
    ```
-   Render per paragraf dengan deskripsi suara dan `seed` yang sama untuk seluruh paragraf, supaya warnanya konsisten.
+   Render per paragraf dengan deskripsi suara dan `seed` yang sama untuk seluruh paragraf, supaya warnanya konsisten. Skrip ini mematikan `torch.compile` secara default (`optimize=False`), karena kompilasi justru memperlambat pemakaian sekali-sekali dan di T4 malah dilewati.
 5. **Kalau semua GPU sedang tidak bisa dipakai**, render draft dengan `edge-tts --voice id-ID-ArdiNeural` sambil menyusun video, lalu ganti audio final setelah VoxCPM2 jalan. Timeline tetap sama, hanya audionya yang ditukar di akhir.
 6. **Susun di editor**: audio, musik latar dengan level di bawah narasi, subtitle dari naskah asli (bukan versi fonetis), dan keterangan audio dihasilkan AI.
 

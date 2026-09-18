@@ -177,14 +177,28 @@ Kalau muncul galat `403 Invalid response status`, versi `edge-tts` di mesin terl
 
 | Gejala | Sebab dan tindakan |
 | :--- | :--- |
-| `pip install voxcpm` gagal, menyebut versi Python | Colab perlu Python ≥3.10 dan <3.13. Pin runtime: *Runtime → Change runtime type → Runtime version → 2026.07*. |
+| Sekumpulan peringatan `Tesla T4 does not support bfloat16 compilation natively, skipping` | **Bukan galat, abaikan.** Model berjalan pada bfloat16, sedangkan T4 arsitektur Turing yang tidak punya tensor core bfloat16. PyTorch melewati tahap kompilasi untuk bagian itu dan jatuh ke jalur biasa. Hasilnya benar, hanya lebih lambat. Percepat dengan `--optimize` tidak dipakai (lihat baris berikutnya). |
+| Peringatan `Dynamo detected a call to a functools.lru_cache-wrapped function at 'einops.py'` | **Bukan galat, abaikan.** Ini peringatan `torch.compile` soal fungsi `einops` yang di-cache. Peringatannya sendiri menyebut risikonya hanya potensial dan belum pernah teramati. Kalau mau hilang, jalankan tanpa `--optimize`. |
+| `Not enough SMs to use max_autotune_gemm mode` | **Bukan galat.** T4 punya jumlah SM lebih sedikit dari yang dibutuhkan mode autotune. Kompilasi tetap jalan dengan setelan biasa. |
+| `pip install voxcpm` gagal, menyebut versi Python | Sangat jarang. Metadata paket `voxcpm` 2.0.3 hanya mensyaratkan `>=3.10`, tanpa batas atas, dan pemasangan di Colab Python 3.13 sudah terbukti berhasil. Kalau tetap gagal, pin runtime: *Runtime → Change runtime type → Runtime version → 2026.07*. |
 | `ERROR: pip's dependency resolver ... gcsfs requires fsspec==..., but you have fsspec ...` | **Bukan galat, abaikan saja.** `voxcpm` 2.0.3 mendeklarasikan `modelscope>=1.22.0` dan `datasets<4`, dan keduanya memin `fsspec` ke versi lama sehingga bertabrakan dengan `gcsfs` bawaan Colab. Yang terdampak hanya akses Google Cloud Storage, yang tidak dipakai di alur ini. Pengunduhan model memakai Hugging Face, dan Drive yang sudah termount tidak terpengaruh. Jangan ditambal dengan menaikkan `fsspec`, karena ModelScope akan rusak. |
 | Proses berhenti tanpa pesan, Colab memutus sesi | Sesi gratis punya batas waktu. Jalankan ulang Sel 1, 2, 4; hasil sebelumnya dilewati otomatis. |
 | Satu paragraf keluar kosong atau terpotong | Dokumentasi VoxCPM2 mengakui ketidakstabilan pada teks panjang. Potong paragraf itu jadi dua, tambahkan baris kosong di `naskah-tts.txt`, render ulang. |
 | Sebutir kata terucap salah | Perbaiki di `naskah-tts.txt` saja, lalu render ulang paragraf itu dengan `--start N --force`. Naskah asli tidak perlu disentuh. |
 | `edge-tts` mengembalikan 403 | Versi lama. `pipx upgrade edge-tts`. |
 | Semua paragraf terdengar seperti orang berbeda | `--voice-desc` atau `--seed` berubah antar render. Pakai nilai yang sama persis. |
-| Muncul galat saat memuat model | Periksa versi Python dan PyTorch terhadap syarat VoxCPM: Python ≥3.10 dan <3.13, PyTorch ≥2.5. |
+| Render terasa sangat lambat di Colab | T4 memang jauh lebih lambat dari 4090, dan kompilasi bfloat16 dilewati. Pastikan `--optimize` tidak dipakai. Kalau tersedia L4 atau A100 di dialog runtime, pindah ke sana. |
+
+### Selamat datang di tahap yang benar
+
+Kalau log kamu berisi baris berikut, semuanya sudah berjalan seperti seharusnya:
+
+```
+Running on device: cuda, dtype: bfloat16
+Loaded VoxCPM2Model
+```
+
+Model terunduh 4,35 GB lalu dipulihkan menjadi 4,96 GB di `/root/.cache/huggingface/`. Selepas itu, peringatan apa pun yang muncul berasal dari `torch.compile` dan tidak menghentikan proses. Yang perlu ditunggu adalah baris `narasi_01.wav` mulai muncul di `/content/drive/MyDrive/video-puu/out/`.
 
 ---
 
