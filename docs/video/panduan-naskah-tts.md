@@ -133,15 +133,22 @@ drive.mount('/content/drive')
   "/content/drive/MyDrive/video-puu/naskah-tts.txt" \
   --out "/content/drive/MyDrive/video-puu/out" --dry-run
 
-# Sel 4 — render
+# Sel 4 — buat satu paragraf acuan, ulangi sampai suaranya cocok
+!cd /content && python render_narasi.py \
+  "/content/drive/MyDrive/video-puu/naskah-tts.txt" \
+  --out acuan --start 1 \
+  --voice-desc "(Pria muda, suara tenang dan jelas, tempo agak cepat, gaya narasi dokumenter)"
+
+# Sel 5 — render semua paragraf dengan suara terkunci dari acuan
 !cd /content && python render_narasi.py \
   "/content/drive/MyDrive/video-puu/naskah-tts.txt" \
   --out "/content/drive/MyDrive/video-puu/out" \
-  --voice-desc "(Pria muda, suara tenang dan jelas, tempo sedang, gaya narasi dokumenter)" \
-  --seed 42
+  --reference-wav "/content/acuan/narasi_01.wav"
 ```
 
 Sel 3 akan menampilkan 15 paragraf dan perkiraan 4,7 menit. Kalau jumlahnya bukan 15, berarti berkasnya terunggah tidak lengkap.
+
+Sel 4 wajib dijalankan lebih dulu dan tidak boleh digabung dengan Sel 5. Voice Design dari teks tidak menghasilkan suara yang sama antar pemanggilan, jadi suara harus dikunci lewat berkas audio acuan. Alasan lengkapnya ada di `docs/video/cara-pakai-voxcpm2.md` Sel 4 dan 5.
 
 ### Langkah 3. Setelah audio jadi
 

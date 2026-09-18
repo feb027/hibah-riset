@@ -43,6 +43,8 @@ Catatan penting soal angka di atas: itu n=1 per kondisi, jadi sah untuk melihat 
 
 **Keterbatasan yang perlu diketahui sebelum dipakai.** Dokumentasi VoxCPM2 mengakui stabilnya menurun pada teks panjang, sehingga narasi 5 menit harus dipotong per paragraf lalu disambung. `torch.compile` juga **tidak membantu** untuk pemakaian sekali-sekali: benchmark komunitas mengukur mode *compiled* justru 10–20 kali lebih lambat daripada *eager* karena grafnya dikompilasi ulang untuk setiap bentuk masukan baru. Untuk keperluan video ini, jalankan apa adanya tanpa `optimize=True`.
 
+Satu keterbatasan lagi yang paling mudah menjebak, dan tertulis di halaman *A Voice Chef's Guide*: **hasil *Voice Design* dari teks tidak konsisten antar pemanggilan.** Kalimat aslinya, *"Because of the model's creative nature, every generation can still have subtle, unique variations, a bit like hiring a new voice actor each time."* Artinya, membuat 15 paragraf dengan satu deskripsi suara yang sama tetap menghasilkan 15 suara yang berbeda-beda. Yang mengunci suara adalah **kloning dari berkas audio acuan**, bukan deskripsi teks dan bukan *seed*. Alur yang benar adalah membuat satu paragraf contoh, memilih hasil terbaik, lalu menjadikan berkas itu acuan `reference_wav_path` untuk seluruh paragraf sisanya. Rinciannya ada di `docs/video/cara-pakai-voxcpm2.md` Sel 4 dan 5.
+
 Perintah pemakaiannya:
 
 ```bash
@@ -65,7 +67,7 @@ wav = model.generate(
 sf.write("narasi_01.wav", wav, model.tts_model.sample_rate)
 ```
 
-Untuk membuat suara tanpa merekam siapa pun, pakai *Voice Design* dengan deskripsi di dalam tanda kurung di awal teks:
+Untuk membuat suara tanpa merekam siapa pun, pakai *Voice Design* dengan deskripsi di dalam tanda kurung di awal teks. Pakai ini untuk membuat **satu** paragraf acuan saja, bukan untuk seluruh naskah:
 
 ```python
 wav = model.generate(
